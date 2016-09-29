@@ -203,7 +203,12 @@ timestamp = datetime.now().isoformat()
 tool_version = version
 fsl_config = args.fslconfig or DEFAULT_FSL_PATH
 fsl_version = FSLWrapper([], shfile=fsl_config).version
-runtime = dict([(name, locals()[name])
+print(locals().keys())
+print(locals()["tool"])
+print(locals()["tool_version"])
+print(locals()["fsl_config"])
+params = locals()
+runtime = dict([(name, params[name])
                for name in ("fsl_config", "tool", "tool_version",
                             "fsl_version", "timestamp")])
 if args.verbose > 0:
@@ -225,7 +230,8 @@ model = args.model
 rician = args.rician
 burnin = args.burnin
 parallel = args.parallel
-inputs = dict([(name, locals()[name])
+params = locals()
+inputs = dict([(name, params[name])
                for name in ("subjdir", "subject", "diffusion_file",
                             "bvecs_file", "bvals_file", "nfiber", "thres",
                             "model", "rician", "burnin", "parallel")])
@@ -350,7 +356,8 @@ Update the outputs and save them and the inputs in a 'logs' directory.
 logdir = os.path.join(subjdir, "logs")
 if not os.path.isdir(logdir):
     os.mkdir(logdir)
-outputs = dict([(name, locals()[name])
+params = locals()
+outputs = dict([(name, params[name])
                 for name in ("b0_file", "b0_brain_file", "mask_file",
                              "merged_files", "bedpostx_outdir")])
 for name, final_struct in [("inputs", inputs), ("outputs", outputs),
