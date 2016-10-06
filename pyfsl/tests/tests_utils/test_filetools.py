@@ -71,12 +71,14 @@ class Fslreorient2std(unittest.TestCase):
         # Test execution
         self.assertRaises(ValueError, fslreorient2std, **self.kwargs)
 
+    @mock.patch("pyfsl.utils.filetools.glob.glob")
     @mock.patch("pyfsl.utils.filetools.os.path.isfile")
-    def test_normal_execution(self, mock_isfile):
+    def test_normal_execution(self, mock_isfile, mock_glob):
         """ Test the normal behaviour of the function.
         """
         # Set the mocked function returned values.
         mock_isfile.side_effect = [True]
+        mock_glob.return_value = ["/my/path/mock_output"]
 
         # Test execution
         fslreorient2std(**self.kwargs)
@@ -119,9 +121,9 @@ class FslApplyMask(unittest.TestCase):
 
         # Define function parameters
         self.kwargs = {
-            "input_image": "/my/path/mock_input_image",
-            "mask_image": "/my/path/mock_mask_image",
-            "output_image": "/my/path/mock_output_image",
+            "input_file": "/my/path/mock_input_file",
+            "mask_file": "/my/path/mock_mask_file",
+            "output_fileroot": "/my/path/mock_output_fileroot",
             "fslconfig": "/my/path/mock_shfile",
         }
 
@@ -137,12 +139,14 @@ class FslApplyMask(unittest.TestCase):
         # Test execution
         self.assertRaises(ValueError, apply_mask, **self.kwargs)
 
+    @mock.patch("pyfsl.utils.filetools.glob.glob")
     @mock.patch("pyfsl.utils.filetools.os.path.isfile")
-    def test_normal_execution(self, mock_isfile):
+    def test_normal_execution(self, mock_isfile, mock_glob):
         """ Test the normal behaviour of the function.
         """
         # Set the mocked function returned values.
         mock_isfile.side_effect = [True, True]
+        mock_glob.return_value = ["/my/path/mock_output"]
 
         # Test execution
         apply_mask(**self.kwargs)
@@ -151,9 +155,9 @@ class FslApplyMask(unittest.TestCase):
             mock.call(["which", "fslmaths"],
                       env={}, stderr=-1, stdout=-1),
             mock.call(["fslmaths",
-                       self.kwargs["input_image"],
-                       "-mas", self.kwargs["mask_image"],
-                       self.kwargs["output_image"]],
+                       self.kwargs["input_file"],
+                       "-mas", self.kwargs["mask_file"],
+                       self.kwargs["output_fileroot"]],
                       env={}, stderr=-1, stdout=-1)],
             self.mock_popen.call_args_list)
         self.assertEqual(len(self.mock_env.call_args_list), 1)

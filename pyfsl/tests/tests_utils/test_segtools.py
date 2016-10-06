@@ -50,10 +50,19 @@ class FslBet2(unittest.TestCase):
 
         # Define function parameters
         self.kwargs = {
-            "input_fileroot": "/my/path/mock_input_fileroot",
+            "input_file": "/my/path/mock_input_fileroot",
             "output_fileroot": "/my/path/mock_output_fileroot",
+            "outline": False,
+            "mask": False,
+            "skull": False,
+            "nooutput": False,
             "f": 0.5,
             "g": 0,
+            "radius": None,
+            "smooth": None,
+            "c": None,
+            "threshold": False,
+            "mesh": False,
             "shfile": "/my/path/mock_shfile",
         }
 
@@ -65,7 +74,7 @@ class FslBet2(unittest.TestCase):
 
     @mock.patch("pyfsl.utils.segtools.os.path.isfile")
     def test_badfileerror_raise(self, mock_isfile):
-        """Bad input file -> raise valueError.
+        """ Bad input file -> raise valueError.
         """
         # Set the mocked functions returned values
         mock_isfile.side_effect = [False]
@@ -77,7 +86,7 @@ class FslBet2(unittest.TestCase):
     @mock.patch("pyfsl.models.tensor.os.path.isdir")
     @mock.patch("pyfsl.models.tensor.os.path.isfile")
     def test_baddirerror_raise(self, mock_isfile, mock_isdir, mock_mkdir):
-        """Bad directory -> raise valueError.
+        """ Bad directory -> raise valueError.
         """
         # Set the mocked functions returned values
         mock_isfile.side_effect = [True]
@@ -90,7 +99,7 @@ class FslBet2(unittest.TestCase):
     @mock.patch("pyfsl.models.tensor.os.path.isdir")
     @mock.patch("pyfsl.models.tensor.os.path.isfile")
     def test_nofsltype_raise(self, mock_isfile, mock_isdir, mock_mkdir):
-        """Bad FSL extension error  -> raise valueError.
+        """ Bad FSL extension error  -> raise valueError.
         """
         # Set the mocked functions returned values
         mock_isfile.side_effect = [True]
@@ -118,7 +127,7 @@ class FslBet2(unittest.TestCase):
                       env={"FSLOUTPUTTYPE": "NIFTI"},
                       stderr=-1, stdout=-1),
             mock.call(["bet2",
-                       self.kwargs["input_fileroot"],
+                       self.kwargs["input_file"],
                        self.kwargs["output_fileroot"],
                        "-f", str(self.kwargs["f"]),
                        "-g", str(self.kwargs["g"])],

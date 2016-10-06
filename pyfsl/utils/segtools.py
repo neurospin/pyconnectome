@@ -19,8 +19,9 @@ from pyfsl import DEFAULT_FSL_PATH
 from pyfsl.wrapper import FSLWrapper
 
 
-def fast(input_file, out, klass=3, im_type=1, segments=False, bias_field=True,
-         bias_corrected_im=True, probabilities=False, shfile=DEFAULT_FSL_PATH):
+def fast(input_file, out_fileroot, klass=3, im_type=1, segments=False,
+         bias_field=True, bias_corrected_im=True, probabilities=False,
+         shfile=DEFAULT_FSL_PATH):
     """ FAST (FMRIB's Automated Segmentation Tool) segments a 3D image of
     the brain into different tissue types (Grey Matter, White Matter, CSF,
     etc.), whilst also correcting for spatial intensity variations
@@ -75,7 +76,7 @@ def fast(input_file, out, klass=3, im_type=1, segments=False, bias_field=True,
         "-B": bias_corrected_im,
         "-p": probabilities
     }
-    cmd = ["fast", "-o", out, "-n", str(klass), "-t", str(im_type)]
+    cmd = ["fast", "-o", out_fileroot, "-n", str(klass), "-t", str(im_type)]
     for name, value in bool_params.items():
         if value:
             cmd.append(name)
@@ -92,20 +93,20 @@ def fast(input_file, out, klass=3, im_type=1, segments=False, bias_field=True,
 
     # Format outputs
     image_ext = fslprocess.output_ext[fslprocess.environment["FSLOUTPUTTYPE"]]
-    segmentation_file = out + "_seg" + image_ext
-    bias_file = out + "_bias" + image_ext
+    segmentation_file = out_fileroot + "_seg" + image_ext
+    bias_file = out_fileroot + "_bias" + image_ext
     if not os.path.isfile(bias_file):
         bias_file = None
-    biascorrected_file = out + "_restore" + image_ext
+    biascorrected_file = out_fileroot + "_restore" + image_ext
     if not os.path.isfile(biascorrected_file):
         biascorrected_file = None
-    tpm = glob.glob(out + "_pve_*")
-    tsm = glob.glob(out + "_pve_*")
+    tpm = glob.glob(out_fileroot + "_pve_*")
+    tsm = glob.glob(out_fileroot + "_pve_*")
 
     return tpm, tsm, segmentation_file, bias_file, biascorrected_file
 
 
-def bet2(input_fileroot, output_fileroot, outline=False, mask=False,
+def bet2(input_file, output_fileroot, outline=False, mask=False,
          skull=False, nooutput=False, f=0.5, g=0, radius=None, smooth=None,
          c=None, threshold=False, mesh=False, shfile=DEFAULT_FSL_PATH):
     """ Wraps command bet2.
@@ -119,7 +120,7 @@ def bet2(input_fileroot, output_fileroot, outline=False, mask=False,
 
     Parameters
     ----------
-    input_fileroot: (mandatory)
+    input_file: (mandatory)
         Input image.
     output_fileroot: (mandatory)
         Output image.
@@ -174,9 +175,9 @@ def bet2(input_fileroot, output_fileroot, outline=False, mask=False,
         the path to the FSL 'fsl.sh' configuration file.
     """
     # Check the input parameter
-    if not os.path.isfile(input_fileroot):
+    if not os.path.isfile(input_file):
         raise ValueError("'{0}' is not a valid input file.".format(
-                         input_fileroot))
+                         input_file))
 
     # Check that the output directory exists
     if not os.path.isdir(output_fileroot):
@@ -184,7 +185,7 @@ def bet2(input_fileroot, output_fileroot, outline=False, mask=False,
 
     # Define the FSL command
     cmd = ["bet2",
-           input_fileroot,
+           input_file,
            output_fileroot,
            "-f", str(f),
            "-g", str(g),

@@ -13,6 +13,7 @@ Wrappers for the FSL's file utilities.
 # System import
 import os
 import nibabel
+import glob
 
 # Pyfsl import
 from pyfsl import DEFAULT_FSL_PATH
@@ -55,7 +56,7 @@ def extract_image(in_file, index, out_file=None):
 
 def fslreorient2std(input_image, output_image, fslconfig=DEFAULT_FSL_PATH):
     """ Reorient an image to match the approximate orientation of the standard
-    template images (MNI152).
+    template image (MNI152).
 
     It only applies 0, 90, 180 or 270 degree rotations.
     It is not a registration tool.
@@ -88,32 +89,41 @@ def fslreorient2std(input_image, output_image, fslconfig=DEFAULT_FSL_PATH):
     fslprocess = FSLWrapper(cmd, shfile=fslconfig)
     fslprocess()
 
+    return glob.glob(output_image + "*")[0]
 
-def apply_mask(input_image, output_image, mask_image,
+
+def apply_mask(input_file, output_fileroot, mask_file,
                fslconfig=DEFAULT_FSL_PATH):
     """ Apply a mask to an image.
 
     Parameters
     ----------
-    input_image: str (mandatory)
+    input_file: str (mandatory)
         The image to mask.
-    output_image: str (mandatory)
-        The computed masked image.
-    mask_image: str (mandatory)
+    output_fileroot: str (mandatory)
+        The masked image root name.
+    mask_file: str (mandatory)
         The mask image.
     fslconfig: str (optional, default DEFAULT_FSL_PATH)
         The FSL configuration batch.
+
+    Returns
+    -------
+    mask_file: str
+        the masked input image.
     """
     # check the input parameter
-    for filename in (input_image, mask_image):
+    for filename in (input_file, mask_file):
         if not os.path.isfile(filename):
             raise ValueError("'{0}' is not a valid input "
                              "file.".format(filename))
 
     # Define the FSL command
     # "-mas": use (following image>0) to mask current image.
-    cmd = ["fslmaths", input_image, "-mas", mask_image, output_image]
+    cmd = ["fslmaths", input_file, "-mas", mask_file, output_fileroot]
 
     # Call fslmaths
     fslprocess = FSLWrapper(cmd, shfile=fslconfig)
     fslprocess()
+
+    return glob.glob(output_fileroot + ".*")[0]

@@ -12,12 +12,94 @@ Wrappers for the FSL's registration utilities.
 
 # System import
 import os
+import glob
 import numpy
 import nibabel
 
 # Pyfsl import
 from pyfsl import DEFAULT_FSL_PATH
 from pyfsl.wrapper import FSLWrapper
+
+
+def mcflirt(in_file, out_fileroot, cost="normcorr", bins=256, dof=6,
+            reg_to_mean=True, mats=False, plots=True, verbose=0,
+            shfile=DEFAULT_FSL_PATH):
+    """ Wraps command mcflirt.
+
+    MCFLIRT is an intra-modal motion correction tool designed for use on
+    fMRI time series and based on optimization and registration techniques
+    used in FLIRT, a fully automated robust and accurate tool for linear
+    (affine) inter- and inter-modal brain image registration.
+
+    Parameters
+    ----------
+    in_file: str (mandatory)
+        Input serie file path.
+    out_fileroot: str (mandatory)
+        Output serie file path without extension.
+    cost: str(optional, default None)
+        The optimization cost function.
+        Choose the most appropriate option: "mutualinfo", "woods",
+        "corratio", "normcorr", "normmi", "leastsquares".
+    bins: int (optional, default 256)
+        Number of histogram bins.
+    dof: int (optional, default 6)
+        Number of transform degrees of freedom.
+    reg_to_mean: bool (optional, default True)
+        If set, register to mean, otherwise to middle volume of the serie.
+    mats: bool (optional, default False)
+        If set save transformation matricies in subdirectory outfilename.mat
+    plot: bool (optional, default True)
+        If set save transformation parameters in file outputfilename.par
+    verbose: int (optional)
+        0 is least and default.
+    shfile: str (optional, default DEFAULT_FSL_PATH)
+        The FSL configuration batch.
+
+    Returns
+    -------
+    func_file: str
+        Output realigned serie.
+    mean_file: str
+        Mean serie tempalte.
+    """
+    # Check the input parameters
+    if not os.path.isfile(in_file):
+        raise ValueError(
+            "'{0}' is not a valid input file.".format(in_file))
+    if cost not in ["mutualinfo", "woods", "corratio", "normcorr", "normmi",
+                    "leastsquares"]:
+        raise ValueError(
+            "'{0}' is not a valid optimization cost function.".format(cost))
+
+    # Define the FSL command
+    cmd = ["mcflirt",
+           "-in", in_file,
+           "-out", out_fileroot,
+           "-cost", cost,
+           "-bins", str(bins),
+           "-dof", str(dof),
+           "-verbose", str(verbose)]
+    if reg_to_mean:
+        cmd.append("-meanvol")
+    if mats:
+        cmd.append("-mats")
+    if plots:
+        cmd.append("-plots")
+
+    # Call mcflirt
+    fslprocess = FSLWrapper(cmd, shfile=shfile)
+    fslprocess()
+
+    # Get generated outputs
+    func_file = glob.glob(out_fileroot + ".*")[0]
+    mean_file = glob.glob(out_fileroot + "_mean_reg.*")
+    if len(mean_file) == 1:
+        mean_file = mean_file[0]
+    else:
+        mean_file = None
+
+    return func_file, mean_file
 
 
 def flirt(in_file, ref_file, omat=None, out=None, init=None, cost="corratio",
@@ -38,16 +120,16 @@ def flirt(in_file, ref_file, omat=None, out=None, init=None, cost="corratio",
         Input volume.
     ref_file: str (mandatory)
         Reference volume.
-    omat: (optional, default None)
+    omat: str (optional, default None)
         Matrix filename. Output in 4x4 ascii format.
-    out: (optional, default None)
+    out: str (optional, default None)
         Output volume.
     init: (optional, default None)
         Input 4x4 affine matrix
     cost: str (optional, default "corratio")
         Choose the most appropriate option: "mutualinfo", "corratio",
         "normcorr", "normmi", "leastsq", "labeldiff", "bbr".
-    usesqform: bool (optional)
+    usesqform: bool (optional, default False)
         Initialise using appropriate sform or qform.
     displayinit: bool
         Display initial matrix.
@@ -77,7 +159,7 @@ def flirt(in_file, ref_file, omat=None, out=None, init=None, cost="corratio",
     omat: str
         Output matrix filename. Output in 4x4 ascii format.
     """
-    # check the input parameters
+    # Check the input parameters
     for filename in (in_file, ref_file):
         if not os.path.isfile(filename):
             raise ValueError(
@@ -89,10 +171,10 @@ def flirt(in_file, ref_file, omat=None, out=None, init=None, cost="corratio",
            "-ref", ref_file,
            "-cost", cost,
            "-anglerep", anglerep,
-           "-bins", bins,
+           "-bins", str(bins),
            "-interp", interp,
-           "-dof", dof,
-           "-verbose", verbose]
+           "-dof", str(dof),
+           "-verbose", str(verbose)]
 
     # Set default parameters
     if usesqform:

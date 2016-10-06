@@ -38,8 +38,8 @@ def environment(sh_file=None, env={}):
     process = subprocess.Popen(command, env=env,
                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = process.communicate()
-    stdout = stdout.decode('utf8')
-    stderr = stderr.decode('utf8')
+    stdout = stdout.decode("utf8")
+    stderr = stderr.decode("utf8")
     if process.returncode != 0:
         raise Exception(
             "Could not parse 'sh_file' {0}. Maybe you should check if all "
@@ -59,3 +59,32 @@ def environment(sh_file=None, env={}):
                 environment[name] = value
 
     return environment
+
+
+def concat_environment(env1, env2):
+    """ Concatenate two environments.
+
+    1 - Check duplicated keys and concatenate their values.
+    2 - Update the concatenated environment.
+
+    Parameters
+    ----------
+    env1: dict (mandatory)
+        First environment.
+    env2: dict (mandatory)
+        Second environment.
+
+    Returns
+    -------
+    concat_env: dict
+        Updated environment where the duplicated keys values are concatenated
+        with ':'.
+    """
+    concat_env = env1
+    for key, value in env2.items():
+        if key in concat_env.keys():
+            if value != concat_env[key]:
+                concat_env[key] += ":" + env2[key]
+        else:
+            concat_env[key] = env2[key]
+    return concat_env

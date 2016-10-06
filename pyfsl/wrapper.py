@@ -17,6 +17,7 @@ import subprocess
 from .info import FSL_RELEASE
 from .info import DEFAULT_FSL_PATH
 from .configuration import environment
+from .configuration import concat_environment
 from .exceptions import FSLRuntimeError
 from .exceptions import FSLDependencyError
 from .exceptions import FSLConfigurationError
@@ -32,7 +33,8 @@ class FSLWrapper(object):
         "NIFTI_PAIR_GZ": ".hdr.gz",
     }
 
-    def __init__(self, cmd, shfile=DEFAULT_FSL_PATH, fsl_parallel=False):
+    def __init__(self, cmd, shfile=DEFAULT_FSL_PATH, fsl_parallel=False,
+                 env=None):
         """ Initialize the FSLWrapper class by setting properly the
         environment.
 
@@ -44,11 +46,16 @@ class FSLWrapper(object):
             The path to the FSL 'fsl.sh' configuration file.
         fsl_parallel: bool (optional, default False)
             If set use Condor to parallelize FSL on your local workstation.
+        env: dict (optional, default None)
+            The current environment in which the FSL command will be executed.
+            Default None, an empty environment.
         """
         self.cmd = cmd
         self.version = None
         self.shfile = shfile
         self.environment = self._fsl_version_check()
+        if env is not None:
+            self.environment = concat_environment(self.environment, env)
 
         # Condor specific setting
         if fsl_parallel:

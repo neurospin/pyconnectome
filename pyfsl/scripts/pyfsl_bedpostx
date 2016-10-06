@@ -203,10 +203,6 @@ timestamp = datetime.now().isoformat()
 tool_version = version
 fsl_config = args.fslconfig or DEFAULT_FSL_PATH
 fsl_version = FSLWrapper([], shfile=fsl_config).version
-print(locals().keys())
-print(locals()["tool"])
-print(locals()["tool_version"])
-print(locals()["fsl_config"])
 params = locals()
 runtime = dict([(name, params[name])
                for name in ("fsl_config", "tool", "tool_version",
