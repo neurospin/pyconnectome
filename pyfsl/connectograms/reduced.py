@@ -97,8 +97,8 @@ def get_region_names_of_lausanne_2008_atlas():
     # Non-hemispheric subcortical region
     axial_subctx_rois = ['Brain-Stem']
 
-    atlas_names = (lh_ctx_rois + lh_subctx_rois + rh_ctx_rois + rh_subctx_rois
-                   + axial_subctx_rois)
+    atlas_names = (lh_ctx_rois + lh_subctx_rois + rh_ctx_rois +
+                   rh_subctx_rois + axial_subctx_rois)
 
     return atlas_names
 
