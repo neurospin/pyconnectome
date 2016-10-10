@@ -62,6 +62,8 @@ def mcflirt(in_file, out_fileroot, cost="normcorr", bins=256, dof=6,
         Output realigned serie.
     mean_file: str
         Mean serie tempalte.
+    par_file: str
+        The motion correction transformation parameters.
     """
     # Check the input parameters
     if not os.path.isfile(in_file):
@@ -93,13 +95,14 @@ def mcflirt(in_file, out_fileroot, cost="normcorr", bins=256, dof=6,
 
     # Get generated outputs
     func_file = glob.glob(out_fileroot + ".*")[0]
-    mean_file = glob.glob(out_fileroot + "_mean_reg.*")
-    if len(mean_file) == 1:
-        mean_file = mean_file[0]
-    else:
-        mean_file = None
+    mean_file = None
+    if reg_to_mean:
+        mean_file = glob.glob(out_fileroot + "_mean_reg.*")[0]
+    par_file = None  
+    if plots:
+        par_file = out_fileroot + ".par"
 
-    return func_file, mean_file
+    return func_file, mean_file, par_file
 
 
 def flirt(in_file, ref_file, omat=None, out=None, init=None, cost="corratio",
