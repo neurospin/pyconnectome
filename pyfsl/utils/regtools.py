@@ -98,7 +98,7 @@ def mcflirt(in_file, out_fileroot, cost="normcorr", bins=256, dof=6,
     mean_file = None
     if reg_to_mean:
         mean_file = glob.glob(out_fileroot + "_mean_reg.*")[0]
-    par_file = None  
+    par_file = None
     if plots:
         par_file = out_fileroot + ".par"
 
