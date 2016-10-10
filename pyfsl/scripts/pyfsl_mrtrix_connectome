@@ -1,19 +1,47 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Thu Oct  6 15:51:37 2016
+##########################################################################
+# NSAp - Copyright (C) CEA, 2016
+# Distributed under the terms of the CeCILL-B license, as published by
+# the CEA-CNRS-INRIA. Refer to the LICENSE file or to
+# http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html
+# for details.
+#
+# Created on Thu Oct  6 15:51:37 2016
+#
+# @author: tg244389
+##########################################################################
 
-@author: tg244389
-"""
-
+# System import
 import os
 import argparse
+from pprint import pprint
+from datetime import datetime
+import json
 
-from pyfsl.connectograms.reduced import (get_path_of_freesurfer_lut,
-                                         mrtrix_connectome_pipeline)
+# Bredala module
+try:
+    import bredala
+    bredala.USE_PROFILER = False
+    bredala.register("pyfsl.connectomes.reduced",
+                     names=["get_path_of_freesurfer_lut",
+                            "mrtrix_connectome_pipeline"])
+except:
+    pass
+
+# Module import
+from pyfsl import __version__ as version
+from pyfsl import DEFAULT_FSL_PATH
+from pyfsl.wrapper import FSLWrapper
+from pyfsl.connectomes.reduced import get_path_of_freesurfer_lut
+from pyfsl.connectomes.reduced import mrtrix_connectome_pipeline
+
+
+# Parameters to keep trace
+__hopla__ = ["runtime", "inputs", "outputs"]
 
 
 DOC = """
-Compute the connectome of a given parcellation, like the Freesurfer aparc+aseg
+Compute the connectome of a given parcellation, like the FreeSurfer aparc+aseg
 segmentation, using MRtrix.
 
 Requirements:
@@ -23,8 +51,23 @@ Requirements:
     - diffusion brain mask: nodif_brain_mask
     - parcellation: image of labeled regions, e.g. Freesurfer aparc+aseg
 
-Connectogram strategy:
-    <TO DO>
+
+Command:
+python $HOME/git/pyfsl/pyfsl/scripts/pyfsl_mrtrix_connectome.py \
+    -a /neurospin/population/HCP/S500-1/139233/T1w/T1w_acpc_dc_restore_brain.nii.gz \
+    -i /neurospin/population/HCP/S500-1/139233/T1w/Diffusion/data.nii.gz \
+    -b /neurospin/population/HCP/S500-1/139233/T1w/Diffusion/bvals \
+    -r /neurospin/population/HCP/S500-1/139233/T1w/Diffusion/bvecs \
+    -m /neurospin/population/HCP/S500-1/139233/T1w/Diffusion/nodif_brain_mask.nii.gz \
+    -p /neurospin/population/HCP/S500-1/139233/T1w/aparc+aseg.nii.gz \
+    -o /volatile/MRtrix/test_hopla \
+    -d /volatile/MRtrix/tmp_hopla \
+    -t 5 \
+    -z 2 \
+    -l 250 \
+    -s 0.06 \
+    -n 5 \
+    -v 2
 """
 
 
@@ -98,8 +141,7 @@ def get_cmd_line_args():
 
     # Optional arguments
 
-    parser.add_argument("-f", "--parc-lut", type=is_file,
-                        default=get_path_of_freesurfer_lut(), metavar="<path>",
+    parser.add_argument("-f", "--parc-lut", type=is_file, metavar="<path>",
                         help="Path to the Look Up Table for the passed parcel"
                              "lation in the Freesurfer LUT format. By default "
                              "$FREESURFER_HOME/FreeSurferColorLUT.txt.")
@@ -113,17 +155,67 @@ def get_cmd_line_args():
     parser.add_argument("-c", "--connectome-lut", type=is_file, default=None,
                         metavar="<path>", help=chelp)
 
-    parser.add_argument("-F", "--fsl-init", default="/etc/fsl/5.0/fsl.sh",
+    parser.add_argument("-F", "--fsl-init",
                         type=is_file, metavar="<path>",
                         help="Bash script initializing FSL's environment.")
+
+    parser.add_argument("-v", "--verbose", type=int,
+                        choices=[0, 1, 2], default=0,
+                        help="Increase the verbosity level: 0 silent, [1, 2] "
+                             "verbose.")
 
     # Create a dict of arguments to pass to the 'main' function
     args = parser.parse_args()
     kwargs = vars(args)
+    verbose = kwargs.pop("verbose")
+    kwargs["fsl_init"] = kwargs["fsl_init"] or DEFAULT_FSL_PATH
+    kwargs["parc_lut"] = kwargs["parc_lut"] or get_path_of_freesurfer_lut()
 
-    return kwargs
+    return kwargs, verbose
 
 
-kwargs = get_cmd_line_args()
-print kwargs
-mrtrix_connectome_pipeline(**kwargs)
+"""
+Parse the command line.
+"""
+inputs, verbose = get_cmd_line_args()
+tool = "pyfsl_mrtrix_connectome"
+timestamp = datetime.now().isoformat()
+tool_version = version
+fsl_version = FSLWrapper([], shfile=inputs["fsl_init"]).version
+params = locals()
+runtime = dict([(name, params[name])
+               for name in ("tool", "tool_version", "fsl_version",
+                            "timestamp")])
+if verbose > 0:
+    print("[info] Starting MRTrix3 connectome ...")
+    print("[info] Runtime:")
+    pprint(runtime)
+    print("[info] Inputs:")
+    pprint(inputs)
+
+
+"""
+Start the connectome creation.
+"""
+mrtrix_connectome_pipeline(**inputs)
+results_dir = inputs["outdir"]
+
+
+"""
+Update the outputs and save them and the inputs in a 'logs' directory.
+"""
+logdir = os.path.join(inputs["outdir"], "logs")
+if not os.path.isdir(logdir):
+    os.mkdir(logdir)
+params = locals()
+outputs = dict([(name, params[name])
+                for name in ("results_dir", )])
+for name, final_struct in [("inputs", inputs), ("outputs", outputs),
+                           ("runtime", runtime)]:
+    log_file = os.path.join(logdir, "{0}.json".format(name))
+    with open(log_file, "wt") as open_file:
+        json.dump(final_struct, open_file, sort_keys=True, check_circular=True,
+                  indent=4)
+if verbose > 1:
+    print("[info] Outputs:")
+    pprint(outputs)
