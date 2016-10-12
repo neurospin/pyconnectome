@@ -84,18 +84,17 @@ def get_cmd_line_args():
     Create a command line argument parser and return a dict mapping
     <argument name> -> <argument value>.
     """
-
-    usage = ("%(prog)s -a <t1 brain> -i <dwi> -b <bvals> -r <bvecs> "
-             "-m <nodif_brain_mask> -p <parc> -o <outdir> -d <tempdir> "
-             "-t <int> -z <int> -l <int> -s <float> -n <int> [options]")
+    usage = ("%(prog)s -s <subject id> -i <dwi> -b <bvals> -r <bvecs> "
+             "-a <'freesurfer'|t1 brain> -p <t1 parc> -f <t1 parc LUT> "
+             "-c <'lausanne2008'|connectome LUT> -o <outdir> -d <tempdir> "
+             "-t <int> -z <int> -l <int> -k <float> -n <int> [options]")
     parser = argparse.ArgumentParser(prog="python mrtrix_connectome.py",
                                      usage=usage, description=DOC)
 
     # Required arguments
 
-    parser.add_argument("-a", "--t1-brain", type=is_file, required=True,
-                        metavar="<path>",
-                        help="Path to the brain-only T1 (anatomy).")
+    parser.add_argument("-s", "--subject-id", required=True, metavar="<id>",
+                        help="Subject id used in Freesurfer.")
 
     parser.add_argument("-i", "--dwi", type=is_file, required=True,
                         metavar="<path>", help="Path to the diffusion data.")
@@ -107,14 +106,42 @@ def get_cmd_line_args():
                         metavar="<path>", help="Path to the list of diffusion-"
                                                "sensitized directions.")
 
-    parser.add_argument("-m", "--nodif-brain-mask", type=is_file,
-                        required=True, metavar="<path>",
-                        help="Diffusion brain binary mask.")
+    ahelp = ("2 possibilities: (1) if you set this argument to 'freesurfer', "
+             "the Freesurfer T1 brain (i.e. <subjects_dir>/<subject_id>/mri/"
+             "brain.mgz) will be used and registered to diffusion with "
+             "Freesurfer 'bbregister'. It implies that you either set "
+             "'subjects_dir' or $SUBJECTS_DIR environment variable. "
+             "(2) if you don't want to provide/use Freesurfer, set to path of "
+             "a T1 brain-only volume registered to diffusion. It is not "
+             "required that the T1 has the same spacing as the diffusion as "
+             "long as they are registered (you can keep the T1 in its native "
+             "resolution).")
+    parser.add_argument("-a", "--t1-brain-to-dif", required=True,
+                        metavar="<'freesurfer'|path>", help=ahelp)
 
-    parser.add_argument("-p", "--parc", type=is_file, required=True,
+    parser.add_argument("-p", "--t1-parc", type=is_file, required=True,
                         metavar="<path>",
-                        help="Parcellation that defines the nodes of the "
-                             "connectome, e.g. 'aparc+aseg' from Freesurfer.")
+                        help="Path to the parcellation that defines the nodes "
+                             "of the connectome, e.g. aparc+aseg.mgz from Free"
+                             "surfer. Should be in the same space as the T1.")
+
+    fhelp = ("Path to the Look Up Table for the passed parcellation in the "
+             "Freesurfer LUT format. If your T1 parcellation comes from "
+             "Freesurfer, this will most likely be "
+             "<$FREESURFER_HOME>/FreeSurferColorLUT.txt.")
+    parser.add_argument("-f", "--t1-parc-lut", type=is_file, required=True,
+                        default=get_path_of_freesurfer_lut(), metavar="<path>",
+                        help=fhelp)
+
+    chelp = ("2 possibilities: (1) set to 'lausanne2008', a predefined LUT "
+             "for (and only for) Freesurfer aparc+aseg parcellation (Lausanne "
+             "et al. 2008 atlas). (2) set to the path to a Look Up Table in "
+             "the Freesurfer LUT format, listing the regions from the parcel"
+             "lation to use as nodes in the connectome. The region names "
+             "should match the ones used in the 't1_parc_lut' and the integer "
+             "labels should be the row/col positions in the connectome.")
+    parser.add_argument("-c", "--connectome-lut", required=True,
+                        metavar="<path>", help=chelp)
 
     parser.add_argument("-o", "--outdir", required=True, metavar="<path>",
                         help="Directory where to output.")
@@ -126,36 +153,63 @@ def get_cmd_line_args():
                         metavar="<int>",
                         help="Number of millions of tracks to compute.")
 
-    parser.add_argument("-z", "--sift-mtracks", required=True, type=int,
-                        metavar="<int>",
-                        help="Number of millions of tracks to keep with SIFT.")
-
     parser.add_argument("-l", "--maxlength", required=True, type=int,
                         metavar="<int>", help="Max fiber length in mm.")
 
-    parser.add_argument("-s", "--cutoff", required=True, type=float,
-                        metavar="<float>", help="Cutoff; stopping criteria.")
+    parser.add_argument("-k", "--cutoff", required=True, type=float,
+                        metavar="<float>",
+                        help="FOD cutoff = stopping criteria.")
 
-    parser.add_argument("-n", "--nthreads", required=True, type=int,
+    parser.add_argument("-n", "--nb-threads", required=True, type=int,
                         metavar="<int>", help="Number of threads.")
 
     # Optional arguments
 
-    parser.add_argument("-f", "--parc-lut", type=is_file, metavar="<path>",
-                        help="Path to the Look Up Table for the passed parcel"
-                             "lation in the Freesurfer LUT format. By default "
-                             "$FREESURFER_HOME/FreeSurferColorLUT.txt.")
+    parser.add_argument("-I", "--seed-gmwmi", action="store_true",
+                        help="Set this option if you want to activate the "
+                             "'-seed_gmwmi' option of MRtrix 'tckgen', to "
+                             "seed from the GM/WM interface. Otherwise, and "
+                             "by default, the seeding is done in white matter "
+                             "('-seed_dynamic' option).")
 
-    chelp = ("Path to a Look Up Table, in the Freesurfer LUT format, listing "
-             "the regions from the parcellation to use as nodes in the "
-             "connectome. The integer label should be the row/col position in "
-             "the connectome. By default a LUT is created for the Lausanne2008"
-             " atlas, which implies that the passed parcellation is "
-             "'aparc+aseg' from Freesurfer.")
-    parser.add_argument("-c", "--connectome-lut", type=is_file, default=None,
-                        metavar="<path>", help=chelp)
+    parser.add_argument("-z", "--sift-mtracks", required=False,
+                        metavar="<int>",
+                        help="Number of millions of tracks to keep with SIFT. "
+                             "If not set, SIFT is not applied.")
 
-    parser.add_argument("-F", "--fsl-init",
+    parser.add_argument("-S", "--subjects-dir", metavar="<path>",
+                        help="To set or bypass the $SUBJECTS_DIR environment "
+                             "variable.")
+
+    parser.add_argument("-B", "--nodif-brain", type=is_file, metavar="<path>",
+                        help="Diffusion brain-only volume to use to estimate "
+                             "the registration between diffusion and T1.")
+
+    parser.add_argument("-m", "--nodif-brain-mask", type=is_file,
+                        metavar="<path>",
+                        help="Path to diffusion brain binary mask.")
+
+    uhelp = ("If the <t1_parc> is aparc+aseg or aparc.a2009s+aseg from "
+             "Freesurfer set this option to True, to recompute the "
+             "subcortical segmentations of 5 structures that are uncorrectly "
+             "segmented by Freesurfer, using FSL FIRST")
+    parser.add_argument("-u", "--labelsgmfix", action="store_true", help=uhelp)
+
+    parser.add_argument("-D", "--delete-raw-tracks", action="store_true",
+                        help="To save disk space, delete the raw tracks when "
+                             "the connectome has been computed.")
+
+    parser.add_argument("-K", "--keep-dwi-mif", action="store_false",
+                        dest="delete_dwi_mif", default=True,
+                        help="To not delete <outdir>/DWI.mif, which is a copy "
+                             "of the input <dwi> in the .mif format.")
+
+    parser.add_argument("-U", "--no-mif-gz", action="store_false",
+                        dest="mif_gz", default=True,
+                        help="To not compress MIF files: .mif instead of "
+                             ".mif.gz.")
+
+    parser.add_argument("-F", "--fsl-init", default="/etc/fsl/5.0/fsl.sh",
                         type=is_file, metavar="<path>",
                         help="Bash script initializing FSL's environment.")
 
