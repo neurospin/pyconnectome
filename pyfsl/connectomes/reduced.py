@@ -18,9 +18,6 @@ Requirements:
       rigid transformation.
     - diffusion brain mask: nodif_brain_mask
     - parcellation: image of labeled regions, e.g. Freesurfer aparc+aseg
-
-Connectogram strategy:
-    <TO DO>
 """
 
 import os
@@ -325,6 +322,7 @@ def mrtrix_connectome_pipeline(outdir,
                                nb_threads,
                                seed_gmwmi=False,
                                sift_mtracks=None,
+                               sift2=False,
                                nodif_brain=None,
                                nodif_brain_mask=None,
                                labelsgmfix=False,
@@ -392,7 +390,9 @@ def mrtrix_connectome_pipeline(outdir,
         default, the seeding is done in white matter ('-seed_dynamic' option).
     sift_mtracks: int, default None
         Number of millions of tracks to keep with SIFT.
-        If not set, SIFT is not applied
+        If not set, SIFT is not applied.
+    sift2: bool, default False
+        To activate SIFT2.
     nodif_brain: str, default None
         Diffusion brain-only volume with bvalue ~ 0. If not passed, it is
         generated automatically by averaging all the b0 volumes of the DWI.
@@ -433,7 +433,7 @@ def mrtrix_connectome_pipeline(outdir,
     use_freesurfer = (t1_brain_to_dif.lower() == "freesurfer")
 
     # Is SIFT to be applied
-    apply_sift = (sift_mtracks is not None)
+    sift = (sift_mtracks is not None)
 
     if connectome_lut.lower() == "lausanne2008":
         lausanne2008_lut = os.path.join(outdir, "Lausanne2008LUT.txt")
@@ -462,7 +462,6 @@ def mrtrix_connectome_pipeline(outdir,
             raise ValueError("File or directory does not exist: %s" % p)
 
     # -------------------------------------------------------------------------
-
     # STEP 0
 
     # Identify whether the DWI acquisition is single or multi-shell
@@ -497,9 +496,10 @@ def mrtrix_connectome_pipeline(outdir,
         subprocess.check_call(cmd_0d)
 
     # -------------------------------------------------------------------------
-    # STEP 1 - If T1 and DWI are not already registered, compute the rigid
-    # transformation and align T1 and T1 parcellation with diffusion without
-    # downsampling T1 and T1 parcellation to diffusion
+    # STEP 1 - If T1 and DWI are not already registered:
+    # - compute the rigid transformation
+    # - apply transformation to align T1 and T1 parcellation with diffusion
+    #   without downsampling
 
     if use_freesurfer:
 
@@ -543,7 +543,7 @@ def mrtrix_connectome_pipeline(outdir,
         t1_parc_to_dif = t1_parc
 
     # -------------------------------------------------------------------------
-    # STEP X - QC the T1/parcellation/DWI alignment by creating snapshots
+    # QC the T1/parcellation/DWI alignment by creating snapshots
 
 #    path_snapshot_1 = os.path.join(qc_dir, "t1_dwi_alignment.pdf")
 #    qc_vol2vol_alignment(path_ref=nodif_brain,
@@ -558,7 +558,6 @@ def mrtrix_connectome_pipeline(outdir,
 #                         title="T1 parcellation - DWI alignment")
 
     # -------------------------------------------------------------------------
-
     # STEP 2 - "5 tissue types" segmentation
     # Generate the 5TT image based on a FSL FAST
     five_tissues = os.path.join(outdir, "5TT%s" % MIF_EXT)
@@ -567,6 +566,7 @@ def mrtrix_connectome_pipeline(outdir,
     fsl_process = FSLWrapper(cmd_2, env=os.environ, shfile=fsl_init)
     fsl_process()
 
+    # -------------------------------------------------------------------------
     # STEP 3 - Convert LUT
     # Change integer labels in the LUT so that the each label corresponds
     # to the row/col position in the connectome freesurfer
@@ -575,6 +575,7 @@ def mrtrix_connectome_pipeline(outdir,
              nodes, "-nthreads", "%i" % nb_threads, "-failonwarn"]
     subprocess.check_call(cmd_3)
 
+    # -------------------------------------------------------------------------
     # STEP 4 - If the T1 parcellation is aparc+aseg or aparc.a2009s+aseg
     # from Freesurfer, this option allows the recompute the subcortical
     # segmentations of 5 structures that are uncorrectly segmented by
@@ -588,6 +589,7 @@ def mrtrix_connectome_pipeline(outdir,
         fsl_process()
         nodes = fixed_nodes
 
+    # -------------------------------------------------------------------------
     # STEP 7 - Estimation of the response function of fibers in each voxel
     if is_multi_shell:
         rf_wm = os.path.join(outdir, "RF_WM.txt")
@@ -603,6 +605,7 @@ def mrtrix_connectome_pipeline(outdir,
               "-nthreads", "%i" % nb_threads]
     subprocess.check_call(cmd_7)
 
+    # -------------------------------------------------------------------------
     # STEP 8 - Compute FODs
     wm_fods = os.path.join(outdir, "WM_FODs%s" % MIF_EXT)
     if is_multi_shell:
@@ -616,7 +619,8 @@ def mrtrix_connectome_pipeline(outdir,
               "-failonwarn"]
     subprocess.check_call(cmd_8)
 
-    # STEP 9 - Image to visualize
+    # -------------------------------------------------------------------------
+    # STEP 9 - Image to visualize for multi-shell
     if is_multi_shell:
         wm_fods_vol0 = os.path.join(outdir, "WM_FODs_vol0%s" % MIF_EXT)
         cmd_9a = ["mrconvert", wm_fods, wm_fods_vol0, "-coord", "3", "0",
@@ -628,14 +632,16 @@ def mrtrix_connectome_pipeline(outdir,
                   "-axis", "3", "-nthreads", "%i" % nb_threads, "-failonwarn"]
         subprocess.check_call(cmd_9b)
 
-    # STEP 10 - Tractography
+    # -------------------------------------------------------------------------
+    # STEP 10 - Anatomically Constrained Tractography:
+    # iFOD2 algorithm with backtracking and crop fibers at GM/WM interface
     tracks = os.path.join(outdir, "%iM.tck" % mtracks)
     cmd_10 = ["tckgen", wm_fods, tracks, "-act", five_tissues, "-backtrack",
               "-crop_at_gmwmi", "-maxlength", "%i" % maxlength,
               "-number", "%dM" % mtracks, "-cutoff", "%f" % cutoff,
               "-nthreads", "%i" % nb_threads, "-failonwarn"]
     if seed_gmwmi:
-        gmwmi_mask = os.path.join(outdir, "gmwmi_mask.%s" % MIF_EXT)
+        gmwmi_mask = os.path.join(outdir, "gmwmi_mask%s" % MIF_EXT)
         cmd_10b = ["5tt2gmwmi", five_tissues, gmwmi_mask]
         subprocess.check_call(cmd_10b)
         cmd_10 += ["-seed_gmwmi", gmwmi_mask]
@@ -643,28 +649,47 @@ def mrtrix_connectome_pipeline(outdir,
         cmd_10 += ["-seed_dynamic", wm_fods]
     subprocess.check_call(cmd_10)
 
+    # -------------------------------------------------------------------------
     # STEP 11 - Filter tracts with SIFT if requested
-    if apply_sift:
-        sifted_tracks = os.path.join(outdir, "%iM_SIFT.tck" % sift_mtracks)
-        cmd_11 = ["tcksift", tracks, wm_fods, sifted_tracks,
+    if sift:
+        sift_tracks = os.path.join(outdir, "%iM_SIFT.tck" % sift_mtracks)
+        cmd_11 = ["tcksift", tracks, wm_fods, sift_tracks,
                   "-act", five_tissues, "-term_number", "%iM" % sift_mtracks,
                   "-nthreads", "%i" % nb_threads, "-failonwarn"]
         subprocess.check_call(cmd_11)
 
-    # STEP 12 - Create connectome(s) array(s) from tracts for raw tractogram
-    # and for SIFT tractogram, if SIFT was applied
+    # -------------------------------------------------------------------------
+    # STEP 12 - run SIFT2 if requested (compute weights of fibers)
+    if sift2:
+        sift2_weights = os.path.join(outdir, "sift2_weights.txt")
+        cmd_12 = ["tcksift2", tracks, wm_fods, sift2_weights,
+                  "-act", five_tissues,
+                  "-nthreads", "%i" % nb_threads, "-failonwarn"]
+        subprocess.check_call(cmd_12)
+
+    # -------------------------------------------------------------------------
+    # STEP 13 - Create the connectome(s) of the raw tractogram,
+    # and for SIFT and SIFT2 if used.
     raw_connectome = os.path.join(outdir, "raw_connectome.csv")
-    cmd_12a = ["tck2connectome", tracks, nodes, raw_connectome,
+    cmd_13a = ["tck2connectome", tracks, nodes, raw_connectome,
                "-nthreads", "%i" % nb_threads, "-failonwarn"]
-    subprocess.check_call(cmd_12a)
+    subprocess.check_call(cmd_13a)
 
-    if apply_sift:
-        sifted_connectome = os.path.join(outdir, "sifted_connectome.csv")
-        cmd_12b = ["tck2connectome", sifted_tracks, nodes, sifted_connectome,
+    if sift:
+        sift_connectome = os.path.join(outdir, "sift_connectome.csv")
+        cmd_13b = ["tck2connectome", sift_tracks, nodes, sift_connectome,
                    "-nthreads", "%i" % nb_threads, "-failonwarn"]
-        subprocess.check_call(cmd_12b)
+        subprocess.check_call(cmd_13b)
 
-    # STEP 13 - create snapshots of the connectomes
+    if sift2:
+        sift2_connectome = os.path.join(outdir, "sift2_connectome.csv")
+        cmd_13c = ["tck2connectome", tracks, nodes, sift2_connectome,
+                   "-tck_weights_in", sift2_weights,
+                   "-nthreads", "%i" % nb_threads, "-failonwarn"]
+        subprocess.check_call(cmd_13c)
+
+    # -------------------------------------------------------------------------
+    # STEP 14 - create snapshots of the connectomes
 
     # Read labels from LUT and create a list of labels: labels.txt
     labels = numpy.loadtxt(connectome_lut, dtype=str, usecols=[1])
@@ -676,9 +701,15 @@ def mrtrix_connectome_pipeline(outdir,
     connectome_snapshot(raw_connectome, raw_snapshot, labels=path_labels,
                         transform=numpy.log1p, colorbar_title="log(# tracks)")
 
-    if apply_sift:
-        sifted_snapshot = os.path.join(outdir, "sifted_connectome.png")
-        connectome_snapshot(sifted_connectome, sifted_snapshot,
+    if sift:
+        sift_snapshot = os.path.join(outdir, "sift_connectome.png")
+        connectome_snapshot(sift_connectome, sift_snapshot,
+                            labels=path_labels, transform=numpy.log1p,
+                            colorbar_title="log(# tracks)")
+
+    if sift2:
+        sift2_snapshot = os.path.join(outdir, "sift2_connectome.png")
+        connectome_snapshot(sift2_connectome, sift2_snapshot,
                             labels=path_labels, transform=numpy.log1p,
                             colorbar_title="log(# tracks)")
 

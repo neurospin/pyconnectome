@@ -1,30 +1,26 @@
-# -*- coding: utf-8 -*-
+#! /usr/bin/env python
+# -*- coding: utf-8 -*
 ##########################################################################
 # NSAp - Copyright (C) CEA, 2016
 # Distributed under the terms of the CeCILL-B license, as published by
 # the CEA-CNRS-INRIA. Refer to the LICENSE file or to
-# http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html
-# for details.
-#
-# Created on Thu Oct  6 15:51:37 2016
-#
-# @author: tg244389
+# http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html for details.
 ##########################################################################
 
 # System import
 import os
 import argparse
+import json
+
 from pprint import pprint
 from datetime import datetime
-import json
 
 # Bredala module
 try:
     import bredala
     bredala.USE_PROFILER = False
     bredala.register("pyfsl.connectomes.reduced",
-                     names=["get_path_of_freesurfer_lut",
-                            "mrtrix_connectome_pipeline"])
+                     names=["mrtrix_connectome_pipeline"])
 except:
     pass
 
@@ -32,7 +28,6 @@ except:
 from pyfsl import __version__ as version
 from pyfsl import DEFAULT_FSL_PATH
 from pyfsl.wrapper import FSLWrapper
-from pyfsl.connectomes.reduced import get_path_of_freesurfer_lut
 from pyfsl.connectomes.reduced import mrtrix_connectome_pipeline
 
 
@@ -94,7 +89,7 @@ def get_cmd_line_args():
     # Required arguments
 
     parser.add_argument("-s", "--subject-id", required=True, metavar="<id>",
-                        help="Subject id used in Freesurfer.")
+                        help="Subject identifier.")
 
     parser.add_argument("-i", "--dwi", type=is_file, required=True,
                         metavar="<path>", help="Path to the diffusion data.")
@@ -109,8 +104,8 @@ def get_cmd_line_args():
     ahelp = ("2 possibilities: (1) if you set this argument to 'freesurfer', "
              "the Freesurfer T1 brain (i.e. <subjects_dir>/<subject_id>/mri/"
              "brain.mgz) will be used and registered to diffusion with "
-             "Freesurfer 'bbregister'. It implies that you either set "
-             "'subjects_dir' or $SUBJECTS_DIR environment variable. "
+             "Freesurfer 'bbregister'. It implies that you pass 'subjects_dir'"
+             " or set $SUBJECTS_DIR environment variable. "
              "(2) if you don't want to provide/use Freesurfer, set to path of "
              "a T1 brain-only volume registered to diffusion. It is not "
              "required that the T1 has the same spacing as the diffusion as "
@@ -130,8 +125,7 @@ def get_cmd_line_args():
              "Freesurfer, this will most likely be "
              "<$FREESURFER_HOME>/FreeSurferColorLUT.txt.")
     parser.add_argument("-f", "--t1-parc-lut", type=is_file, required=True,
-                        default=get_path_of_freesurfer_lut(), metavar="<path>",
-                        help=fhelp)
+                        metavar="<path>", help=fhelp)
 
     chelp = ("2 possibilities: (1) set to 'lausanne2008', a predefined LUT "
              "for (and only for) Freesurfer aparc+aseg parcellation (Lausanne "
@@ -172,10 +166,12 @@ def get_cmd_line_args():
                              "by default, the seeding is done in white matter "
                              "('-seed_dynamic' option).")
 
-    parser.add_argument("-z", "--sift-mtracks", required=False,
-                        metavar="<int>",
+    parser.add_argument("-z", "--sift-mtracks", type=int, metavar="<int>",
                         help="Number of millions of tracks to keep with SIFT. "
                              "If not set, SIFT is not applied.")
+
+    parser.add_argument("-Z", "--sift2", action="store_true",
+                        help="To activate SIFT2.")
 
     parser.add_argument("-S", "--subjects-dir", metavar="<path>",
                         help="To set or bypass the $SUBJECTS_DIR environment "
@@ -209,12 +205,11 @@ def get_cmd_line_args():
                         help="To not compress MIF files: .mif instead of "
                              ".mif.gz.")
 
-    parser.add_argument("-F", "--fsl-init", default="/etc/fsl/5.0/fsl.sh",
-                        type=is_file, metavar="<path>",
+    parser.add_argument("-F", "--fsl-init", type=is_file, metavar="<path>",
                         help="Bash script initializing FSL's environment.")
 
     parser.add_argument("-v", "--verbose", type=int,
-                        choices=[0, 1, 2], default=0,
+                        choices=[0, 1, 2], default=2,
                         help="Increase the verbosity level: 0 silent, [1, 2] "
                              "verbose.")
 
@@ -222,8 +217,8 @@ def get_cmd_line_args():
     args = parser.parse_args()
     kwargs = vars(args)
     verbose = kwargs.pop("verbose")
-    kwargs["fsl_init"] = kwargs["fsl_init"] or DEFAULT_FSL_PATH
-    kwargs["parc_lut"] = kwargs["parc_lut"] or get_path_of_freesurfer_lut()
+    if kwargs["fsl_init"] is None:
+        kwargs["fsl_init"] = DEFAULT_FSL_PATH
 
     return kwargs, verbose
 
@@ -241,15 +236,15 @@ runtime = dict([(name, params[name])
                for name in ("tool", "tool_version", "fsl_version",
                             "timestamp")])
 if verbose > 0:
-    print("[info] Starting MRTrix3 connectome ...")
-    print("[info] Runtime:")
+    pprint("[info] Starting MRTrix3 connectome ...")
+    pprint("[info] Runtime:")
     pprint(runtime)
-    print("[info] Inputs:")
+    pprint("[info] Inputs:")
     pprint(inputs)
 
 
 """
-Start the connectome creation.
+Start the connectome computation.
 """
 mrtrix_connectome_pipeline(**inputs)
 results_dir = inputs["outdir"]
@@ -262,8 +257,7 @@ logdir = os.path.join(inputs["outdir"], "logs")
 if not os.path.isdir(logdir):
     os.mkdir(logdir)
 params = locals()
-outputs = dict([(name, params[name])
-                for name in ("results_dir", )])
+outputs = dict([(name, params[name]) for name in ("results_dir", )])
 for name, final_struct in [("inputs", inputs), ("outputs", outputs),
                            ("runtime", runtime)]:
     log_file = os.path.join(logdir, "{0}.json".format(name))
@@ -271,5 +265,5 @@ for name, final_struct in [("inputs", inputs), ("outputs", outputs),
         json.dump(final_struct, open_file, sort_keys=True, check_circular=True,
                   indent=4)
 if verbose > 1:
-    print("[info] Outputs:")
+    pprint("[info] Outputs:")
     pprint(outputs)
