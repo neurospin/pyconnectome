@@ -24,6 +24,7 @@ import os
 import subprocess
 
 import numpy
+import nibabel
 
 from pyfsl.wrapper import FSLWrapper
 from pyfreesurfer.wrapper import FSWrapper
@@ -173,6 +174,25 @@ def create_lausanne2008_lut(path_out):
             f.write(line_format.format(*row))
 
     return path_out
+
+
+def load_look_up_table(path_lut):
+    """
+    Load the Look Up Table, provided in the Freesurfer LUT format,
+    as 3 ordered lists: labels (ints), names, colors (RGBA tuples)
+    Structure:
+        [.., 55, ..], [.., 'Right-Insula', .. ], [.., (80, 196, 98, 0), ..]
+    """
+    # Load the Look Up Table and create 3 ordered lists
+    try:
+        table = numpy.loadtxt(path_lut, dtype=str)
+        labels = table[:, 0].astype(dtype=int).tolist()
+        names = table[:, 1].tolist()
+        colors = [tuple(x) for x in table[:, 2:].astype(dtype=int)]
+    except:
+        raise Exception("Failed to the Look Up Table: %s" % path_lut)
+
+    return labels, names, colors
 
 
 def connectome_snapshot(connectome, snapshot, labels=None, transform=None,
@@ -726,4 +746,354 @@ def mrtrix_connectome_pipeline(outdir,
             subprocess.check_call(["gzip", dwi_mif])
             dwi_mif += ".gz"
 
+    return outdir
+
+
+def voxel_to_node_connectivity(probtrackx2_dir, nodes, connectome_lut, outdir,
+                               basename="connectome"):
+    """
+    When using the --omatrix3 option in Probtrackx2, the result is a
+    VOXELxVOXEL connectivity matrix. This function creates the NODExNODE
+    (i.e. ROIxROI) connectivity matrix for the given parcellation.
+
+    Parameters
+    ----------
+    probtrackx2_dir: str
+        Path to dir where to find the files created by probtrackx2 when using
+        --omatrix3 option, i.e "fdt_matrix3.dot" and "coords_for_fdt_matrix3"
+    nodes: str
+        Path to parcellation defining the nodes of the connectome,
+        e.g. Freesurfer aparc+aseg parcellation with only the regions
+        (i.e. labels) to keep in the connectome.
+    connectome_lut: str
+        Path to the Look Up Table of the given parcellation in the
+        Freesurfer LUT format.
+    outdir: str
+        Path to directory where output.
+    basename: str, default "connectome"
+        Basename of output files (<outdir>/<basename>.[mat|labels]).
+    """
+
+    # Check input and output dirs
+    if not os.path.isdir(probtrackx2_dir):
+        raise ValueError("Directory does not exist: %s" % probtrackx2_dir)
+
+    # coords: map x,y,z coordinates to voxel index
+    # <x> <y> <z> <voxel index>
+    path_coords = os.path.join(probtrackx2_dir, "coords_for_fdt_matrix3")
+    coords = numpy.loadtxt(path_coords, dtype=int, usecols=[0, 1, 2, 4])
+
+    # Load parcellation volume with node labels
+    nodes_vol = nibabel.load(nodes).get_data().astype(dtype=int)
+
+    # Load LUT to get the node names
+    node_labels, node_names, _ = load_look_up_table(connectome_lut)
+    set_labels = set(node_labels)
+
+    # Connectivity matriw
+    nb_nodes = len(node_names)
+    connectome = numpy.zeros((nb_nodes, nb_nodes), dtype=int)
+
+    # fdt_matrix3.dot: voxel to voxel connectivity
+    # <index voxel 1> <index voxel 2> <nb connections>
+    path_fdt_matrix3 = os.path.join(probtrackx2_dir, "fdt_matrix3.dot")
+
+    # Since the fdt_matrix3.dot file can be very large, we parse it line by
+    # line without loading it completely in memory
+    with open(path_fdt_matrix3) as f:
+        for line in f:
+
+            # Get indexes of connected voxels and nb of connections
+            v1_idx, v2_idx, nb_connections = map(int, line.strip().split())
+
+            if nb_connections == 0:
+                continue
+
+            # Volume coordinates of connected voxels
+            x1, y1, z1, _v1_idx = coords[v1_idx - 1, :]
+            x2, y2, z2, _v2_idx = coords[v2_idx - 1, :]
+
+            assert v1_idx == _v1_idx, "%i %i" % (v1_idx, _v1_idx)
+            assert v2_idx == _v2_idx, "%i %i" % (v2_idx, _v2_idx)
+
+            # labels of the 2 connected voxels
+            label1, label2 = nodes_vol[x1, y1, z1], nodes_vol[x2, y2, z2]
+
+            # Ignore pairs of voxels which labels are not in the connectome
+            if not {label1, label2}.issubset(set_labels):
+                continue
+
+            # Update counts
+            i, j = label1 - 1, label2 - 1  # 0-indexed in python
+            connectome[i, j] += nb_connections
+            connectome[j, i] += nb_connections
+
+    # Write output connectome
+    out_connectome = os.path.join(outdir, basename + ".mat")
+    numpy.savetxt(out_connectome, connectome, fmt="%i")
+
+    # Write nodes names
+    out_labels = os.path.join(outdir, basename + ".labels")
+    numpy.savetxt(out_labels, node_names, fmt="%s")
+
+    return out_connectome, out_labels
+
+
+# TODO: remove and replace by pyfsl
+from clindmri.tractography.fsl import probtrackx2
+
+
+def probtrackx2_connectome_pipeline(outdir,
+                                    tempdir,
+                                    subject_id,
+                                    t1_parc,
+                                    t1_parc_lut,
+                                    connectome_lut,
+                                    nodif_brain,
+                                    nodif_brain_mask,
+                                    bedpostx_dir,
+                                    nsamples,
+                                    nsteps,
+                                    steplength,
+                                    labelsgmfix=False,
+                                    subjects_dir=None,
+                                    cthr=None,
+                                    loopcheck=True,
+                                    fibthresh=None,
+                                    distthresh=None,
+                                    sampvox=None,
+                                    fsl_init="/etc/fsl/5.0/fsl.sh"):
+    """
+    Compute the connectome of a given parcellation, like the FreeSurfer
+    aparc+aseg segmentation, using MRtrix.
+
+    Requirements:
+        - preprocessed DWI with bval and bvec: if distortions from acquisition
+          have been properly corrected it should be possible to register
+          diffusion to T1 with rigid transformation.
+        - brain masks for the preprocessed DWI: nodif_brain and
+          nodif_brain_mask
+        - Freesurfer: result of recon-all on the T1
+        - FSL Bedpostx: computed for the preprocessed DWI
+
+    Connectogram strategy:
+        - Pathways are constructed from 'constitutive points' and not from
+          endpoints. A pathway is the result of 2 samples propagating in
+          opposite directions from a seed point. It is done using the
+          --omatrix3 option of Probtrackx2.
+        - The seed mask is the GM/WM interface computed with MRtrix 5tt_wmgmi.
+        - The stop mask is the inverse of white matter, i.e. a sample stops
+          propagating as soon as it leaves the white matter.
+
+    Parameters
+    ----------
+    outdir: str
+        Directory where to output.
+    subject_id: str
+        Subject id used with Freesurfer 'recon-all' command.
+    nodif_brain: str
+        Path to the preprocessed brain-only DWI volume.
+    nodif_brain_mask: str
+        Path to the brain binary mask.
+    bedpostx_dir: str
+        Directory where Bedpostx has outputted.
+    t1_parc: str
+        Path to the parcellation that defines the nodes of the connectome, e.g.
+        aparc+aseg.mgz from Freesurfer. Should be in the same space as the T1.
+    t1_parc_lut: str
+        Path to the Look Up Table for the passed parcellation in the
+        Freesurfer LUT format. If you T1 parcellation is from Freesurfer, this
+        will most likely be <$FREESURFER_HOME>/FreeSurferColorLUT.txt.
+    connectome_lut: str
+        2 possibilities:
+        - set to 'Lausanne2008', a predefined LUT for Freesurfer aparc+aseg
+          parcellation (Lausanne et al. 2008 atlas).
+        - set to the path to a Look Up Table in the Freesurfer LUT format,
+          listing the regions from the parcellation to use as nodes in the
+          connectome. The region names should match the ones used in the
+          't1_parc_lut' and the integer labels should be the row/col positions
+          in the connectome.
+    subjects_dir: str or None, default None
+        Path to the Freesurfer subjects directory. Required if the Freesurfer
+        environment variable (i.e. $SUBJECTS_DIR) is not set.
+    nsamples, nsteps, cthr, steplength: int, optional
+        Probtrackx2 options.
+    fibthresh, distthresh, sampvox: int, optional
+        Probtrackx2 options.
+    loopcheck: bool, optional
+        Probtrackx2 option.
+    fsl_init: str, optional.
+        Path to the Bash script setting the FSL environment.
+    """
+
+    # Create <outdir> if not existing
+    if not os.path.isdir(outdir):
+        os.makedirs(outdir)
+
+    # Freesurfer subjects_dir
+    subjects_dir = get_or_check_freesurfer_subjects_dir(subjects_dir)
+
+    if connectome_lut.lower() == "lausanne2008":
+        lausanne2008_lut = os.path.join(outdir, "Lausanne2008LUT.txt")
+        connectome_lut = create_lausanne2008_lut(lausanne2008_lut)
+
+    # -------------------------------------------------------------------------
+    # STEP 1
+
+    # T1 to nifti
+    fs_t1_brain = os.path.join(subjects_dir, subject_id, "mri/brain.mgz")
+    t1_brain = os.path.join(outdir, "t1_brain.nii.gz")
+    cmd_1_ = ["mri_convert", fs_t1_brain, t1_brain]
+    run_freesurfer_cmd(cmd_1_)
+
+    # Register diffusion to T1
+    dif2anat_dat = os.path.join(outdir, "dif2anat.dat")
+    dif2anat_mat = os.path.join(outdir, "dif2anat.mat")
+    cmd_1a = ["bbregister",
+              "--s",      subject_id,
+              "--mov",    nodif_brain,
+              "--reg",    dif2anat_dat,
+              "--fslmat", dif2anat_mat,
+              "--dti",
+              "--init-fsl"]
+    run_freesurfer_cmd(cmd_1a, subjects_dir=subjects_dir)
+
+    # anat2dif: invert dif2anat transform
+    m = numpy.loadtxt(dif2anat_mat)
+    m_inv = numpy.linalg.inv(m)
+    anat2dif_mat = os.path.join(outdir, "anat2dif.mat")
+    numpy.savetxt(anat2dif_mat, m_inv)
+
+    # -------------------------------------------------------------------------
+    # STEP 2 - QC the projections/registrations by creating snapshots
+
+#    path_snapshot_1 = os.path.join(qc_dir, "aparc_aseg_to_dif.pdf")
+#    qc_vol2vol_alignment(path_ref=nodif_brain,
+#                         path_edge=aparc_aseg_to_dif,
+#                         path_out=path_snapshot_1,
+#                         title="aparc+aseg to diffusion")
+#
+#    path_snapshot_2 = os.path.join(qc_dir, "aparc_a2009s_aseg_to_dif.pdf")
+#    qc_vol2vol_alignment(path_ref=nodif_brain,
+#                         path_edge=aparc_aseg_to_dif,
+#                         path_out=path_snapshot_2,
+#                         title="aparc.a2009s+aseg to diffusion")
+
+    # -------------------------------------------------------------------------
+    # STEP 3 - Convert LUT
+    # Change integer labels in the LUT so that the each label corresponds
+    # to the row/col position in the connectome freesurfer
+
+    nodes = os.path.join(outdir, "nodes.nii.gz")
+    cmd_3 = ["labelconvert", t1_parc, t1_parc_lut, connectome_lut,
+             nodes, "-nthreads", "0", "-failonwarn"]
+    subprocess.check_call(cmd_3)
+
+    # -------------------------------------------------------------------------
+    # STEP 4 - If the T1 parcellation is aparc+aseg or aparc.a2009s+aseg
+    # from Freesurfer, this option allows the recompute the subcortical
+    # segmentations of 5 structures that are uncorrectly segmented by
+    # Freesurfer, using FSL FIRST
+
+    if labelsgmfix:
+        fixed_nodes = os.path.join(outdir, "nodes_fixSGM.nii.gz")
+        cmd_4 = ["labelsgmfix", nodes, t1_brain, connectome_lut,
+                 fixed_nodes, "-premasked", "-tempdir", tempdir,
+                 "-nthreads", "0"]
+        fsl_process = FSLWrapper(cmd_4, env=os.environ, shfile=fsl_init)
+        fsl_process()
+        nodes = fixed_nodes
+
+#    # ------------------------------------------------------------------------
+#    # STEP 5 - "5 tissue types" segmentation of MRtrix
+#    # Generate the 5TT image based on a FSL FAST
+#    five_tissues = os.path.join(outdir, "5TT.nii.gz")
+#    cmd_5 = ["5ttgen", "fsl", t1_brain_to_dif, five_tissues, "-premasked",
+#             "-tempdir", tempdir, "-nthreads", "0"]
+#    fsl_process = FSLWrapper(cmd_5, env=os.environ, shfile=fsl_init)
+#    fsl_process()
+#
+#    # Extract the white matter and CSF masks
+#    wm_mask = os.path.join(outdir, "wm_mask.nii.gz")
+#    csf_mask = os.path.join(outdir, "csf_mask.nii.gz")
+
+    # -------------------------------------------------------------------------
+    # STEP 3 - Create the masks for Probtrackx2
+
+    # White matter mask
+    aparc_aseg = os.path.join(subjects_dir, subject_id, "mri/aparc+aseg.mgz")
+    wm_mask = os.path.join(outdir, "wm_mask.nii.gz")
+    cmd_3a = ["mri_binarize",
+              "--i", aparc_aseg,
+              "--o", wm_mask,
+              "--wm"]
+    run_freesurfer_cmd(cmd_3a)
+
+    # Stop mask is inverse of white matter mask
+    stop_mask = os.path.join(outdir, "inv_wm_mask.nii.gz")
+    cmd_3c = ["mri_binarize",
+              "--i", aparc_aseg,
+              "--o", stop_mask,
+              "--wm", "--inv"]
+    run_freesurfer_cmd(cmd_3c)
+
+    # Create seed mask: white matter voxels near nodes (target regions)
+
+    # Create target mask: a mask of all nodes
+    target_mask = os.path.join(outdir, "target_mask.nii.gz")
+    cmd_3d = ["mri_binarize",
+              "--i",   nodes,
+              "--o",   target_mask,
+              "--min", "1"]
+    run_freesurfer_cmd(cmd_3d)
+
+    # Dilate target mask by one voxel (12-connexity)
+    target_mask_dil = os.path.join(outdir, "target_mask_dilated.nii.gz")
+    cmd_3e = ["mri_morphology", target_mask, "dilate", "1", target_mask_dil]
+    run_freesurfer_cmd(cmd_3e)
+
+    # Intersect dilated target mask and white matter mask
+    seed_mask = os.path.join(outdir, "wm_nodes_interface_mask.nii.gz")
+    cmd_3f = ["mri_and", wm_mask, target_mask_dil, seed_mask]
+    run_freesurfer_cmd(cmd_3f)
+
+    # -------------------------------------------------------------------------
+    # STEP 4 - Run Probtrackx2
+
+    probtrackx2_dir = os.path.join(outdir, "probtrackx2")
+    probtrackx2(dir=probtrackx2_dir,
+                seedref=t1_brain,
+                xfm=anat2dif_mat,
+                invxfm=dif2anat_mat,
+                samples=os.path.join(bedpostx_dir, "merged"),
+                mask=nodif_brain_mask,
+                seed=seed_mask,
+                omatrix3=True,
+                target3=nodes,
+                stop=stop_mask,
+                nsamples=nsamples,
+                nsteps=nsteps,
+                cthr=cthr,
+                loopcheck=loopcheck,
+                steplength=steplength,
+                fibthresh=fibthresh,
+                distthresh=distthresh,
+                sampvox=sampvox)
+
+    # ------------------------------------------------------------------------
+    # STEP 5 - Create NODExNODE connectivity matrix for t1_parc
+
+    connectome, labels = \
+        voxel_to_node_connectivity(probtrackx2_dir=probtrackx2_dir,
+                                   nodes=nodes,
+                                   connectome_lut=connectome_lut,
+                                   outdir=outdir)
+
+    # ------------------------------------------------------------------------
+    # STEP 7 - Create a connectome snapshop
+
+    snapshot = os.path.join(outdir, "connectome.png")
+    connectome_snapshot(connectome, snapshot, labels=labels,
+                        transform=numpy.log1p, dpi=300, labels_size=4,
+                        colorbar_title="log(# of tracks)")
     return outdir
