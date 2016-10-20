@@ -181,16 +181,16 @@ def probtrackx2(samples, mask, seed, out="fdt_paths",
            "-s", samples,
            "-m", mask,
            "-x", seed,
-           "--out", out,
-           "--dir", dir,
-           "--nsamples", nsamples,
-           "--nsteps", nsteps,
-           "--steplength", steplength,
-           "--distthresh", distthresh,
-           "--cthr", cthr,
-           "--fibthresh", fibthresh,
-           "--sampvox", sampvox,
-           "--randfib", randfib]
+           "--out=%s" % out,
+           "--dir=%s" % dir,
+           "--nsamples=%i" % nsamples,
+           "--nsteps=%i" % nsteps,
+           "--steplength=%f" % steplength,
+           "--distthresh=%f" % distthresh,
+           "--cthr=%f" % cthr,
+           "--fibthresh=%f" % fibthresh,
+           "--sampvox=%f" % sampvox,
+           "--randfib=%i" % randfib]
 
     # Add optional arguments
     if forcedir:
@@ -214,27 +214,27 @@ def probtrackx2(samples, mask, seed, out="fdt_paths",
     if simple:
         cmd += ["--simple"]
     if avoid is not None:
-        cmd += ["--avoid", avoid]
+        cmd += ["--avoid=%s" % avoid]
     if targetmasks is not None:
-        cmd += ["--targetmasks", targetmasks]
+        cmd += ["--targetmasks=%s" % targetmasks]
     if waypoints is not None:
-        cmd += ["--waypoints", waypoints]
+        cmd += ["--waypoints=%s" % waypoints]
     if stop is not None:
-        cmd += ["--stop", stop]
+        cmd += ["--stop=%s" % stop]
     if wtstop is not None:
-        cmd += ["--wtstop", wtstop]
+        cmd += ["--wtstop=%s" % wtstop]
     if usef is not None:
-        cmd += ["--usef", usef]
+        cmd += ["--usef=%s" % usef]
     if seedref is not None:
-        cmd += ["--seedref", seedref]
+        cmd += ["--seedref=%s" % seedref]
     if target2 is not None:
-        cmd += ["--target2", target2]
+        cmd += ["--target2=%s" % target2]
     if target3 is not None:
-        cmd += ["--target3", target3]
+        cmd += ["--target3=%s" % target3]
     if xfm is not None:
-        cmd += ["--xfm", xfm]
+        cmd += ["--xfm=%s" % xfm]
     if invxfm is not None:
-        cmd += ["--invxfm", invxfm]
+        cmd += ["--invxfm=%s" % invxfm]
 
     # Call probtrackx
     fslprocess = FSLWrapper(cmd, shfile=shfile)
