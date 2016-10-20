@@ -47,7 +47,7 @@ Requirements:
     - parcellation: image of labeled regions, e.g. Freesurfer aparc+aseg
 
 
-Command:
+Example of command:
 python $HOME/git/pyfsl/pyfsl/scripts/pyfsl_mrtrix_connectome.py \
     -a /neurospin/population/HCP/S500-1/139233/T1w/T1w_acpc_dc_restore_brain.nii.gz \
     -i /neurospin/population/HCP/S500-1/139233/T1w/Diffusion/data.nii.gz \
@@ -127,16 +127,6 @@ def get_cmd_line_args():
     parser.add_argument("-f", "--t1-parc-lut", type=is_file, required=True,
                         metavar="<path>", help=fhelp)
 
-    chelp = ("2 possibilities: (1) set to 'lausanne2008', a predefined LUT "
-             "for (and only for) Freesurfer aparc+aseg parcellation (Lausanne "
-             "et al. 2008 atlas). (2) set to the path to a Look Up Table in "
-             "the Freesurfer LUT format, listing the regions from the parcel"
-             "lation to use as nodes in the connectome. The region names "
-             "should match the ones used in the 't1_parc_lut' and the integer "
-             "labels should be the row/col positions in the connectome.")
-    parser.add_argument("-c", "--connectome-lut", required=True,
-                        metavar="<path>", help=chelp)
-
     parser.add_argument("-o", "--outdir", required=True, metavar="<path>",
                         help="Directory where to output.")
 
@@ -158,6 +148,14 @@ def get_cmd_line_args():
                         metavar="<int>", help="Number of threads.")
 
     # Optional arguments
+
+    chelp = ("Path to a Look Up Table in the Freesurfer LUT format, listing "
+             "the regions from the parcellation to use as nodes in the "
+             "connectome. The region names should match the ones used in the "
+             "'t1_parc_lut' and the integer labels should be the row/col "
+             "positions in the connectome. By default the predefined LUT of "
+             "the Lausanne 2008 atlas is used.")
+    parser.add_argument("-c", "--connectome-lut", metavar="<path>", help=chelp)
 
     parser.add_argument("-I", "--seed-gmwmi", action="store_true",
                         help="Set this option if you want to activate the "
@@ -204,6 +202,11 @@ def get_cmd_line_args():
                         dest="mif_gz", default=True,
                         help="To not compress MIF files: .mif instead of "
                              ".mif.gz.")
+
+    parser.add_argument("-Q", "--no-snapshots", action="store_false",
+                        dest="snapshots", default=True,
+                        help="To not create snapshots of the results. "
+                             "Useful if matplotlib is not installed.")
 
     parser.add_argument("-F", "--fsl-init", type=is_file, metavar="<path>",
                         help="Bash script initializing FSL's environment.")
