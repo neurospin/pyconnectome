@@ -10,14 +10,7 @@
 
 """
 Compute the connectome of a given parcellation, like the Freesurfer aparc+aseg
-segmentation, using MRtrix.
-
-Requirements:
-    - preprocessed DWI with bval and bvec: if distortions from acquisition
-      have been properly corrected it should be alignable to the T1 with a
-      rigid transformation.
-    - diffusion brain mask: nodif_brain_mask
-    - parcellation: image of labeled regions, e.g. Freesurfer aparc+aseg
+segmentation, using MRtrix or Probtrackx2.
 """
 
 import os
@@ -26,10 +19,10 @@ import subprocess
 import numpy
 import nibabel
 
+from pyfsl import DEFAULT_FSL_PATH
 from pyfsl.wrapper import FSLWrapper
+from pyfsl.tractography.probabilist import probtrackx2
 from pyfreesurfer.wrapper import FSWrapper
-
-import matplotlib.pyplot as plt
 
 
 def get_region_names_of_lausanne_2008_atlas():
@@ -122,31 +115,47 @@ def get_or_check_freesurfer_subjects_dir(subjects_dir=None):
     return subjects_dir
 
 
-def get_path_of_freesurfer_lut():
+def get_or_check_path_of_freesurfer_lut(freesurfer_lut=None):
     """
     """
-    if "FREESURFER_HOME" in os.environ:
-        freesurfer_home = os.environ["FREESURFER_HOME"]
-        path_lut = os.path.join(freesurfer_home, "FreeSurferColorLUT.txt")
+    # If the LUT path was given, check that it exists
+    if freesurfer_lut is not None:
+        if not os.path.isfile(freesurfer_lut):
+            raise ValueError("File does not exist: %s" % freesurfer_lut)
+    # If not passed look for the Freesurfer environment variable
+    elif "FREESURFER_HOME" in os.environ:
+        FS_home = os.environ["FREESURFER_HOME"]
+        freesurfer_lut = os.path.join(FS_home, "FreeSurferColorLUT.txt")
+    # If not passed and no environment variable, raise an Exception
     else:
-        raise Exception("Environment variable 'FREESURFER_HOME' is not set.")
+        raise Exception("Could not find Freesurfer Look Up Table, either set "
+                        "'freesurfer_lut' argument or 'FREESURFER_HOME' "
+                        "environment variable.")
 
-    return path_lut
+    return freesurfer_lut
 
 
-def create_lausanne2008_lut(path_out):
+def create_lausanne2008_lut(outdir, freesurfer_lut=None):
     """
     Create a Look Up Table for the Lausanne2008 atlas. It has the same format
-    as the Freesurfer LUT ($FREESURFER_HOME/FreeSurferColorLUT.txt), but it
-    lists only the regions of the Lausanne2008 atlas and the integer labels
-    are the row/col positions of the regions in the connectome.
+    as the Freesurfer LUT (FreeSurferColorLUT.txt), but it lists only the
+    regions of the Lausanne2008 atlas and the integer labels are the row/col
+    positions of the regions in the connectome.
+
+    Parameters
+    ----------
+    outdir: str
+        Path to directory where to write "Lausanne2008LUT.txt"
+    freesurfer_lut: str, default None
+        Path to the Freesurfer Look Up Table. If not passed, try to use
+        $FREESURFER_HOME/FreeSurferColorLUT.txt. If not found raise Exception.
     """
 
     # Ordered ROIs (i.e. nodes of the connectome) of the Lausanne 2008 atlas
     roi_names = get_region_names_of_lausanne_2008_atlas()
 
     # Path to the Freesurfer LUT
-    freesurfer_lut = get_path_of_freesurfer_lut()
+    freesurfer_lut = get_or_check_path_of_freesurfer_lut(freesurfer_lut)
 
     # Load table
     table = numpy.loadtxt(freesurfer_lut, dtype=str)
@@ -165,7 +174,8 @@ def create_lausanne2008_lut(path_out):
     header_2 = "#<Label> <Label Name> <R> <G> <B> <A>\n"
 
     # Save as .txt file
-    with open(path_out, "w") as f:
+    lausanne2008_lut = os.path.join(outdir, "Lausanne2008LUT.txt")
+    with open(lausanne2008_lut, "w") as f:
         f.write(header_1)
         f.write(header_2)
         # Maintain the indentation
@@ -173,7 +183,7 @@ def create_lausanne2008_lut(path_out):
         for i, row in enumerate(table, start=1):
             f.write(line_format.format(*row))
 
-    return path_out
+    return lausanne2008_lut
 
 
 def load_look_up_table(path_lut):
@@ -223,6 +233,10 @@ def connectome_snapshot(connectome, snapshot, labels=None, transform=None,
     path_out: str
         Path to the output connectogram snapshot.
     """
+
+    # Import in function, so that the rest of the module can be used even
+    # if matplotlib is not available
+    import matplotlib.pyplot as plt
 
     # Load the connectivity matrix
     matrix = numpy.loadtxt(connectome)
@@ -287,7 +301,7 @@ from pyfreesurfer.exceptions import FreeSurferRuntimeError
 from pyfreesurfer.configuration import concat_environment
 
 
-def run_freesurfer_cmd(cmd, subjects_dir=None, fsl_init="/etc/fsl/5.0/fsl.sh"):
+def run_freesurfer_cmd(cmd, subjects_dir=None, fsl_init=DEFAULT_FSL_PATH):
     """
     To avoid repeating the code to run Freesurfer and check exitcode
     everywhere.
@@ -335,11 +349,11 @@ def mrtrix_connectome_pipeline(outdir,
                                t1_brain_to_dif,
                                t1_parc,
                                t1_parc_lut,
-                               connectome_lut,
                                mtracks,
                                maxlength,
                                cutoff,
                                nb_threads,
+                               connectome_lut=None,
                                seed_gmwmi=False,
                                sift_mtracks=None,
                                sift2=False,
@@ -350,7 +364,8 @@ def mrtrix_connectome_pipeline(outdir,
                                mif_gz=True,
                                delete_raw_tracks=False,
                                delete_dwi_mif=True,
-                               fsl_init="/etc/fsl/5.0/fsl.sh"):
+                               snapshots=True,
+                               fsl_init=DEFAULT_FSL_PATH):
     """
     Compute the connectome using MRtrix.
 
@@ -387,15 +402,6 @@ def mrtrix_connectome_pipeline(outdir,
         Path to the Look Up Table for the passed parcellation in the
         Freesurfer LUT format. If you T1 parcellation is from Freesurfer, this
         will most likely be <$FREESURFER_HOME>/FreeSurferColorLUT.txt.
-    connectome_lut: str
-        2 possibilities:
-        - set to 'Lausanne2008', a predefined LUT for Freesurfer aparc+aseg
-          parcellation (Lausanne et al. 2008 atlas).
-        - set to the path to a Look Up Table in the Freesurfer LUT format,
-          listing the regions from the parcellation to use as nodes in the
-          connectome. The region names should match the ones used in the
-          't1_parc_lut' and the integer labels should be the row/col positions
-          in the connectome.
     mtracks: int
         Number of millions of tracks of the raw tractography.
     maxlength: int
@@ -404,6 +410,12 @@ def mrtrix_connectome_pipeline(outdir,
         FOD amplitude cutoff, stopping criteria.
     nb_threads: int
         Number of threads.
+    connectome_lut: str, default None
+        Path to a Look Up Table in the Freesurfer LUT format, listing the
+        regions from the parcellation to use as nodes in the connectome.
+        The region names should match the ones used in the 't1_parc_lut' and
+        the integer labels should be the row/col positions in the connectome.
+        By default the predefined LUT of the Lausanne 2008 atlas is used.
     seed_gmwmi: bool, default False
         Set this option if you want to activate the '-seed_gmwmi' option of
         MRtrix 'tckgen', to seed from the GM/WM interface. Otherwise, and by
@@ -437,6 +449,8 @@ def mrtrix_connectome_pipeline(outdir,
     delete_dwi_mif: bool, default True
         Delete <outdir>/DWI.mif(.gz) at the end of processing, which is a copy
         of the input <dwi> in the MIF format, to save space.
+    snapshots: bool, default True
+        If True, create PNG snapshots for QC.
     fsl_init: str, optional.
         Path to the Bash script setting the FSL environment.
     """
@@ -455,9 +469,9 @@ def mrtrix_connectome_pipeline(outdir,
     # Is SIFT to be applied
     sift = (sift_mtracks is not None)
 
-    if connectome_lut.lower() == "lausanne2008":
-        lausanne2008_lut = os.path.join(outdir, "Lausanne2008LUT.txt")
-        connectome_lut = create_lausanne2008_lut(lausanne2008_lut)
+    if connectome_lut is None:
+        module_dir = os.path.dirname(os.path.abspath(__file__))
+        connectome_lut = os.path.join(module_dir, "Lausanne2008LUT.txt")
 
     # -------------------------------------------------------------------------
     # Check input paths
@@ -716,22 +730,24 @@ def mrtrix_connectome_pipeline(outdir,
     path_labels = os.path.join(outdir, "labels.txt")
     numpy.savetxt(path_labels, labels, fmt="%s")
 
-    # Create plots with matplotlib
-    raw_snapshot = os.path.join(outdir, "raw_connectome.png")
-    connectome_snapshot(raw_connectome, raw_snapshot, labels=path_labels,
-                        transform=numpy.log1p, colorbar_title="log(# tracks)")
-
-    if sift:
-        sift_snapshot = os.path.join(outdir, "sift_connectome.png")
-        connectome_snapshot(sift_connectome, sift_snapshot,
-                            labels=path_labels, transform=numpy.log1p,
+    # Create plots with matplotlib if requested
+    if snapshots:
+        raw_snapshot = os.path.join(outdir, "raw_connectome.png")
+        connectome_snapshot(raw_connectome, raw_snapshot, labels=path_labels,
+                            transform=numpy.log1p,
                             colorbar_title="log(# tracks)")
 
-    if sift2:
-        sift2_snapshot = os.path.join(outdir, "sift2_connectome.png")
-        connectome_snapshot(sift2_connectome, sift2_snapshot,
-                            labels=path_labels, transform=numpy.log1p,
-                            colorbar_title="log(# tracks)")
+        if sift:
+            sift_snapshot = os.path.join(outdir, "sift_connectome.png")
+            connectome_snapshot(sift_connectome, sift_snapshot,
+                                labels=path_labels, transform=numpy.log1p,
+                                colorbar_title="log(# tracks)")
+
+        if sift2:
+            sift2_snapshot = os.path.join(outdir, "sift2_connectome.png")
+            connectome_snapshot(sift2_connectome, sift2_snapshot,
+                                labels=path_labels, transform=numpy.log1p,
+                                colorbar_title="log(# tracks)")
 
     # STEP 14 - clean if requested
     if delete_raw_tracks:
@@ -839,30 +855,27 @@ def voxel_to_node_connectivity(probtrackx2_dir, nodes, connectome_lut, outdir,
     return out_connectome, out_labels
 
 
-# TODO: remove and replace by pyfsl
-from clindmri.tractography.fsl import probtrackx2
-
-
 def probtrackx2_connectome_pipeline(outdir,
                                     tempdir,
                                     subject_id,
                                     t1_parc,
                                     t1_parc_lut,
-                                    connectome_lut,
                                     nodif_brain,
                                     nodif_brain_mask,
                                     bedpostx_dir,
                                     nsamples,
                                     nsteps,
                                     steplength,
+                                    connectome_lut=None,
                                     labelsgmfix=False,
                                     subjects_dir=None,
-                                    cthr=None,
                                     loopcheck=True,
-                                    fibthresh=None,
-                                    distthresh=None,
-                                    sampvox=None,
-                                    fsl_init="/etc/fsl/5.0/fsl.sh"):
+                                    cthr=0.2,
+                                    fibthresh=0.01,
+                                    distthresh=0.0,
+                                    sampvox=0.0,
+                                    snapshots=True,
+                                    fsl_init=DEFAULT_FSL_PATH):
     """
     Compute the connectome of a given parcellation, like the FreeSurfer
     aparc+aseg segmentation, using MRtrix.
@@ -876,12 +889,13 @@ def probtrackx2_connectome_pipeline(outdir,
         - Freesurfer: result of recon-all on the T1
         - FSL Bedpostx: computed for the preprocessed DWI
 
-    Connectogram strategy:
+    Connectome construction strategy:
         - Pathways are constructed from 'constitutive points' and not from
           endpoints. A pathway is the result of 2 samples propagating in
           opposite directions from a seed point. It is done using the
           --omatrix3 option of Probtrackx2.
-        - The seed mask is the GM/WM interface computed with MRtrix 5tt_wmgmi.
+        - The seed mask is the mask of WM voxels that are neighbors
+          (12-connexity) of nodes.
         - The stop mask is the inverse of white matter, i.e. a sample stops
           propagating as soon as it leaves the white matter.
 
@@ -889,14 +903,11 @@ def probtrackx2_connectome_pipeline(outdir,
     ----------
     outdir: str
         Directory where to output.
+    tempdir: str
+        Path to the directory where temporary directories should be written.
+        If you be on a partition with 5+ GB available.
     subject_id: str
         Subject id used with Freesurfer 'recon-all' command.
-    nodif_brain: str
-        Path to the preprocessed brain-only DWI volume.
-    nodif_brain_mask: str
-        Path to the brain binary mask.
-    bedpostx_dir: str
-        Directory where Bedpostx has outputted.
     t1_parc: str
         Path to the parcellation that defines the nodes of the connectome, e.g.
         aparc+aseg.mgz from Freesurfer. Should be in the same space as the T1.
@@ -904,24 +915,35 @@ def probtrackx2_connectome_pipeline(outdir,
         Path to the Look Up Table for the passed parcellation in the
         Freesurfer LUT format. If you T1 parcellation is from Freesurfer, this
         will most likely be <$FREESURFER_HOME>/FreeSurferColorLUT.txt.
-    connectome_lut: str
-        2 possibilities:
-        - set to 'Lausanne2008', a predefined LUT for Freesurfer aparc+aseg
-          parcellation (Lausanne et al. 2008 atlas).
-        - set to the path to a Look Up Table in the Freesurfer LUT format,
-          listing the regions from the parcellation to use as nodes in the
-          connectome. The region names should match the ones used in the
-          't1_parc_lut' and the integer labels should be the row/col positions
-          in the connectome.
+    nodif_brain: str
+        Path to the preprocessed brain-only DWI volume.
+    nodif_brain_mask: str
+        Path to the brain binary mask.
+    bedpostx_dir: str
+        Bedpostx output directory.
+    nsamples: int
+        Number of samples per voxel to initiate in the seed mask.
+    nsteps: int
+        Maximum number of steps for a given sample.
+    steplength: int
+        Step size in mm.
+    connectome_lut: str, default None
+        Path to a Look Up Table in the Freesurfer LUT format, listing the
+        regions from the parcellation to use as nodes in the connectome.
+        The region names should match the ones used in the 't1_parc_lut' and
+        the integer labels should be the row/col positions in the connectome.
+        By default the predefined LUT of the Lausanne 2008 atlas is used.
     subjects_dir: str or None, default None
         Path to the Freesurfer subjects directory. Required if the Freesurfer
         environment variable (i.e. $SUBJECTS_DIR) is not set.
-    nsamples, nsteps, cthr, steplength: int, optional
-        Probtrackx2 options.
+    cthr: int, optional
+        Probtrackx2 option.
     fibthresh, distthresh, sampvox: int, optional
         Probtrackx2 options.
     loopcheck: bool, optional
         Probtrackx2 option.
+    snapshots: bool, default True
+        If True, create PNG snapshots for QC.
     fsl_init: str, optional.
         Path to the Bash script setting the FSL environment.
     """
@@ -933,30 +955,30 @@ def probtrackx2_connectome_pipeline(outdir,
     # Freesurfer subjects_dir
     subjects_dir = get_or_check_freesurfer_subjects_dir(subjects_dir)
 
-    if connectome_lut.lower() == "lausanne2008":
-        lausanne2008_lut = os.path.join(outdir, "Lausanne2008LUT.txt")
-        connectome_lut = create_lausanne2008_lut(lausanne2008_lut)
+    if connectome_lut is None:
+        module_dir = os.path.dirname(os.path.abspath(__file__))
+        connectome_lut = os.path.join(module_dir, "Lausanne2008LUT.txt")
 
     # -------------------------------------------------------------------------
-    # STEP 1
+    # STEP 1 - Compute T1 <-> DWI rigid transformation
 
     # T1 to nifti
     fs_t1_brain = os.path.join(subjects_dir, subject_id, "mri/brain.mgz")
     t1_brain = os.path.join(outdir, "t1_brain.nii.gz")
-    cmd_1_ = ["mri_convert", fs_t1_brain, t1_brain]
-    run_freesurfer_cmd(cmd_1_)
+    cmd_1a = ["mri_convert", fs_t1_brain, t1_brain]
+    run_freesurfer_cmd(cmd_1a)
 
     # Register diffusion to T1
     dif2anat_dat = os.path.join(outdir, "dif2anat.dat")
     dif2anat_mat = os.path.join(outdir, "dif2anat.mat")
-    cmd_1a = ["bbregister",
+    cmd_1b = ["bbregister",
               "--s",      subject_id,
               "--mov",    nodif_brain,
               "--reg",    dif2anat_dat,
               "--fslmat", dif2anat_mat,
               "--dti",
               "--init-fsl"]
-    run_freesurfer_cmd(cmd_1a, subjects_dir=subjects_dir)
+    run_freesurfer_cmd(cmd_1b, subjects_dir=subjects_dir)
 
     # anat2dif: invert dif2anat transform
     m = numpy.loadtxt(dif2anat_mat)
@@ -1004,8 +1026,9 @@ def probtrackx2_connectome_pipeline(outdir,
         fsl_process()
         nodes = fixed_nodes
 
-#    # ------------------------------------------------------------------------
-#    # STEP 5 - "5 tissue types" segmentation of MRtrix
+    # ------------------------------------------------------------------------
+    # STEP 5 - "5 tissue types" segmentation of MRtrix
+
 #    # Generate the 5TT image based on a FSL FAST
 #    five_tissues = os.path.join(outdir, "5TT.nii.gz")
 #    cmd_5 = ["5ttgen", "fsl", t1_brain_to_dif, five_tissues, "-premasked",
@@ -1018,50 +1041,51 @@ def probtrackx2_connectome_pipeline(outdir,
 #    csf_mask = os.path.join(outdir, "csf_mask.nii.gz")
 
     # -------------------------------------------------------------------------
-    # STEP 3 - Create the masks for Probtrackx2
+    # STEP 6 - Create the masks for Probtrackx2
 
     # White matter mask
     aparc_aseg = os.path.join(subjects_dir, subject_id, "mri/aparc+aseg.mgz")
     wm_mask = os.path.join(outdir, "wm_mask.nii.gz")
-    cmd_3a = ["mri_binarize",
+    cmd_6a = ["mri_binarize",
               "--i", aparc_aseg,
               "--o", wm_mask,
               "--wm"]
-    run_freesurfer_cmd(cmd_3a)
+    run_freesurfer_cmd(cmd_6a)
 
     # Stop mask is inverse of white matter mask
     stop_mask = os.path.join(outdir, "inv_wm_mask.nii.gz")
-    cmd_3c = ["mri_binarize",
+    cmd_6c = ["mri_binarize",
               "--i", aparc_aseg,
               "--o", stop_mask,
               "--wm", "--inv"]
-    run_freesurfer_cmd(cmd_3c)
+    run_freesurfer_cmd(cmd_6c)
 
     # Create seed mask: white matter voxels near nodes (target regions)
 
     # Create target mask: a mask of all nodes
     target_mask = os.path.join(outdir, "target_mask.nii.gz")
-    cmd_3d = ["mri_binarize",
+    cmd_6d = ["mri_binarize",
               "--i",   nodes,
               "--o",   target_mask,
               "--min", "1"]
-    run_freesurfer_cmd(cmd_3d)
+    run_freesurfer_cmd(cmd_6d)
 
     # Dilate target mask by one voxel (12-connexity)
     target_mask_dil = os.path.join(outdir, "target_mask_dilated.nii.gz")
-    cmd_3e = ["mri_morphology", target_mask, "dilate", "1", target_mask_dil]
-    run_freesurfer_cmd(cmd_3e)
+    cmd_6e = ["mri_morphology", target_mask, "dilate", "1", target_mask_dil]
+    run_freesurfer_cmd(cmd_6e)
 
     # Intersect dilated target mask and white matter mask
     seed_mask = os.path.join(outdir, "wm_nodes_interface_mask.nii.gz")
-    cmd_3f = ["mri_and", wm_mask, target_mask_dil, seed_mask]
-    run_freesurfer_cmd(cmd_3f)
+    cmd_6f = ["mri_and", wm_mask, target_mask_dil, seed_mask]
+    run_freesurfer_cmd(cmd_6f)
 
     # -------------------------------------------------------------------------
-    # STEP 4 - Run Probtrackx2
+    # STEP 7 - Run Probtrackx2
 
     probtrackx2_dir = os.path.join(outdir, "probtrackx2")
     probtrackx2(dir=probtrackx2_dir,
+                forcedir=True,
                 seedref=t1_brain,
                 xfm=anat2dif_mat,
                 invxfm=dif2anat_mat,
@@ -1073,15 +1097,15 @@ def probtrackx2_connectome_pipeline(outdir,
                 stop=stop_mask,
                 nsamples=nsamples,
                 nsteps=nsteps,
-                cthr=cthr,
-                loopcheck=loopcheck,
                 steplength=steplength,
+                loopcheck=loopcheck,
+                cthr=cthr,
                 fibthresh=fibthresh,
                 distthresh=distthresh,
                 sampvox=sampvox)
 
     # ------------------------------------------------------------------------
-    # STEP 5 - Create NODExNODE connectivity matrix for t1_parc
+    # STEP 8 - Create NODExNODE connectivity matrix for t1_parc
 
     connectome, labels = \
         voxel_to_node_connectivity(probtrackx2_dir=probtrackx2_dir,
@@ -1090,10 +1114,11 @@ def probtrackx2_connectome_pipeline(outdir,
                                    outdir=outdir)
 
     # ------------------------------------------------------------------------
-    # STEP 7 - Create a connectome snapshop
+    # STEP 9 - Create a connectome snapshot if requested
 
-    snapshot = os.path.join(outdir, "connectome.png")
-    connectome_snapshot(connectome, snapshot, labels=labels,
-                        transform=numpy.log1p, dpi=300, labels_size=4,
-                        colorbar_title="log(# of tracks)")
+    if snapshots:
+        snapshot = os.path.join(outdir, "connectome.png")
+        connectome_snapshot(connectome, snapshot, labels=labels,
+                            transform=numpy.log1p, dpi=300, labels_size=4,
+                            colorbar_title="log(# of tracks)")
     return outdir
