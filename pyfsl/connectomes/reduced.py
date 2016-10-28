@@ -301,7 +301,8 @@ from pyfreesurfer.exceptions import FreeSurferRuntimeError
 from pyfreesurfer.configuration import concat_environment
 
 
-def run_freesurfer_cmd(cmd, subjects_dir=None, fsl_init=DEFAULT_FSL_PATH):
+def run_freesurfer_cmd(cmd, subjects_dir=None, add_fsl_env=False,
+                       fsl_init=DEFAULT_FSL_PATH):
     """
     To avoid repeating the code to run Freesurfer and check exitcode
     everywhere.
@@ -325,10 +326,11 @@ def run_freesurfer_cmd(cmd, subjects_dir=None, fsl_init=DEFAULT_FSL_PATH):
     """
     fs_process = FSWrapper(cmd)
 
-    # Add FSL and current env to Freesurfer environment
-    fsl_env = FSLWrapper([], env=os.environ, shfile=fsl_init).environment
-    complete_env = concat_environment(fsl_env, fs_process.environment)
-    fs_process.environment = complete_env
+    if add_fsl_env:
+        # Add FSL and current env to Freesurfer environment
+        fsl_env = FSLWrapper([], env=os.environ, shfile=fsl_init).environment
+        complete_env = concat_environment(fsl_env, fs_process.environment)
+        fs_process.environment = complete_env
 
     if subjects_dir is not None:
         fs_process.environment["SUBJECTS_DIR"] = subjects_dir
@@ -349,11 +351,12 @@ def mrtrix_connectome_pipeline(outdir,
                                t1_brain_to_dif,
                                t1_parc,
                                t1_parc_lut,
-                               mtracks,
-                               maxlength,
-                               cutoff,
                                nb_threads,
                                connectome_lut=None,
+                               global_tractography=False,
+                               mtracks=None,
+                               maxlength=None,
+                               cutoff=None,
                                seed_gmwmi=False,
                                sift_mtracks=None,
                                sift2=False,
@@ -402,12 +405,6 @@ def mrtrix_connectome_pipeline(outdir,
         Path to the Look Up Table for the passed parcellation in the
         Freesurfer LUT format. If you T1 parcellation is from Freesurfer, this
         will most likely be <$FREESURFER_HOME>/FreeSurferColorLUT.txt.
-    mtracks: int
-        Number of millions of tracks of the raw tractography.
-    maxlength: int
-        Max fiber length in mm.
-    cutoff: float
-        FOD amplitude cutoff, stopping criteria.
     nb_threads: int
         Number of threads.
     connectome_lut: str, default None
@@ -416,14 +413,27 @@ def mrtrix_connectome_pipeline(outdir,
         The region names should match the ones used in the 't1_parc_lut' and
         the integer labels should be the row/col positions in the connectome.
         By default the predefined LUT of the Lausanne 2008 atlas is used.
+    global_tractography: bool, default False
+        If True run global tractography (tckglobal) instead of local (tckgen).
+    mtracks: int, default None
+        For non-global tractography only. Number of millions of tracks of the
+        raw tractogram.
+    maxlength: int, default None
+        For non-global tractography only. Max fiber length in mm.
+    cutoff: float, default None
+        For non-global tractography only.
+        FOD amplitude cutoff, stopping criteria.
     seed_gmwmi: bool, default False
+        For non-global tractography only.
         Set this option if you want to activate the '-seed_gmwmi' option of
         MRtrix 'tckgen', to seed from the GM/WM interface. Otherwise, and by
         default, the seeding is done in white matter ('-seed_dynamic' option).
     sift_mtracks: int, default None
+        For non-global tractography only.
         Number of millions of tracks to keep with SIFT.
         If not set, SIFT is not applied.
     sift2: bool, default False
+        For non-global tractography only.
         To activate SIFT2.
     nodif_brain: str, default None
         Diffusion brain-only volume with bvalue ~ 0. If not passed, it is
@@ -476,8 +486,8 @@ def mrtrix_connectome_pipeline(outdir,
     # -------------------------------------------------------------------------
     # Check input paths
 
-    paths_to_check = [outdir, tempdir, dwi, bvals, bvecs, t1_parc, t1_parc_lut,
-                      connectome_lut]
+    paths_to_check = [outdir, tempdir, dwi, bvals, bvecs, t1_parc,
+                      t1_parc_lut, connectome_lut]
 
     # Optional paths that could be set
     for p in [nodif_brain, nodif_brain_mask]:
@@ -495,12 +505,36 @@ def mrtrix_connectome_pipeline(outdir,
         if not os.path.exists(p):
             raise ValueError("File or directory does not exist: %s" % p)
 
-    # -------------------------------------------------------------------------
-    # STEP 0
-
     # Identify whether the DWI acquisition is single or multi-shell
     bvalues = numpy.loadtxt(bvals, dtype=int)
     is_multi_shell = len(set(bvalues)) - 1 > 1
+
+    if global_tractography:
+        if not is_multi_shell:
+            raise ValueError("MRtrix global tractography is only applicable "
+                             "to multi shell data.")
+        if seed_gmwmi:
+            raise ValueError("'seed_gmwmi' cannot be applied when requesting "
+                             "global tractography.")
+        if sift or sift2:
+            raise ValueError("SIFT or SIFT2 are not meant to be used with "
+                             "global tractography.")
+    else:
+        value_of_required_arg = dict(mtracks=mtracks, maxlength=maxlength,
+                                     cutoff=cutoff)
+        for required_arg, value in value_of_required_arg.items():
+            if value is None:
+                raise ValueError("When 'global_tractography' is set to False "
+                                 "%s is required." % required_arg)
+
+    # -------------------------------------------------------------------------
+    # STEP 0
+
+    # TODO: remove (to introduce delay)
+    import time
+    import random
+
+    time.sleep(random.random()*600)
 
     # convert DWI to MRtrix desired format
     dwi_mif = os.path.join(outdir, "DWI.mif")
@@ -545,7 +579,7 @@ def mrtrix_connectome_pipeline(outdir,
                   "--reg", dif2anat_dat,
                   "--dti",
                   "--init-fsl"]
-        run_freesurfer_cmd(cmd_1a, subjects_dir=subjects_dir)
+        run_freesurfer_cmd(cmd_1a, subjects_dir=subjects_dir, add_fsl_env=True)
 
         # Align Freesurfer T1 brain to diffusion without downsampling
         fs_t1 = os.path.join(subjects_dir, subject_id, "mri", "brain.mgz")
@@ -667,20 +701,31 @@ def mrtrix_connectome_pipeline(outdir,
         subprocess.check_call(cmd_9b)
 
     # -------------------------------------------------------------------------
-    # STEP 10 - Anatomically Constrained Tractography:
-    # iFOD2 algorithm with backtracking and crop fibers at GM/WM interface
-    tracks = os.path.join(outdir, "%iM.tck" % mtracks)
-    cmd_10 = ["tckgen", wm_fods, tracks, "-act", five_tissues, "-backtrack",
-              "-crop_at_gmwmi", "-maxlength", "%i" % maxlength,
-              "-number", "%dM" % mtracks, "-cutoff", "%f" % cutoff,
-              "-nthreads", "%i" % nb_threads, "-failonwarn"]
-    if seed_gmwmi:
-        gmwmi_mask = os.path.join(outdir, "gmwmi_mask%s" % MIF_EXT)
-        cmd_10b = ["5tt2gmwmi", five_tissues, gmwmi_mask]
-        subprocess.check_call(cmd_10b)
-        cmd_10 += ["-seed_gmwmi", gmwmi_mask]
+    # STEP 10 - Tractography: tckglobal or tckgen
+
+    if global_tractography:
+        tracks = os.path.join(outdir, "global.tck")
+        global_fod = os.path.join(outdir, "fod%s" % MIF_EXT)
+        fiso_mif = os.path.join(outdir, "fiso%s" % MIF_EXT)
+        cmd_10 = ["tckglobal", dwi_mif, rf_wm, "-riso", rf_csf, "-riso", rf_gm,
+                  "-mask", nodif_brain_mask, "-niter", "1e8",
+                  "-fod", global_fod, "-fiso", fiso_mif, tracks]
     else:
-        cmd_10 += ["-seed_dynamic", wm_fods]
+        # Anatomically Constrained Tractography:
+        # iFOD2 algorithm with backtracking and crop fibers at GM/WM interface
+        tracks = os.path.join(outdir, "%iM.tck" % mtracks)
+        cmd_10 = ["tckgen", wm_fods, tracks, "-act", five_tissues,
+                  "-backtrack", "-crop_at_gmwmi",
+                  "-maxlength", "%i" % maxlength,
+                  "-number", "%dM" % mtracks, "-cutoff", "%f" % cutoff]
+        if seed_gmwmi:
+            gmwmi_mask = os.path.join(outdir, "gmwmi_mask%s" % MIF_EXT)
+            cmd_10b = ["5tt2gmwmi", five_tissues, gmwmi_mask]
+            subprocess.check_call(cmd_10b)
+            cmd_10 += ["-seed_gmwmi", gmwmi_mask]
+        else:
+            cmd_10 += ["-seed_dynamic", wm_fods]
+    cmd_10 += ["-nthreads", "%i" % nb_threads, "-failonwarn"]
     subprocess.check_call(cmd_10)
 
     # -------------------------------------------------------------------------
@@ -704,7 +749,10 @@ def mrtrix_connectome_pipeline(outdir,
     # -------------------------------------------------------------------------
     # STEP 13 - Create the connectome(s) of the raw tractogram,
     # and for SIFT and SIFT2 if used.
-    raw_connectome = os.path.join(outdir, "raw_connectome.csv")
+    if global_tractography:
+        raw_connectome = os.path.join(outdir, "tckglobal_connectome.csv")
+    else:
+        raw_connectome = os.path.join(outdir, "tckgen_connectome.csv")
     cmd_13a = ["tck2connectome", tracks, nodes, raw_connectome,
                "-nthreads", "%i" % nb_threads, "-failonwarn"]
     subprocess.check_call(cmd_13a)
@@ -732,7 +780,10 @@ def mrtrix_connectome_pipeline(outdir,
 
     # Create plots with matplotlib if requested
     if snapshots:
-        raw_snapshot = os.path.join(outdir, "raw_connectome.png")
+        if global_tractography:
+            raw_snapshot = os.path.join(outdir, "tckglobal_connectome.png")
+        else:
+            raw_snapshot = os.path.join(outdir, "tckgen_connectome.png")
         connectome_snapshot(raw_connectome, raw_snapshot, labels=path_labels,
                             transform=numpy.log1p,
                             colorbar_title="log(# tracks)")
@@ -978,7 +1029,7 @@ def probtrackx2_connectome_pipeline(outdir,
               "--fslmat", dif2anat_mat,
               "--dti",
               "--init-fsl"]
-    run_freesurfer_cmd(cmd_1b, subjects_dir=subjects_dir)
+    run_freesurfer_cmd(cmd_1b, subjects_dir=subjects_dir, add_fsl_env=True)
 
     # anat2dif: invert dif2anat transform
     m = numpy.loadtxt(dif2anat_mat)

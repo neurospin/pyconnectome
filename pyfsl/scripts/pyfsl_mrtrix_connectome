@@ -40,25 +40,29 @@ Compute the connectome of a given parcellation, like the FreeSurfer aparc+aseg
 segmentation, using MRtrix.
 
 Requirements:
-    - preprocessed DWI with bval and bvec: if distortions from acquisition
-      have been properly corrected it should be alignable to the T1 with a
-      rigid transformation.
-    - diffusion brain mask: nodif_brain_mask
+    - preprocessed DWI with bvals/bvecs: if distortion artifacts from
+      acquisition have been properly corrected it should be alignable to the
+      T1 with a rigid transformation.
     - parcellation: image of labeled regions, e.g. Freesurfer aparc+aseg
+    - Freesurfer recon-all or a T1 aligned to diffusion. T1 can be kept in
+      its native resolution as long as it is registered to diffusion.
 
 
-Example of command:
+Example of command for HCP, using SIFT2 but not SIFT:
+
+PACKAGE_DIR=/neurospin/population/HCP/S500-1
+SUBJECT=139233
 python $HOME/git/pyfsl/pyfsl/scripts/pyfsl_mrtrix_connectome.py \
-    -a /neurospin/population/HCP/S500-1/139233/T1w/T1w_acpc_dc_restore_brain.nii.gz \
-    -i /neurospin/population/HCP/S500-1/139233/T1w/Diffusion/data.nii.gz \
-    -b /neurospin/population/HCP/S500-1/139233/T1w/Diffusion/bvals \
-    -r /neurospin/population/HCP/S500-1/139233/T1w/Diffusion/bvecs \
-    -m /neurospin/population/HCP/S500-1/139233/T1w/Diffusion/nodif_brain_mask.nii.gz \
-    -p /neurospin/population/HCP/S500-1/139233/T1w/aparc+aseg.nii.gz \
+    -a ${PACKAGE_DIR}/${SUBJECT}/T1w/T1w_acpc_dc_restore_brain.nii.gz \
+    -i ${PACKAGE_DIR}/${SUBJECT}/T1w/Diffusion/data.nii.gz \
+    -b ${PACKAGE_DIR}/${SUBJECT}/T1w/Diffusion/bvals \
+    -r ${PACKAGE_DIR}/${SUBJECT}/T1w/Diffusion/bvecs \
+    -m ${PACKAGE_DIR}/${SUBJECT}/T1w/Diffusion/nodif_brain_mask.nii.gz \
+    -p ${PACKAGE_DIR}/${SUBJECT}/T1w/aparc+aseg.nii.gz \
     -o /volatile/MRtrix/test_hopla \
     -d /volatile/MRtrix/tmp_hopla \
-    -t 5 \
-    -z 2 \
+    -t 10 \
+    -Z \
     -l 250 \
     -s 0.06 \
     -n 5 \
@@ -133,17 +137,6 @@ def get_cmd_line_args():
     parser.add_argument("-d", "--tempdir", required=True, metavar="<path>",
                         help="Where to write temporary directories e.g. /tmp.")
 
-    parser.add_argument("-t", "--mtracks", required=True, type=int,
-                        metavar="<int>",
-                        help="Number of millions of tracks to compute.")
-
-    parser.add_argument("-l", "--maxlength", required=True, type=int,
-                        metavar="<int>", help="Max fiber length in mm.")
-
-    parser.add_argument("-k", "--cutoff", required=True, type=float,
-                        metavar="<float>",
-                        help="FOD cutoff = stopping criteria.")
-
     parser.add_argument("-n", "--nb-threads", required=True, type=int,
                         metavar="<int>", help="Number of threads.")
 
@@ -156,6 +149,22 @@ def get_cmd_line_args():
              "positions in the connectome. By default the predefined LUT of "
              "the Lausanne 2008 atlas is used.")
     parser.add_argument("-c", "--connectome-lut", metavar="<path>", help=chelp)
+
+    parser.add_argument("-G", "--global-tractography", action="store_true",
+                        help="If set run global tractography (tckglobal) "
+                             "instead of local (tckgen).")
+
+    parser.add_argument("-t", "--mtracks", type=int, metavar="<int>",
+                        help="For non-global tractography only. "
+                             "Number of millions of tracks in raw tractogram.")
+
+    parser.add_argument("-l", "--maxlength", type=int, metavar="<int>",
+                        help="For non-global tractography only. "
+                             "Max fiber length in mm.")
+
+    parser.add_argument("-k", "--cutoff", type=float, metavar="<float>",
+                        help="For non-global tractography only. "
+                             "FOD cutoff = stopping criteria.")
 
     parser.add_argument("-I", "--seed-gmwmi", action="store_true",
                         help="Set this option if you want to activate the "
