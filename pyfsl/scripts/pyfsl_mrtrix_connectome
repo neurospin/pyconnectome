@@ -25,6 +25,8 @@ except:
     pass
 
 # Module import
+from pyfreesurfer import DEFAULT_FREESURFER_PATH
+
 from pyfsl import __version__ as version
 from pyfsl import DEFAULT_FSL_PATH
 from pyfsl.wrapper import FSLWrapper
@@ -43,8 +45,8 @@ Requirements:
     - preprocessed DWI with bvals/bvecs: if distortion artifacts from
       acquisition have been properly corrected it should be alignable to the
       T1 with a rigid transformation.
-    - parcellation: image of labeled regions, e.g. Freesurfer aparc+aseg
-    - Freesurfer recon-all or a T1 aligned to diffusion. T1 can be kept in
+    - parcellation: image of labeled regions, e.g. FreeSurfer aparc+aseg
+    - FreeSurfer recon-all or a T1 aligned to diffusion. T1 can be kept in
       its native resolution as long as it is registered to diffusion.
 
 
@@ -84,9 +86,9 @@ def get_cmd_line_args():
     <argument name> -> <argument value>.
     """
     usage = ("%(prog)s -s <subject id> -i <dwi> -b <bvals> -r <bvecs> "
-             "-a <'freesurfer'|t1 brain> -p <t1 parc> -f <t1 parc LUT> "
-             "-c <'lausanne2008'|connectome LUT> -o <outdir> -d <tempdir> "
-             "-t <int> -z <int> -l <int> -k <float> -n <int> [options]")
+             "-p <t1 parc> -f <t1 parc LUT> -c <'Lausanne2008'|connectome LUT>"
+             " -o <outdir> -d <tempdir> -t <int> -z <int> -l <int> -k <float> "
+             "-n <int> [options]")
     parser = argparse.ArgumentParser(prog="python mrtrix_connectome.py",
                                      usage=usage, description=DOC)
 
@@ -105,31 +107,27 @@ def get_cmd_line_args():
                         metavar="<path>", help="Path to the list of diffusion-"
                                                "sensitized directions.")
 
-    ahelp = ("2 possibilities: (1) if you set this argument to 'freesurfer', "
-             "the Freesurfer T1 brain (i.e. <subjects_dir>/<subject_id>/mri/"
-             "brain.mgz) will be used and registered to diffusion with "
-             "Freesurfer 'bbregister'. It implies that you pass 'subjects_dir'"
-             " or set $SUBJECTS_DIR environment variable. "
-             "(2) if you don't want to provide/use Freesurfer, set to path of "
-             "a T1 brain-only volume registered to diffusion. It is not "
-             "required that the T1 has the same spacing as the diffusion as "
-             "long as they are registered (you can keep the T1 in its native "
-             "resolution).")
-    parser.add_argument("-a", "--t1-brain-to-dif", required=True,
-                        metavar="<'freesurfer'|path>", help=ahelp)
-
+    phelp = ("Path to the parcellation that defines the nodes of the connec"
+             "tome, e.g. aparc+aseg.mgz from FreeSurfer. It has to be in the "
+             "FreeSurfer space (i.e. aligned with FreeSurfer 'brain.mgz').")
     parser.add_argument("-p", "--t1-parc", type=is_file, required=True,
-                        metavar="<path>",
-                        help="Path to the parcellation that defines the nodes "
-                             "of the connectome, e.g. aparc+aseg.mgz from Free"
-                             "surfer. Should be in the same space as the T1.")
+                        metavar="<path>", help=phelp)
 
     fhelp = ("Path to the Look Up Table for the passed parcellation in the "
-             "Freesurfer LUT format. If your T1 parcellation comes from "
-             "Freesurfer, this will most likely be "
+             "FreeSurfer LUT format. If your T1 parcellation comes from "
+             "FreeSurfer, this will most likely be "
              "<$FREESURFER_HOME>/FreeSurferColorLUT.txt.")
     parser.add_argument("-f", "--t1-parc-lut", type=is_file, required=True,
                         metavar="<path>", help=fhelp)
+
+    chelp = ("Path to a Look Up Table in the FreeSurfer LUT format, listing "
+             "the regions from the parcellation to use as nodes in the connec"
+             "tome. The region names should match the ones used in the "
+             "<t1_parc_lut> LUT and the integer labels should be the row/col "
+             "positions in the connectome. Alternatively it can be set to "
+             "'Lausanne2008' to use the predefined LUT for the Lausanne 2008 a"
+             "tlas, which is based on the FreeSurfer aparc+aseg parcellation.")
+    parser.add_argument("-c", "--connectome-lut", metavar="<path>", help=chelp)
 
     parser.add_argument("-o", "--outdir", required=True, metavar="<path>",
                         help="Directory where to output.")
@@ -141,14 +139,6 @@ def get_cmd_line_args():
                         metavar="<int>", help="Number of threads.")
 
     # Optional arguments
-
-    chelp = ("Path to a Look Up Table in the Freesurfer LUT format, listing "
-             "the regions from the parcellation to use as nodes in the "
-             "connectome. The region names should match the ones used in the "
-             "'t1_parc_lut' and the integer labels should be the row/col "
-             "positions in the connectome. By default the predefined LUT of "
-             "the Lausanne 2008 atlas is used.")
-    parser.add_argument("-c", "--connectome-lut", metavar="<path>", help=chelp)
 
     parser.add_argument("-G", "--global-tractography", action="store_true",
                         help="If set run global tractography (tckglobal) "
@@ -193,10 +183,11 @@ def get_cmd_line_args():
                         help="Path to diffusion brain binary mask.")
 
     uhelp = ("If the <t1_parc> is aparc+aseg or aparc.a2009s+aseg from "
-             "Freesurfer set this option to True, to recompute the "
+             "FreeSurfer set this option to True, to recompute the "
              "subcortical segmentations of 5 structures that are uncorrectly "
-             "segmented by Freesurfer, using FSL FIRST")
-    parser.add_argument("-u", "--labelsgmfix", action="store_true", help=uhelp)
+             "segmented by FreeSurfer, using FSL FIRST")
+    parser.add_argument("-u", "--fix-freesurfer-subcortical",
+                        action="store_true", help=uhelp)
 
     parser.add_argument("-D", "--delete-raw-tracks", action="store_true",
                         help="To save disk space, delete the raw tracks when "
@@ -217,7 +208,11 @@ def get_cmd_line_args():
                         help="To not create snapshots of the results. "
                              "Useful if matplotlib is not installed.")
 
-    parser.add_argument("-F", "--fsl-init", type=is_file, metavar="<path>",
+    parser.add_argument("-H", "--fs-sh", type=is_file, metavar="<path>",
+                        help="Bash script initializing FreeSurfer's "
+                             "environment.")
+
+    parser.add_argument("-F", "--fsl-sh", type=is_file, metavar="<path>",
                         help="Bash script initializing FSL's environment.")
 
     parser.add_argument("-v", "--verbose", type=int,
@@ -229,8 +224,10 @@ def get_cmd_line_args():
     args = parser.parse_args()
     kwargs = vars(args)
     verbose = kwargs.pop("verbose")
-    if kwargs["fsl_init"] is None:
-        kwargs["fsl_init"] = DEFAULT_FSL_PATH
+    if kwargs["fs_sh"] is None:
+        kwargs["fs_sh"] = DEFAULT_FREESURFER_PATH
+    if kwargs["fsl_sh"] is None:
+        kwargs["fsl_sh"] = DEFAULT_FSL_PATH
 
     return kwargs, verbose
 
@@ -242,7 +239,7 @@ inputs, verbose = get_cmd_line_args()
 tool = "pyfsl_mrtrix_connectome"
 timestamp = datetime.now().isoformat()
 tool_version = version
-fsl_version = FSLWrapper([], shfile=inputs["fsl_init"]).version
+fsl_version = FSLWrapper([], shfile=inputs["fsl_sh"]).version
 params = locals()
 runtime = dict([(name, params[name])
                for name in ("tool", "tool_version", "fsl_version",

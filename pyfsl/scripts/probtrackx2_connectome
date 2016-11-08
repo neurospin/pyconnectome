@@ -25,6 +25,8 @@ except:
     pass
 
 # Module import
+from pyfreesurfer import DEFAULT_FREESURFER_PATH
+
 from pyfsl import __version__ as version
 from pyfsl import DEFAULT_FSL_PATH
 from pyfsl.wrapper import FSLWrapper
@@ -43,13 +45,14 @@ bedpostx.
 Command:
 
 subject=000009963964
+root_dir=/neurospin/imagen/BL/processed
 
 python ~/git/pyfsl/pyfsl/scripts/probtrackx2_connectome \
     -s ${subject} \
-    -B /neurospin/imagen/BL/processed/dwi_preproc_wo_fieldmap/${subject}/nodif_brain.nii.gz \
-    -m /neurospin/imagen/BL/processed/dwi_preproc_wo_fieldmap/${subject}/nodif_brain_mask.nii.gz \
-    -x /neurospin/imagen/BL/processed/bedpostx_wo_fieldmap/${subject}/diffusion.bedpostX \
-    -p /neurospin/imagen/BL/processed/freesurfer/${subject}/mri/aparc+aseg.mgz \
+    -B ${root_dir}/dwi_preproc_wo_fieldmap/${subject}/nodif_brain.nii.gz \
+    -m ${root_dir}/dwi_preproc_wo_fieldmap/${subject}/nodif_brain_mask.nii.gz \
+    -x ${root_dir}/bedpostx_wo_fieldmap/${subject}/diffusion.bedpostX \
+    -p ${root_dir}/freesurfer/${subject}/mri/aparc+aseg.mgz \
     -f ${FREESURFER_HOME}/FreeSurferColorLUT.txt \
     -c lausanne2008 \
     -N 500 \
@@ -121,6 +124,15 @@ def get_cmd_line_args():
     parser.add_argument("-f", "--t1-parc-lut", type=is_file, required=True,
                         metavar="<path>", help=fhelp)
 
+    chelp = ("Path to a Look Up Table in the FreeSurfer LUT format, listing "
+             "the regions from the parcellation to use as nodes in the connec"
+             "tome. The region names should match the ones used in the "
+             "<t1_parc_lut> LUT and the integer labels should be the row/col "
+             "positions in the connectome. Alternatively it can be set to "
+             "'Lausanne2008' to use the predefined LUT for the Lausanne 2008 a"
+             "tlas, which is based on the FreeSurfer aparc+aseg parcellation.")
+    parser.add_argument("-c", "--connectome-lut", metavar="<path>", help=chelp)
+
     parser.add_argument("-N", "--nsamples", type=int, metavar="<int>",
                         help="Number of samples per voxel to initiate in "
                              "seed region")
@@ -139,19 +151,12 @@ def get_cmd_line_args():
 
     # Optional arguments
 
-    chelp = ("Path to a Look Up Table in the Freesurfer LUT format, listing "
-             "the regions from the parcellation to use as nodes in the "
-             "connectome. The region names should match the ones used in the "
-             "'t1_parc_lut' and the integer labels should be the row/col "
-             "positions in the connectome. By default the predefined LUT of "
-             "the Lausanne 2008 atlas is used.")
-    parser.add_argument("-c", "--connectome-lut", metavar="<path>", help=chelp)
-
     uhelp = ("If the <t1_parc> is aparc+aseg or aparc.a2009s+aseg from "
-             "Freesurfer set this option to True, to recompute the "
+             "FreeSurfer set this option to True, to recompute the "
              "subcortical segmentations of 5 structures that are uncorrectly "
-             "segmented by Freesurfer, using FSL FIRST")
-    parser.add_argument("-u", "--labelsgmfix", action="store_true", help=uhelp)
+             "segmented by FreeSurfer, using FSL FIRST")
+    parser.add_argument("-u", "--fix-freesurfer-subcortical",
+                        action="store_true", help=uhelp)
 
     parser.add_argument("-S", "--subjects-dir", metavar="<path>",
                         help="To set or bypass the $SUBJECTS_DIR environment "
@@ -162,7 +167,11 @@ def get_cmd_line_args():
                         help="To not create snapshots of the results. "
                              "Useful if matplotlib is not installed.")
 
-    parser.add_argument("-F", "--fsl-init", type=is_file, metavar="<path>",
+    parser.add_argument("-H", "--fs-sh", type=is_file, metavar="<path>",
+                        help="Bash script initializing FreeSurfer's "
+                             "environment.")
+
+    parser.add_argument("-F", "--fsl-sh", type=is_file, metavar="<path>",
                         help="Bash script initializing FSL's environment.")
 
     parser.add_argument("-v", "--verbose", type=int,
@@ -174,8 +183,10 @@ def get_cmd_line_args():
     args = parser.parse_args()
     kwargs = vars(args)
     verbose = kwargs.pop("verbose")
-    if kwargs["fsl_init"] is None:
-        kwargs["fsl_init"] = DEFAULT_FSL_PATH
+    if kwargs["fs_sh"] is None:
+        kwargs["fs_sh"] = DEFAULT_FREESURFER_PATH
+    if kwargs["fsl_sh"] is None:
+        kwargs["fsl_sh"] = DEFAULT_FSL_PATH
 
     return kwargs, verbose
 
@@ -187,7 +198,7 @@ inputs, verbose = get_cmd_line_args()
 tool = "probtrackx2_connectome"
 timestamp = datetime.now().isoformat()
 tool_version = version
-fsl_version = FSLWrapper([], shfile=inputs["fsl_init"]).version
+fsl_version = FSLWrapper([], shfile=inputs["fsl_sh"]).version
 params = locals()
 runtime = dict([(name, params[name])
                for name in ("tool", "tool_version", "fsl_version",
