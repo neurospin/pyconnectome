@@ -185,7 +185,7 @@ def flirt(in_file, ref_file, omat=None, out=None, init=None, cost="corratio",
     if displayinit:
         cmd += ["-displayinit"]
     if applyxfm:
-        cmd += ["-applyxfm", applyxfm]
+        cmd += ["-applyxfm"]
 
     if init is not None:
         cmd += ["-init", init]
