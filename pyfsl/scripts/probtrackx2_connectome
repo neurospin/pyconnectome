@@ -20,7 +20,7 @@ try:
     import bredala
     bredala.USE_PROFILER = False
     bredala.register("pyfsl.connectomes.reduced",
-                     names=["mrtrix_connectome_pipeline"])
+                     names=["probtrackx2_connectome_pipeline"])
 except:
     pass
 
@@ -30,7 +30,7 @@ from pyfreesurfer import DEFAULT_FREESURFER_PATH
 from pyfsl import __version__ as version
 from pyfsl import DEFAULT_FSL_PATH
 from pyfsl.wrapper import FSLWrapper
-from pyfsl.connectomes.reduced import mrtrix_connectome_pipeline
+from pyfsl.connectomes.reduced import probtrackx2_connectome_pipeline
 
 
 # Parameters to keep trace
@@ -39,35 +39,29 @@ __hopla__ = ["runtime", "inputs", "outputs"]
 
 DOC = """
 Compute the connectome of a given parcellation, like the FreeSurfer aparc+aseg
-segmentation, using MRtrix.
+segmentation, using FSL Probtrackx2. Assuming you have run Freesurfer and
+bedpostx.
 
-Requirements:
-    - preprocessed DWI with bvals/bvecs: if distortion artifacts from
-      acquisition have been properly corrected it should be alignable to the
-      T1 with a rigid transformation.
-    - parcellation: image of labeled regions, e.g. FreeSurfer aparc+aseg
-    - FreeSurfer recon-all or a T1 aligned to diffusion. T1 can be kept in
-      its native resolution as long as it is registered to diffusion.
+Command:
 
+subject=000009963964
+root_dir=/neurospin/imagen/BL/processed
 
-Example of command for HCP, using SIFT2 but not SIFT:
-
-PACKAGE_DIR=/neurospin/population/HCP/S500-1
-SUBJECT=139233
-python $HOME/git/pyfsl/pyfsl/scripts/pyfsl_mrtrix_connectome.py \
-    -a ${PACKAGE_DIR}/${SUBJECT}/T1w/T1w_acpc_dc_restore_brain.nii.gz \
-    -i ${PACKAGE_DIR}/${SUBJECT}/T1w/Diffusion/data.nii.gz \
-    -b ${PACKAGE_DIR}/${SUBJECT}/T1w/Diffusion/bvals \
-    -r ${PACKAGE_DIR}/${SUBJECT}/T1w/Diffusion/bvecs \
-    -m ${PACKAGE_DIR}/${SUBJECT}/T1w/Diffusion/nodif_brain_mask.nii.gz \
-    -p ${PACKAGE_DIR}/${SUBJECT}/T1w/aparc+aseg.nii.gz \
-    -o /volatile/MRtrix/test_hopla \
-    -d /volatile/MRtrix/tmp_hopla \
-    -t 10 \
-    -Z \
-    -l 250 \
-    -s 0.06 \
-    -n 5 \
+python ~/git/pyfsl/pyfsl/scripts/probtrackx2_connectome \
+    -s ${subject} \
+    -B ${root_dir}/dwi_preproc_wo_fieldmap/${subject}/nodif_brain.nii.gz \
+    -m ${root_dir}/dwi_preproc_wo_fieldmap/${subject}/nodif_brain_mask.nii.gz \
+    -x ${root_dir}/bedpostx_wo_fieldmap/${subject}/diffusion.bedpostX \
+    -p ${root_dir}/freesurfer/${subject}/mri/aparc+aseg.mgz \
+    -f ${FREESURFER_HOME}/FreeSurferColorLUT.txt \
+    -c lausanne2008 \
+    -N 500 \
+    -P 200 \
+    -L 1.25 \
+    -o /volatile/imagen/probtrackx2/${subject} \
+    -d /volatile/imagen/probtrackx2/tmp \
+    -u \
+    -S /neurospin/imagen/BL/processed/freesurfer \
     -v 2
 """
 
@@ -80,16 +74,25 @@ def is_file(filepath):
     return filepath
 
 
+def is_dir(dirpath):
+    """ Check direcory's existence - argparse 'type' argument.
+    """
+    if not os.path.isdir(dirpath):
+        raise argparse.ArgumentError("Directory does not exist: %s" % dirpath)
+    return dirpath
+
+
 def get_cmd_line_args():
     """
     Create a command line argument parser and return a dict mapping
     <argument name> -> <argument value>.
     """
     usage = ("%(prog)s -s <subject id> -i <dwi> -b <bvals> -r <bvecs> "
-             "-p <t1 parc> -f <t1 parc LUT> -c <'Lausanne2008'|connectome LUT>"
-             " -o <outdir> -d <tempdir> -t <int> -z <int> -l <int> -k <float> "
-             "-n <int> [options]")
-    parser = argparse.ArgumentParser(prog="python mrtrix_connectome.py",
+             "-n <nodif_brain> -m <nodif_brain_mask> -x <bedpostx_dir> "
+             "-p <t1 parc> -f <t1 parc LUT> -c <'lausanne2008'|connectome LUT>"
+             "-o <outdir> -d <tempdir>  -n <nsamples> -p <nsteps> "
+             "-l <steplength> [options]")
+    parser = argparse.ArgumentParser(prog="python probtrackx2_connectome.py",
                                      usage=usage, description=DOC)
 
     # Required arguments
@@ -97,25 +100,26 @@ def get_cmd_line_args():
     parser.add_argument("-s", "--subject-id", required=True, metavar="<id>",
                         help="Subject identifier.")
 
-    parser.add_argument("-i", "--dwi", type=is_file, required=True,
-                        metavar="<path>", help="Path to the diffusion data.")
+    parser.add_argument("-B", "--nodif-brain", type=is_file, required=True,
+                        metavar="<path>",
+                        help="Preprocessed brain-only volume with bvalue=0.")
 
-    parser.add_argument("-b", "--bvals", type=is_file, required=True,
-                        metavar="<path>", help="Path to the bvalue list.")
+    parser.add_argument("-m", "--nodif-brain-mask", type=is_file,
+                        required=True, metavar="<path>",
+                        help="Brain binary mask in diffusion.")
 
-    parser.add_argument("-r", "--bvecs", type=is_file, required=True,
-                        metavar="<path>", help="Path to the list of diffusion-"
-                                               "sensitized directions.")
+    parser.add_argument("-x", "--bedpostx-dir", type=is_dir, required=True,
+                        metavar="<path>", help="Bedpostx output directory.")
 
-    phelp = ("Path to the parcellation that defines the nodes of the connec"
-             "tome, e.g. aparc+aseg.mgz from FreeSurfer. It has to be in the "
-             "FreeSurfer space (i.e. aligned with FreeSurfer 'brain.mgz').")
     parser.add_argument("-p", "--t1-parc", type=is_file, required=True,
-                        metavar="<path>", help=phelp)
+                        metavar="<path>",
+                        help="Path to the parcellation that defines the nodes "
+                             "of the connectome, e.g. aparc+aseg.mgz from Free"
+                             "surfer. Has to be in Freesurfer T1 space.")
 
     fhelp = ("Path to the Look Up Table for the passed parcellation in the "
-             "FreeSurfer LUT format. If your T1 parcellation comes from "
-             "FreeSurfer, this will most likely be "
+             "Freesurfer LUT format. If your T1 parcellation comes from "
+             "Freesurfer, this will most likely be "
              "<$FREESURFER_HOME>/FreeSurferColorLUT.txt.")
     parser.add_argument("-f", "--t1-parc-lut", type=is_file, required=True,
                         metavar="<path>", help=fhelp)
@@ -129,58 +133,23 @@ def get_cmd_line_args():
              "tlas, which is based on the FreeSurfer aparc+aseg parcellation.")
     parser.add_argument("-c", "--connectome-lut", metavar="<path>", help=chelp)
 
+    parser.add_argument("-N", "--nsamples", type=int, metavar="<int>",
+                        help="Number of samples per voxel to initiate in "
+                             "seed region")
+
+    parser.add_argument("-P", "--nsteps", type=int, metavar="<int>",
+                        help="Maximum number of steps for a sample.")
+
+    parser.add_argument('-L', "--steplength", type=float, metavar="<float>",
+                        help="Step length in mm.")
+
     parser.add_argument("-o", "--outdir", required=True, metavar="<path>",
                         help="Directory where to output.")
 
     parser.add_argument("-d", "--tempdir", required=True, metavar="<path>",
                         help="Where to write temporary directories e.g. /tmp.")
 
-    parser.add_argument("-n", "--nb-threads", required=True, type=int,
-                        metavar="<int>", help="Number of threads.")
-
     # Optional arguments
-
-    parser.add_argument("-G", "--global-tractography", action="store_true",
-                        help="If set run global tractography (tckglobal) "
-                             "instead of local (tckgen).")
-
-    parser.add_argument("-t", "--mtracks", type=int, metavar="<int>",
-                        help="For non-global tractography only. "
-                             "Number of millions of tracks in raw tractogram.")
-
-    parser.add_argument("-l", "--maxlength", type=int, metavar="<int>",
-                        help="For non-global tractography only. "
-                             "Max fiber length in mm.")
-
-    parser.add_argument("-k", "--cutoff", type=float, metavar="<float>",
-                        help="For non-global tractography only. "
-                             "FOD cutoff = stopping criteria.")
-
-    parser.add_argument("-I", "--seed-gmwmi", action="store_true",
-                        help="Set this option if you want to activate the "
-                             "'-seed_gmwmi' option of MRtrix 'tckgen', to "
-                             "seed from the GM/WM interface. Otherwise, and "
-                             "by default, the seeding is done in white matter "
-                             "('-seed_dynamic' option).")
-
-    parser.add_argument("-z", "--sift-mtracks", type=int, metavar="<int>",
-                        help="Number of millions of tracks to keep with SIFT. "
-                             "If not set, SIFT is not applied.")
-
-    parser.add_argument("-Z", "--sift2", action="store_true",
-                        help="To activate SIFT2.")
-
-    parser.add_argument("-S", "--subjects-dir", metavar="<path>",
-                        help="To set or bypass the $SUBJECTS_DIR environment "
-                             "variable.")
-
-    parser.add_argument("-B", "--nodif-brain", type=is_file, metavar="<path>",
-                        help="Diffusion brain-only volume to use to estimate "
-                             "the registration between diffusion and T1.")
-
-    parser.add_argument("-m", "--nodif-brain-mask", type=is_file,
-                        metavar="<path>",
-                        help="Path to diffusion brain binary mask.")
 
     uhelp = ("If the <t1_parc> is aparc+aseg or aparc.a2009s+aseg from "
              "FreeSurfer set this option to True, to recompute the "
@@ -189,19 +158,9 @@ def get_cmd_line_args():
     parser.add_argument("-u", "--fix-freesurfer-subcortical",
                         action="store_true", help=uhelp)
 
-    parser.add_argument("-D", "--delete-raw-tracks", action="store_true",
-                        help="To save disk space, delete the raw tracks when "
-                             "the connectome has been computed.")
-
-    parser.add_argument("-K", "--keep-dwi-mif", action="store_false",
-                        dest="delete_dwi_mif", default=True,
-                        help="To not delete <outdir>/DWI.mif, which is a copy "
-                             "of the input <dwi> in the .mif format.")
-
-    parser.add_argument("-U", "--no-mif-gz", action="store_false",
-                        dest="mif_gz", default=True,
-                        help="To not compress MIF files: .mif instead of "
-                             ".mif.gz.")
+    parser.add_argument("-S", "--subjects-dir", metavar="<path>",
+                        help="To set or bypass the $SUBJECTS_DIR environment "
+                             "variable.")
 
     parser.add_argument("-Q", "--no-snapshots", action="store_false",
                         dest="snapshots", default=True,
@@ -236,7 +195,7 @@ def get_cmd_line_args():
 Parse the command line.
 """
 inputs, verbose = get_cmd_line_args()
-tool = "pyfsl_mrtrix_connectome"
+tool = "probtrackx2_connectome"
 timestamp = datetime.now().isoformat()
 tool_version = version
 fsl_version = FSLWrapper([], shfile=inputs["fsl_sh"]).version
@@ -245,17 +204,14 @@ runtime = dict([(name, params[name])
                for name in ("tool", "tool_version", "fsl_version",
                             "timestamp")])
 if verbose > 0:
-    pprint("[info] Starting MRTrix3 connectome ...")
-    pprint("[info] Runtime:")
     pprint(runtime)
-    pprint("[info] Inputs:")
     pprint(inputs)
 
 
 """
 Start the connectome computation.
 """
-mrtrix_connectome_pipeline(**inputs)
+probtrackx2_connectome_pipeline(**inputs)
 results_dir = inputs["outdir"]
 
 
