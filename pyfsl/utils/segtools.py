@@ -7,16 +7,57 @@
 ##########################################################################
 
 """
-Wrappers for the FSL's segmentation utilities.
+Segmentation utilities.
 """
 
 # System import
 import os
 import glob
+import numpy
 
 # Pyfsl import
 from pyfsl import DEFAULT_FSL_PATH
 from pyfsl.wrapper import FSLWrapper
+
+
+def fix_freesurfer_subcortical_parcellation(parc, t1_brain, lut, output,
+                                            tempdir=None, nb_threads=None,
+                                            fsl_sh=DEFAULT_FSL_PATH):
+    """ Use the MRtrix labelsgmfix command to correct the FreeSurfer
+    subcortical parcellation.
+    It uses FSL First to recompute 5 subcortical structures.
+
+    Parameters
+    ----------
+    parc: str
+        Path to the FreeSurfer parcellation, generally aparc+aseg or
+        aparc.a2009s+aseg.
+    t1_brain: str
+        Path to the T1 brain-only image on which recompute the segmentation.
+    lut: str
+        Path to the Look Up Table. If you haven't change the labels it should
+        be FreeSurfer LUT (FreeSurferColorLUT.txt in $FREESURFER_HOME dir).
+    output: str
+        Path to output fixed parcellation.
+    tempdir: str, default None
+        Directory that MRtrix will use as temporary directory.
+    nb_threads: int, default None
+        Number of threads that MRtrix is allowed to use.
+
+    Returns
+    -------
+    output: str
+        Path to output fixed parcellation.
+    """
+    cmd = ["labelsgmfix", parc, t1_brain, lut, output, "-premasked"]
+    if tempdir is not None:
+        cmd += ["-tempdir", tempdir]
+    if nb_threads is not None:
+        cmd += ["-nthreads", "%i" % nb_threads]
+    fsl_process = FSLWrapper(cmd, env=os.environ, shfile=fsl_sh)
+    fsl_process()
+
+    return output
 
 
 def fast(input_file, out_fileroot, klass=3, im_type=1, segments=False,
@@ -266,3 +307,131 @@ def bet2(input_file, output_fileroot, outline=False, mask=False,
     return (output, mask_file, mesh_file, outline_file, inskull_mask_file,
             inskull_mesh_file, outskull_mask_file, outskull_mesh_file,
             outskin_mask_file, outskin_mesh_file, skull_mask_file)
+
+
+def get_region_names_of_lausanne_2008_atlas():
+    """ Get the ordered region names of the Lausanne 2008 atlas as in
+    standard papers.
+
+    It corresponds to the Desikan atlas in the cortex, without the corpus
+    callosum along with 7 subcortical regions.
+
+    Returns
+    -------
+    atlas_names: list of str
+        Ordered region names of the Lausanne 2008 atlas.
+    """
+
+    # All left cortical regions of the Desikan atlas except the corpus callosum
+    lh_ctx_rois = [
+        'ctx-lh-lateralorbitofrontal',
+        'ctx-lh-parsorbitalis',
+        'ctx-lh-frontalpole',
+        'ctx-lh-medialorbitofrontal',
+        'ctx-lh-parstriangularis',
+        'ctx-lh-parsopercularis',
+        'ctx-lh-rostralmiddlefrontal',
+        'ctx-lh-superiorfrontal',
+        'ctx-lh-caudalmiddlefrontal',
+        'ctx-lh-precentral',
+        'ctx-lh-paracentral',
+        'ctx-lh-rostralanteriorcingulate',
+        'ctx-lh-caudalanteriorcingulate',
+        'ctx-lh-posteriorcingulate',
+        'ctx-lh-isthmuscingulate',
+        'ctx-lh-postcentral',
+        'ctx-lh-supramarginal',
+        'ctx-lh-superiorparietal',
+        'ctx-lh-inferiorparietal',
+        'ctx-lh-precuneus',
+        'ctx-lh-cuneus',
+        'ctx-lh-pericalcarine',
+        'ctx-lh-lateraloccipital',
+        'ctx-lh-lingual',
+        'ctx-lh-fusiform',
+        'ctx-lh-parahippocampal',
+        'ctx-lh-entorhinal',
+        'ctx-lh-temporalpole',
+        'ctx-lh-inferiortemporal',
+        'ctx-lh-middletemporal',
+        'ctx-lh-bankssts',
+        'ctx-lh-superiortemporal',
+        'ctx-lh-transversetemporal',
+        'ctx-lh-insula'
+    ]
+
+    # Same for right hemisphere
+    rh_ctx_rois = [x.replace("ctx-lh-", "ctx-rh-") for x in lh_ctx_rois]
+
+    # Ordered left subcortical regions of Lausanne 2008 scale 33 atlas
+    lh_subctx_rois = [
+        'Left-Thalamus-Proper',
+        'Left-Caudate',
+        'Left-Putamen',
+        'Left-Pallidum',
+        'Left-Accumbens-area',
+        'Left-Hippocampus',
+        'Left-Amygdala',
+    ]
+
+    # Ordered right subcortical regions
+    rh_subctx_rois = [x.replace("Left-", "Right-") for x in lh_subctx_rois]
+
+    # Non-hemispheric subcortical region
+    axial_subctx_rois = ['Brain-Stem']
+
+    atlas_names = (lh_ctx_rois + lh_subctx_rois + rh_ctx_rois +
+                   rh_subctx_rois + axial_subctx_rois)
+
+    return atlas_names
+
+
+def create_lausanne2008_lut(outdir, freesurfer_lut=None):
+    """ Create a Look Up Table for the Lausanne2008 atlas. It has the same
+    format as the FreeSurfer LUT (FreeSurferColorLUT.txt), but it lists only
+    the regions of the Lausanne2008 atlas and the integer labels are the
+    row/col positions of the regions in the connectome.
+
+    Parameters
+    ----------
+    outdir: str
+        Path to directory where to write "Lausanne2008LUT.txt"
+    freesurfer_lut: str, default None
+        Path to the FreeSurfer Look Up Table. If not passed, try to use
+        $FREESURFER_HOME/FreeSurferColorLUT.txt. If not found raise Exception.
+    """
+
+    # Ordered ROIs (i.e. nodes of the connectome) of the Lausanne 2008 atlas
+    roi_names = get_region_names_of_lausanne_2008_atlas()
+
+    # Path to the FreeSurfer LUT
+    freesurfer_lut = get_or_check_path_of_freesurfer_lut(freesurfer_lut)
+
+    # Load table
+    table = numpy.loadtxt(freesurfer_lut, dtype=str)
+
+    # Keep rows that corresponds to regions of the atlas
+    table = numpy.array([r for r in table if r[1] in set(roi_names)])
+
+    # Order rows (i.e. regions) of the LUT like Lausanne2008 atlas
+    table = numpy.array(sorted(table, key=lambda r: roi_names.index(r[1])))
+
+    # Replace FreeSurfer label by row/col position in connectome
+    table[:, 0] = numpy.arange(1, table.shape[0] + 1)
+
+    # Header lines
+    header_1 = "# Look up Table for Lausanne 2008 atlas\n"
+    header_2 = "#<Label> <Label Name> <R> <G> <B> <A>\n"
+
+    # Save as .txt file
+    lausanne2008_lut = os.path.join(outdir, "Lausanne2008LUT.txt")
+    with open(lausanne2008_lut, "wt") as f:
+        f.write(header_1)
+        f.write(header_2)
+        # Maintain the indentation
+        line_format = "{0: <8} {1: <50} {2: <4} {3: <4} {4: <4} {5: <4}\n"
+        for i, row in enumerate(table, start=1):
+            f.write(line_format.format(*row))
+
+    return lausanne2008_lut
+

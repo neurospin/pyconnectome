@@ -24,9 +24,10 @@ try:
 except:
     pass
 
-# Module import
+# PyFreeSurfer import
 from pyfreesurfer import DEFAULT_FREESURFER_PATH
 
+# Module import
 from pyfsl import __version__ as version
 from pyfsl import DEFAULT_FSL_PATH
 from pyfsl.wrapper import FSLWrapper
@@ -244,6 +245,7 @@ params = locals()
 runtime = dict([(name, params[name])
                for name in ("tool", "tool_version", "fsl_version",
                             "timestamp")])
+outputs = None
 if verbose > 0:
     pprint("[info] Starting MRTrix3 connectome ...")
     pprint("[info] Runtime:")

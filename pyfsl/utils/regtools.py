@@ -7,7 +7,7 @@
 ##########################################################################
 
 """
-Wrappers for the FSL's registration utilities.
+Registration utilities.
 """
 
 # System import

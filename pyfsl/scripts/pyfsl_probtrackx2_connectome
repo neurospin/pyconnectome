@@ -24,9 +24,10 @@ try:
 except:
     pass
 
-# Module import
+# PyFreeSurfer import
 from pyfreesurfer import DEFAULT_FREESURFER_PATH
 
+# Module import
 from pyfsl import __version__ as version
 from pyfsl import DEFAULT_FSL_PATH
 from pyfsl.wrapper import FSLWrapper
@@ -195,7 +196,7 @@ def get_cmd_line_args():
 Parse the command line.
 """
 inputs, verbose = get_cmd_line_args()
-tool = "probtrackx2_connectome"
+tool = "pyfsl_probtrackx2_connectome"
 timestamp = datetime.now().isoformat()
 tool_version = version
 fsl_version = FSLWrapper([], shfile=inputs["fsl_sh"]).version
@@ -203,6 +204,7 @@ params = locals()
 runtime = dict([(name, params[name])
                for name in ("tool", "tool_version", "fsl_version",
                             "timestamp")])
+outputs = None
 if verbose > 0:
     pprint(runtime)
     pprint(inputs)

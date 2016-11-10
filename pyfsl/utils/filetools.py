@@ -7,17 +7,43 @@
 ##########################################################################
 
 """
-Wrappers for the FSL's file utilities.
+File utilities.
 """
 
 # System import
 import os
 import nibabel
 import glob
+import subprocess
 
 # Pyfsl import
 from pyfsl import DEFAULT_FSL_PATH
 from pyfsl.wrapper import FSLWrapper
+
+
+def mrtrix_extract_b0s_and_mean_b0(dwi, b0s, mean_b0, nb_threads=1):
+    """ Extract b=0 (bvalue=0) volumes from DWI and compute mean b=0 volume.
+
+    Parameters
+    ----------
+    dwi: str
+        The diffusion file.
+    b0s: str
+        The b0 volumes file.
+    mean_b0:
+        The mean b0 volumes file.
+    nb_threads: int, default None
+        Number of threads that MRtrix is allowed to use.
+    """
+    # Extract the b0 volumes
+    cmd_1 = ["dwiextract", "-bzero", dwi, b0s,
+             "-nthreads", "%i" % nb_threads, "-failonwarn"]
+    subprocess.check_call(cmd_1)
+
+    # Average the b0 volumes
+    cmd_2 = ["mrmath", b0s, "mean", mean_b0, "-axis", "3",
+             "-nthreads", "%i" % nb_threads, "-failonwarn"]
+    subprocess.check_call(cmd_2)
 
 
 def extract_image(in_file, index, out_file=None):
