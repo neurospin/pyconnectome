@@ -14,11 +14,11 @@ import os
 
 
 release_info = {}
-infopath = os.path.join(os.path.dirname(__file__), "pyfsl", "info.py")
+infopath = os.path.join(os.path.dirname(__file__), "pyconnectome", "info.py")
 with open(infopath) as open_file:
     exec(open_file.read(), release_info)
 pkgdata = {
-    "pyfsl": ["tests/*.py", "tests/*/*.py"],
+    "pyconnectome": ["tests/*.py", "tests/*/*.py"],
 }
 
 setup(

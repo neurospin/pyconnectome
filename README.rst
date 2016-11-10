@@ -18,10 +18,10 @@
 
 
 ======================
-pyFsl
+pyConnectome
 ======================
 
-[pyfsl] Python wrappers for FSL.
+[pyconnectome] Connectome utility package.
 Visit http://neurospin.github.io/pyfsl main page!
 
 
