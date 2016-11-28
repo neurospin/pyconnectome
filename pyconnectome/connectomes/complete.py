@@ -7,172 +7,232 @@
 ##########################################################################
 
 """
-Use FSL to generate a complete/dense vertices-based connectogram.
+Compute the connectome of a given tesellation, like the FreeSurfer, using
+FSL Probtrackx2.
 """
 
-# System import
+# Standard import
 import os
-import glob
+import subprocess
 import numpy
 import nibabel
-from operator import itemgetter
-
-# Package imports
-from pyconnectome import DEFAULT_FSL_PATH
-from pyconnectome.utils.regtools import flirt
-from pyconnectome.tractography.probabilist import probtrackx2
 
 # PyFreeSurfer import
-from pyfreesurfer.segmentation.freesurfer import mri_vol2surf
+from pyfreesurfer import DEFAULT_FREESURFER_PATH
+from pyfreesurfer.wrapper import FSWrapper
+from pyfreesurfer.utils.filetools import get_or_check_freesurfer_subjects_dir
+from pyfreesurfer.conversions.volconvs import mri_binarize
+from pyfreesurfer.conversions.volconvs import mri_convert
+
+# Package import
+from pyconnectome import DEFAULT_FSL_PATH
+from pyconnectome.wrapper import FSLWrapper
+from pyconnectome.tractography.probabilist import probtrackx2
+from pyconnectome.utils.filetools import surf2surf
 
 
-def get_profile(ico_order, nodif_file, nodifmask_file, seed_file,
-                bedpostx_samples, outdir, t1_file, trf_file, dat_file, fsdir,
-                sid, fslconfig=DEFAULT_FSL_PATH):
-    """ Probabilistic profile.
+def probtrackx2_connectome_complete(outdir,
+                                    subject_id,
+                                    lh_surf,
+                                    rh_surf,
+                                    nodif_brain,
+                                    nodif_brain_mask,
+                                    bedpostx_dir,
+                                    nsamples,
+                                    nsteps,
+                                    steplength,
+                                    subjects_dir=None,
+                                    loopcheck=True,
+                                    cthr=0.2,
+                                    fibthresh=0.01,
+                                    distthresh=0.0,
+                                    sampvox=0.0,
+                                    fs_sh=DEFAULT_FREESURFER_PATH,
+                                    fsl_sh=DEFAULT_FSL_PATH):
+    """ Compute the connectome of a given tesellation, like the FreeSurfer,
+    using ProbTrackx2.
 
-    Computes the tractography using FSL probtrackx2 and projects the result
-    on the cortical surface using FS mri_vol2surf.
+    Requirements:
+        - brain masks for the preprocessed DWI: nodif_brain and
+          nodif_brain_mask.
+        - FreeSurfer: result of recon-all on the T1.
+        - FSL Bedpostx: computed for the preprocessed DWI.
 
-    Parameters
-    ----------
-    ico_order: int (mandatory)
-        Icosahedron order in [0, 7] that will be used to generate the cortical
-        surface texture at a specific tessalation (the corresponding cortical
-        surface can be resampled using the
-        'clindmri.segmentation.freesurfer.resample_cortical_surface' function).
-    nodif_file: str (mandatory)
-        File for probtrackx2 containing the no diffusion volume and associated
-        space information.
-    nodifmask_file: str (mandatory)
-        File for probtrackx2 containing the tractography mask (ie., a mask of
-        the white matter).
-    seed_file: str (mandatory)
-        Text file for probtrackx2 containing seed coordinates.
-    bedpostx_samples: str (mandatory)
-        Path prefix for bedpostX model samples files injected in probtrackx2
-        (eg., fsl.bedpostX/merged).
-    outdir: str (mandatory)
-        The output directory.
-    t1_file : str (mandatory)
-        T1 image file used to align the produced probabilitic tractography map
-        to the T1 space.
-    trf_file : str (mandatory)
-        Diffusion to t1 space affine transformation matrix file.
-    dat_file: str (mandatory)
-        Structural to FreeSurfer space affine transformation matrix '.dat'
-        file as computed by 'tkregister2'.
-    fsdir: str (mandatory)
-        FreeSurfer subjects directory 'SUBJECTS_DIR'.
-    sid: str (mandatory)
-        FreeSurfer subject identifier.
-    fslconfig: str (mandatory)
-        The FreeSurfer '.sh' config file.
+    Connectome construction strategy:
+        - Pathways are constructed from 'constitutive points' and not from
+          endpoints. A pathway is the result of 2 samples propagating in
+          opposite directions from a seed point. It is done using the
+          --omatrix3 option of Probtrackx2.
+        - The seed mask is the mask of WM voxels that are neighbors
+          (12-connexity) of nodes.
+        - The stop mask is the inverse of white matter, i.e. a sample stops
+          propagating as soon as it leaves the white matter.
 
-    Returns
-    -------
-    proba_file: str
-        The seed probabilistic tractography volume.
-    textures: dict
-        A dictionary containing the probabilist texture for each hemisphere.
-    """
-    # Generates the diffusion probability map
-    proba_files, _ = probtrackx2(
-        simple=True, seedref=nodif_file, out="fdt_paths", seed=seed_file,
-        loopcheck=True, onewaycondition=True, samples=bedpostx_samples,
-        mask=nodifmask_file, dir=outdir)
+    Note:
 
-    # Check that only one 'fdt_paths' has been generated
-    if len(proba_files) != 1:
-        raise Exception("One probabilistic tractography file expected at this "
-                        "point: {0}".format(proba_files))
-    proba_file = proba_files[0]
-    proba_fname = os.path.basename(proba_file).replace(".nii.gz", "")
-
-    # Apply 'trf_file' affine transformation matrix using FSL flirt function:
-    # probability map (diffusion space) -> probability map (T1 space).
-    flirt_t1_file = os.path.join(outdir, proba_fname + "_t1_flirt.nii.gz")
-    flirt(proba_file, t1_file, out=flirt_t1_file, applyxfm=True, init=trf_file)
-
-    # Project the volumic probability map (T1 space) generated with FSL flirt
-    # on the cortical surface (Freesurfer space) (both hemispheres) using
-    # Freesurfer's mri_vol2surf and applying the 'dat_file' transformation.
-    textures = {}
-    for hemi in ["lh", "rh"]:
-        prob_texture_file = os.path.join(
-            outdir, "{0}.{1}_vol2surf.mgz".format(hemi, proba_fname))
-        mri_vol2surf(hemi, flirt_t1_file, prob_texture_file, ico_order,
-                     dat_file, fsdir, sid, surface_name="white",
-                     flsconfig=fslconfig)
-        textures[hemi] = prob_texture_file
-
-    return proba_file, textures
-
-
-def get_connectogram(profilesdir):
-    """ Concatenate the conectivity profiles in a matrix.
+    --randfib refers to initialization of streamlines only (i.e. the very first
+    step) and only affects voxels with more than one fiber reconstructed:
+    randfib==0, only sample from the strongest fiber 
+    randfib==1, randomly sample from all fibers regardless of strength that are
+    above --fibthresh
+    randfib==2, sample fibers stronger than --fibthresh in proportion to their
+    strength (in my opinion, this is the best choice)
+    randfib==3, sample all fibers randomly regardless of whether or not they
+    are above --fibthresh.
 
     Parameters
     ----------
-    profilesdir: str (mandatory)
-        the directory with subfolders of the form '<hemi>_<seed_vertice>'
-        containing the profiles of interest.
+    outdir: str
+        Directory where to output.
+    subject_id: str
+        Subject id used with FreeSurfer 'recon-all' command.
+    lh_surf: str
+        The left hemisphere surface.
+    rh_surf: str
+        The left hemisphere surface.
+    nodif_brain: str
+        Path to the preprocessed brain-only DWI volume.
+    nodif_brain_mask: str
+        Path to the brain binary mask.
+    bedpostx_dir: str
+        Bedpostx output directory.
+    nsamples: int
+        Number of samples per voxel to initiate in the seed mask.
+    nsteps: int
+        Maximum number of steps for a given sample.
+    steplength: int
+        Step size in mm.
+    subjects_dir: str or None, default None
+        Path to the FreeSurfer subjects directory. Required if the FreeSurfer
+        environment variable (i.e. $SUBJECTS_DIR) is not set.
+    cthr: float, optional
+        Probtrackx2 option.
+    fibthresh, distthresh, sampvox: float, optional
+        Probtrackx2 options.
+    loopcheck: bool, optional
+        Probtrackx2 option.
+    fs_sh: str, default NeuroSpin path
+        Path to the Bash script setting the FreeSurfer environment
+    fsl_sh: str, default NeuroSpin path
+        Path to the Bash script setting the FSL environment.
 
     Returns
-    -------
-    connectogram: array
-        the connectogram array with sorted profiles as rows (according to the
-        profile seeding vertice index). Profiles are formed with the right and
-        left hemisphere probabilistic tractography volume projections in this
-        order.
-    seed_vertices: array
-        the connectogram rows associated seed vertices indices.
+    ------
+    coords: str
+        The connectome coordinates.
+    weights: str
+        The connectome weights.
     """
-    # List and sort the profile subfolders
-    rhtextures = glob.glob(os.path.join(profilesdir, "*", "rh.*.mgz"))
-    rhtextures = [(int(texture.split(os.sep)[-2].split("_")[1]), texture)
-                  for texture in rhtextures]
-    rhtextures = sorted(rhtextures, key=itemgetter(0))
+    # -------------------------------------------------------------------------
+    # STEP 0 - Check arguments
 
-    # Construct the connectogram
-    connectogram = []
-    seed_vertices = []
-    for seed_vertice, rhtexture in rhtextures:
+    # FreeSurfer subjects_dir
+    subjects_dir = get_or_check_freesurfer_subjects_dir(subjects_dir)
 
-        # Store the current seed vertice
-        seed_vertices.append(seed_vertice)
+    # Check input paths
+    paths_to_check = [nodif_brain, nodif_brain_mask, bedpostx_dir,
+                      fs_sh, fsl_sh]
+    for p in paths_to_check:
+        if not os.path.exists(p):
+            raise ValueError("File or directory does not exist: %s" % p)
 
-        # Check if a left hemi texture has been computed
-        lhtextures = glob.glob(os.path.join(
-            profilesdir, "*_{0}".format(seed_vertice), "lh.*.mgz"))
-        textures = [rhtexture]
-        if len(lhtextures) == 1:
-            textures.append(lhtextures[0])
+    # Create <outdir> if not existing
+    if not os.path.isdir(outdir):
+        os.makedirs(outdir)
 
-        # Concatenate the right and left texture in a row
-        profile = []
-        for hemitexture in textures:
+    # -------------------------------------------------------------------------
+    # STEP 1 - Compute T1 <-> DWI rigid transformation
 
-            # Load the hemi profile
-            profile_array = nibabel.load(hemitexture).get_data()
-            profile_dim = profile_array.ndim
-            profile_shape = profile_array.shape
-            if profile_dim != 3:
-                raise ValueError(
-                    "Expected profile texture array of dimension 3 not "
-                    "'{0}'".format(profile_dim))
-            if (profile_shape[1] != 1) or (profile_shape[2] != 1):
-                raise ValueError(
-                    "Expected profile texture array of shape (*, 1, 1) not "
-                    "'{0}'.".format(profile_shape))
-            texture = profile_array.ravel()
-            profile.extend(texture.tolist())
+    # FreeSurfer T1 to Nifti
+    fs_t1_brain = os.path.join(subjects_dir, subject_id, "mri", "brain.mgz")
+    t1_brain = os.path.join(outdir, "t1_brain.nii.gz")
+    cmd_1a = ["mri_convert", fs_t1_brain, t1_brain]
+    FSWrapper(cmd_1a, shfile=fs_sh)()
 
-        # Add this profile to the connectogram
-        connectogram.append(profile)
+    # Register diffusion to T1
+    dif2anat_dat = os.path.join(outdir, "dif2anat.dat")
+    dif2anat_mat = os.path.join(outdir, "dif2anat.mat")
+    nodif_brain_reg = os.path.join(outdir, "nodif_brain_to_t1.nii.gz")
+    cmd_1b = ["bbregister",
+              "--s",      subject_id,
+              "--mov",    nodif_brain,
+              "--reg",    dif2anat_dat,
+              "--fslmat", dif2anat_mat,
+              "--dti",
+              "--init-fsl",
+              "--o",      nodif_brain_reg]
+    FSWrapper(cmd_1b, subjects_dir=subjects_dir, shfile=fs_sh,
+              add_fsl_env=True, fsl_sh=fsl_sh)()
 
-    # Create a connectogram and rows indices arrays
-    connectogram = numpy.asarray(connectogram)
-    seed_vertices = numpy.asarray(seed_vertices)
+    # Invert dif2anat transform
+    m = numpy.loadtxt(dif2anat_mat)
+    m_inv = numpy.linalg.inv(m)
+    anat2dif_mat = os.path.join(outdir, "anat2dif.mat")
+    numpy.savetxt(anat2dif_mat, m_inv)
 
-    return connectogram, seed_vertices
+    # -------------------------------------------------------------------------
+    # STEP 2 - Create the masks for Probtrackx2
+
+    # White matter mask
+    aparc_aseg = os.path.join(subjects_dir, subject_id, "mri",
+                              "aparc+aseg.mgz")
+    wm_mask = os.path.join(outdir, "wm_mask.nii.gz")
+    mri_binarize(
+        inputfile=aparc_aseg,
+        outputfile=wm_mask,
+        match=None,
+        wm=True,
+        inv=False,
+        fsconfig=fs_sh)
+
+    # Stop mask is inverse of white matter mask
+    stop_mask = os.path.join(outdir, "inv_wm_mask.nii.gz")
+    mri_binarize(
+        inputfile=aparc_aseg,
+        outputfile=stop_mask,
+        match=None,
+        wm=True,
+        inv=True,
+        fsconfig=fs_sh)
+
+    # Create seed mask
+    seed_mask = wm_mask
+
+    # Create target masks: the white surface
+    white_surf = os.path.join(outdir, "white.asc")
+    cmd_2a = ["mris_convert",
+              "--combinesurfs",
+              lh_surf,
+              rh_surf,
+              white_surf]
+    FSWrapper(cmd_2a, subjects_dir=subjects_dir, shfile=fs_sh)()
+
+    # -------------------------------------------------------------------------
+    # STEP 7 - Run Probtrackx2
+    probtrackx2(dir=outdir,
+                forcedir=True,
+                seedref=t1_brain,
+                xfm=anat2dif_mat,
+                invxfm=dif2anat_mat,
+                samples=os.path.join(bedpostx_dir, "merged"),
+                mask=nodif_brain_mask,
+                seed=seed_mask,
+                omatrix3=True,
+                target3=white_surf,
+                stop=stop_mask,
+                nsamples=nsamples,
+                nsteps=nsteps,
+                steplength=steplength,
+                loopcheck=loopcheck,
+                cthr=cthr,
+                fibthresh=fibthresh,
+                distthresh=distthresh,
+                sampvox=sampvox,
+                pd=True,
+                randfib=2,
+                shfile=fsl_sh)
+    coords = os.path.join(outdir, "coords_for_fdt_matrix3")
+    weights = os.path.join(outdir, "fdt_matrix3.dot")
+
+    return coords, weights
+
