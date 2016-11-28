@@ -9,7 +9,7 @@
 
 """
 Compute the connectome of a given parcellation, like the FreeSurfer aparc+aseg
-segmentation, using MRtrix or Probtrackx2.
+segmentation, using MRtrix or FSL Probtrackx2.
 """
 
 # Standard import
@@ -21,9 +21,9 @@ import nibabel
 # PyFreeSurfer import
 from pyfreesurfer import DEFAULT_FREESURFER_PATH
 from pyfreesurfer.wrapper import FSWrapper
-from pyfreesurfer.utils.filetools import (get_or_check_path_of_freesurfer_lut,
-                                          get_or_check_freesurfer_subjects_dir,
-                                          load_look_up_table)
+from pyfreesurfer.utils.filetools import get_or_check_path_of_freesurfer_lut
+from pyfreesurfer.utils.filetools import get_or_check_freesurfer_subjects_dir
+from pyfreesurfer.utils.filetools import load_look_up_table
 
 # PyConnectomist
 from pyconnectomist.utils.dwitools import read_bvals_bvecs
@@ -717,7 +717,7 @@ def probtrackx2_connectome_pipeline(outdir,
         Subject id used with FreeSurfer 'recon-all' command.
     t1_parc: str
         Path to the parcellation that defines the nodes of the connectome, e.g.
-        aparc+aseg.mgz from FreeSurfer. Should be in the same space as the T1.
+        aparc+aseg.mgz from FreeSurfer.
     t1_parc_lut: str
         Path to the Look Up Table for the passed parcellation in the
         FreeSurfer LUT format. If you T1 parcellation is from FreeSurfer, this
@@ -775,7 +775,7 @@ def probtrackx2_connectome_pipeline(outdir,
 
     # Check input paths
     paths_to_check = [t1_parc, t1_parc_lut, connectome_lut, nodif_brain,
-                      nodif_brain_mask, bedpostx_dir, fsl_sh]
+                      nodif_brain_mask, bedpostx_dir, fs_sh, fsl_sh]
     for p in paths_to_check:
         if not os.path.exists(p):
             raise ValueError("File or directory does not exist: %s" % p)
@@ -841,7 +841,8 @@ def probtrackx2_connectome_pipeline(outdir,
     # STEP 4 - Create the masks for Probtrackx2
 
     # White matter mask
-    aparc_aseg = os.path.join(subjects_dir, subject_id, "mri/aparc+aseg.mgz")
+    aparc_aseg = os.path.join(subjects_dir, subject_id, "mri",
+                              "aparc+aseg.mgz")
     wm_mask = os.path.join(outdir, "wm_mask.nii.gz")
     cmd_4a = ["mri_binarize",
               "--i", aparc_aseg,
@@ -857,7 +858,6 @@ def probtrackx2_connectome_pipeline(outdir,
               "--wm", "--inv"]
     FSWrapper(cmd_4b, shfile=fs_sh)()
 
-    # Create seed mask: white matter voxels near nodes (target regions)
     # Create target mask: a mask of all nodes
     target_mask = os.path.join(outdir, "target_mask.nii.gz")
     cmd_4c = ["mri_binarize",
@@ -871,6 +871,7 @@ def probtrackx2_connectome_pipeline(outdir,
     cmd_4d = ["mri_morphology", target_mask, "dilate", "1", target_mask_dil]
     FSWrapper(cmd_4d, shfile=fs_sh)()
 
+    # Create seed mask: white matter voxels near nodes (target regions)
     # Intersect dilated target mask and white matter mask
     # -> white matter voxels neighbor (12-connectivity) to node voxels
     seed_mask = os.path.join(outdir, "wm_nodes_interface_mask.nii.gz")
@@ -898,7 +899,8 @@ def probtrackx2_connectome_pipeline(outdir,
                 cthr=cthr,
                 fibthresh=fibthresh,
                 distthresh=distthresh,
-                sampvox=sampvox)
+                sampvox=sampvox,
+                shfile=fsl_sh)
 
     # ------------------------------------------------------------------------
     # STEP 8 - Create NODExNODE connectivity matrix for nodes from <t1_parc>
