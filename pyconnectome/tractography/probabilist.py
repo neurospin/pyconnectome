@@ -19,7 +19,7 @@ from pyconnectome import DEFAULT_FSL_PATH
 from pyconnectome.wrapper import FSLWrapper
 
 
-def probtrackx2(samples, 
+def probtrackx2(samples,
                 mask,
                 seed,
                 out="fdt_paths",

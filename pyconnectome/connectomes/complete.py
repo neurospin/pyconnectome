@@ -72,7 +72,7 @@ def probtrackx2_connectome_complete(outdir,
 
     --randfib refers to initialization of streamlines only (i.e. the very first
     step) and only affects voxels with more than one fiber reconstructed:
-    randfib==0, only sample from the strongest fiber 
+    randfib==0, only sample from the strongest fiber
     randfib==1, randomly sample from all fibers regardless of strength that are
     above --fibthresh
     randfib==2, sample fibers stronger than --fibthresh in proportion to their
@@ -235,4 +235,3 @@ def probtrackx2_connectome_complete(outdir,
     weights = os.path.join(outdir, "fdt_matrix3.dot")
 
     return coords, weights
-
