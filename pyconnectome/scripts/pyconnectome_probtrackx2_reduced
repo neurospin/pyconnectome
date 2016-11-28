@@ -48,7 +48,7 @@ Command:
 subject=000009963964
 root_dir=/neurospin/imagen/BL/processed
 
-python ~/git/pyconnectome/pyconnectome/scripts/pyconnectome_probtrackx2_connectome \
+python ~/git/pyconnectome/pyconnectome/scripts/pyconnectome_probtrackx2_reduced \
     -s ${subject} \
     -B ${root_dir}/dwi_preproc_wo_fieldmap/${subject}/nodif_brain.nii.gz \
     -m ${root_dir}/dwi_preproc_wo_fieldmap/${subject}/nodif_brain_mask.nii.gz \
