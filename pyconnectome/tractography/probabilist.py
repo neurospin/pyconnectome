@@ -19,15 +19,43 @@ from pyconnectome import DEFAULT_FSL_PATH
 from pyconnectome.wrapper import FSLWrapper
 
 
-def probtrackx2(samples, mask, seed, out="fdt_paths",
-                dir="logdir", forcedir=False, simple=False, network=False,
-                opd=False, os2t=False, targetmasks=None, waypoints=None,
-                onewaycondition=False, avoid=None, stop=None, wtstop=None,
-                omatrix1=False, omatrix2=False, target2=None, omatrix3=False,
-                target3=None, xfm=None, invxfm=None, seedref=None,
-                nsamples=5000, nsteps=2000, steplength=0.5, distthresh=0.0,
-                cthr=0.2, fibthresh=0.01, loopcheck=False, usef=None,
-                sampvox=0.0, randfib=0, shfile=DEFAULT_FSL_PATH):
+def probtrackx2(samples, 
+                mask,
+                seed,
+                out="fdt_paths",
+                dir="logdir",
+                forcedir=False,
+                simple=False,
+                network=False,
+                opd=False,
+                pd=False,
+                os2t=False,
+                targetmasks=None,
+                waypoints=None,
+                onewaycondition=False,
+                avoid=None,
+                stop=None,
+                wtstop=None,
+                omatrix1=False,
+                omatrix2=False,
+                target2=None,
+                omatrix3=False,
+                target3=None,
+                xfm=None,
+                invxfm=None,
+                seedref=None,
+                nsamples=5000,
+                nsteps=2000,
+                steplength=0.5,
+                distthresh=0.0,
+                cthr=0.2,
+                fibthresh=0.01,
+                loopcheck=False,
+                usef=None,
+                sampvox=0.0,
+                randfib=0,
+                savepaths=False,
+                shfile=DEFAULT_FSL_PATH):
     """ Wraps command probtrackx2.
 
     Single voxel
@@ -100,6 +128,8 @@ def probtrackx2(samples, mask, seed, out="fdt_paths",
         the other seed masks.
     opd: bool (optional, default False)
         Output path distribution
+    pd: bool (optional, default False)
+        Correct path distribution for the length of the pathways
     os2t: bool (optional, default False)
         Output seeds to targets
     targetmasks: (optional, default None)
@@ -143,7 +173,7 @@ def probtrackx2(samples, mask, seed, out="fdt_paths",
     nsteps: int (optional, default 2000)
         Number of steps per sample.
     steplength: float (optional, default 0.5)
-        Steplength in mm.
+        Step length in mm.
     distthresh: float (optional, default 0.0)
         Discards samples shorter than this threshold (in mm)
     cthr: float (optional, default 0.2)
@@ -161,6 +191,9 @@ def probtrackx2(samples, mask, seed, out="fdt_paths",
         Set to 1 to randomly sample initial fibres (with f > fibthresh).
         Set to 2 to sample in proportion fibres (with f > fibthresh) to f.
         Set to 3 to sample ALL populations at random (even if f < fibthresh)
+    savepaths: bool, optional
+        Probtrackx2 hidden option: output a ASCII text file with all the
+        coordinates (can be quite large if you run many streamlines).
     shfile: str (optional, default NeuroSpin path)
         The FSL configuration batch.
 
@@ -197,6 +230,8 @@ def probtrackx2(samples, mask, seed, out="fdt_paths",
         cmd += ["--forcedir"]
     if opd:
         cmd += ["--opd"]
+    if pd:
+        cmd += ["--pd"]
     if os2t:
         cmd += ["--os2t"]
     if network:
@@ -235,6 +270,8 @@ def probtrackx2(samples, mask, seed, out="fdt_paths",
         cmd += ["--xfm=%s" % xfm]
     if invxfm is not None:
         cmd += ["--invxfm=%s" % invxfm]
+    if savepaths:
+        cmd += ["--savepaths"]
 
     # Call probtrackx
     fslprocess = FSLWrapper(cmd, shfile=shfile)
