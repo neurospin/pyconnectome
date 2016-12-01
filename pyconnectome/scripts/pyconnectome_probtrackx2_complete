@@ -167,7 +167,7 @@ freesurfer_config =  inputs.pop("fsconfig") or DEFAULT_FREESURFER_PATH
 First check if the subject FSL directory exists on the file system, and
 clean it if requested. Check also the bedpostx directory.
 """
-tool = os.path.basename(__file__)
+tool = "pyconnectome_probtrackx2_complete"
 timestamp = datetime.now().isoformat()
 tool_version = version
 fsl_version = FSLWrapper([], shfile=fsl_config).version

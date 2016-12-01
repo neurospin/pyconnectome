@@ -138,7 +138,7 @@ verbose = inputs.pop("verbose")
 """
 First clean the output directory if requested.
 """
-tool = os.path.basename(__file__)
+tool = "pyconnectome_metrics"
 timestamp = datetime.now().isoformat()
 tool_version = version
 networkx_version = networkx.__version__
