@@ -21,7 +21,6 @@ import nibabel
 # PyFreeSurfer import
 from pyfreesurfer import DEFAULT_FREESURFER_PATH
 from pyfreesurfer.wrapper import FSWrapper
-from pyfreesurfer.utils.filetools import get_or_check_path_of_freesurfer_lut
 from pyfreesurfer.utils.filetools import get_or_check_freesurfer_subjects_dir
 from pyfreesurfer.utils.filetools import load_look_up_table
 

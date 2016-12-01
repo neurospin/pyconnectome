@@ -19,6 +19,9 @@ import numpy
 from pyconnectome import DEFAULT_FSL_PATH
 from pyconnectome.wrapper import FSLWrapper
 
+# PyFreeSurfer import
+from pyfreesurfer.utils.filetools import get_or_check_path_of_freesurfer_lut
+
 
 def fix_freesurfer_subcortical_parcellation(parc, t1_brain, lut, output,
                                             tempdir=None, nb_threads=None,
