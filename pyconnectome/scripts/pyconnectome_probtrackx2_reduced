@@ -196,7 +196,7 @@ def get_cmd_line_args():
 Parse the command line.
 """
 inputs, verbose = get_cmd_line_args()
-tool = "pyconnectome_probtrackx2_connectome"
+tool = "pyconnectome_probtrackx2_reduced"
 timestamp = datetime.now().isoformat()
 tool_version = version
 fsl_version = FSLWrapper([], shfile=inputs["fsl_sh"]).version
