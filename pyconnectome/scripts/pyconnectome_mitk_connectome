@@ -1,0 +1,277 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*
+##########################################################################
+# NSAp - Copyright (C) CEA, 2016
+# Distributed under the terms of the CeCILL-B license, as published by
+# the CEA-CNRS-INRIA. Refer to the LICENSE file or to
+# http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html for details.
+##########################################################################
+
+# System import
+import os
+import argparse
+import json
+
+from pprint import pprint
+from datetime import datetime
+
+# Bredala module
+try:
+    import bredala
+    bredala.USE_PROFILER = False
+    bredala.register("pyconnectome.connectomes.reduced",
+                     names=["mitk_connectome_pipeline"])
+except:
+    pass
+
+# PyFreeSurfer import
+from pyfreesurfer import DEFAULT_FREESURFER_PATH
+
+# Package import
+from pyconnectome import __version__ as version
+from pyconnectome import DEFAULT_FSL_PATH
+from pyconnectome.wrapper import FSLWrapper
+from pyconnectome.connectomes.reduced import mitk_connectome_pipeline
+
+
+# Parameters to keep trace
+__hopla__ = ["runtime", "inputs", "outputs"]
+
+
+DOC = """
+Compute the connectome of a given parcellation, like the FreeSurfer aparc+aseg
+segmentation, using MITK Gibbs Tracking Probtrackx2. Assuming you have run
+Freesurfer (recon-all).
+
+Command:
+
+subject=000009963964
+root_dir=/neurospin/imagen/BL/processed
+
+python ~/git/pyconnectome/pyconnectome/scripts/pyconnectome_mitk_connectome \
+    -s ${subject} \
+    -i ${root_dir}/dwi_preproc_wo_fieldmap/${subject}/dwi.nii.gz \
+    -b ${root_dir}/dwi_preproc_wo_fieldmap/${subject}/dwi.bval \
+    -r ${root_dir}/dwi_preproc_wo_fieldmap/${subject}/dwi.bvec \
+    -n ${root_dir}/dwi_preproc_wo_fieldmap/${subject}/nodif_brain.nii.gz \
+    -m ${root_dir}/dwi_preproc_wo_fieldmap/${subject}/nodif_brain_mask.nii.gz \
+    -p ${root_dir}/freesurfer/${subject}/mri/aparc+aseg.mgz \
+    -f ${FREESURFER_HOME}/FreeSurferColorLUT.txt \
+    -c lausanne2008 \
+    -o /volatile/imagen/MITK/${subject} \
+    -S ${root_dir}/freesurfer \
+    -O 4 \
+    -N 500000000 \
+    -v 2
+"""
+
+
+def is_file(filepath):
+    """ Check file's existence - argparse 'type' argument.
+    """
+    if not os.path.isfile(filepath):
+        raise argparse.ArgumentError("File does not exist: %s" % filepath)
+    return filepath
+
+
+def get_cmd_line_args():
+    """
+    Create a command line argument parser and return a dict mapping
+    <argument name> -> <argument value>.
+    """
+    usage = ("%(prog)s -s <subject id> -i <dwi> -b <bvals> -r <bvecs> "
+             "-n <nodif_brain> -m <nodif_brain_mask> -p <t1 parc> "
+             "-f <t1 parc LUT> -c <'lausanne2008'|connectome LUT> "
+             "-o <outdir> [-S <subjects_dir>] [-O <sh order>] "
+             "[-R <reg factor>] [-N <nb iterations>] [-L <particle length>] "
+             "[-W <particle width>] [-G <particle weight>] "
+             "[-T <start temperature>] [-U <end temperature>] "
+             "[-B <energies balance>] [-M <min length>] [-C <max curvature>] "
+             "[-D <tempdir>] [-Q] [-H] [-F] [-v <level>]")
+    parser = argparse.ArgumentParser(prog="python probtrackx2_connectome.py",
+                                     usage=usage, description=DOC)
+
+    # Required arguments
+
+    parser.add_argument("-s", "--subject-id", required=True, metavar="<id>",
+                        help="Subject identifier.")
+
+    parser.add_argument("-i", "--dwi", type=is_file, required=True,
+                        metavar="<path>", help="Path to the diffusion data.")
+
+    parser.add_argument("-b", "--bvals", type=is_file, required=True,
+                        metavar="<path>", help="Path to the bvalue list.")
+
+    parser.add_argument("-r", "--bvecs", type=is_file, required=True,
+                        metavar="<path>", help="Path to the list of diffusion-"
+                                               "sensitized directions.")
+
+    parser.add_argument("-n", "--nodif-brain", type=is_file, required=True,
+                        metavar="<path>",
+                        help="Preprocessed brain-only volume with bvalue=0.")
+
+    parser.add_argument("-m", "--nodif-brain-mask", type=is_file,
+                        required=True, metavar="<path>",
+                        help="Brain binary mask in diffusion.")
+
+    parser.add_argument("-p", "--t1-parc", type=is_file, required=True,
+                        metavar="<path>",
+                        help="Path to the parcellation that defines the nodes "
+                             "of the connectome, e.g. aparc+aseg.mgz from Free"
+                             "surfer. Has to be in Freesurfer T1 space.")
+
+    fhelp = ("Path to the Look Up Table for the passed parcellation in the "
+             "Freesurfer LUT format. If your T1 parcellation comes from "
+             "Freesurfer, this will most likely be "
+             "<$FREESURFER_HOME>/FreeSurferColorLUT.txt.")
+    parser.add_argument("-f", "--t1-parc-lut", type=is_file, required=True,
+                        metavar="<path>", help=fhelp)
+
+    chelp = ("Path to a Look Up Table in the FreeSurfer LUT format, listing "
+             "the regions from the parcellation to use as nodes in the connec"
+             "tome. The region names should match the ones used in the "
+             "<t1_parc_lut> LUT and the integer labels should be the row/col "
+             "positions in the connectome. Alternatively it can be set to "
+             "'Lausanne2008' to use the predefined LUT for the Lausanne 2008 a"
+             "tlas, which is based on the FreeSurfer aparc+aseg parcellation.")
+    parser.add_argument("-c", "--connectome-lut", metavar="<path>", help=chelp)
+
+    parser.add_argument("-o", "--outdir", required=True, metavar="<path>",
+                        help="Directory where to output.")
+
+    # Optional arguments
+
+    uhelp = ("If the <t1_parc> is aparc+aseg or aparc.a2009s+aseg from "
+             "FreeSurfer set this option to True, to recompute the "
+             "subcortical segmentations of 5 structures that are uncorrectly "
+             "segmented by FreeSurfer, using FSL FIRST")
+    parser.add_argument("-u", "--fix-freesurfer-subcortical",
+                        action="store_true", help=uhelp)
+
+    parser.add_argument("-S", "--subjects-dir", metavar="<path>",
+                        help="To set or bypass the $SUBJECTS_DIR environment "
+                             "variable.")
+
+    parser.add_argument("-O", "--sh-order", type=int, metavar="<int>",
+                        default=4,
+                        help="Qball reconstruction spherical harmonics order.")
+
+    parser.add_argument("-R", "--reg-factor", type=float, metavar="<float>",
+                        default=0.006,
+                        help="Qball reconstruction regularization factor.")
+
+    parser.add_argument("-N", "--nb-iterations", type=int, metavar="<int>",
+                        default=int(5e8),
+                        help="Gibbs tracking number of iterations.")
+
+    parser.add_argument("-L", "--particle-length", type=float, default=0.0,
+                        metavar="<float>",
+                        help="Gibbs tracking particle length, selected "
+                             "automatically if 0.")
+
+    parser.add_argument("-W", "--particle-width", type=float,
+                        default=0.0, metavar="<float>",
+                        help="Gibbs tracking particle width, selected "
+                             "automatically if 0.")
+
+    parser.add_argument("-G", "--particle-weight", type=float,
+                        default=0.0, metavar="<float>",
+                        help="Gibbs tracking particle weigtt, selected "
+                             "automatically if 0.")
+
+    parser.add_argument("-T", "--start-temperature", type=float,
+                        default=0.1, metavar="<float>",
+                        help="Gibbs tracking start temperature.")
+
+    parser.add_argument("-U", "--end-temperature", type=float,
+                        default=0.001, metavar="<float>",
+                        help="Gibbs tracking end temperature.")
+
+    parser.add_argument("-B", "--inex-energy-balance", type=float,
+                        default=0.0, metavar="<float>",
+                        help="Gibbs tracking weighting between in/ext "
+                             "energies.")
+
+    parser.add_argument("-M", "--min-fiber-length", type=int,
+                        default=20, metavar="<int>",
+                        help="Minimum fiber length in mm. Fibers that are "
+                             "shorter are discarded.")
+
+    parser.add_argument("-C", "--curvature-threshold", type=int,
+                        default=45, metavar="<int>",
+                        help="Maximum fiber curvature in degrees.")
+
+    parser.add_argument("-D", "--tempdir", metavar="<path>",
+                        help="Where to write temporary directories e.g. /tmp.")
+
+    parser.add_argument("-Q", "--no-snapshots", action="store_false",
+                        dest="snapshots", default=True,
+                        help="To not create snapshots of the results. "
+                             "Useful if matplotlib is not installed.")
+
+    parser.add_argument("-H", "--fs-sh", type=is_file, metavar="<path>",
+                        help="Bash script initializing FreeSurfer's "
+                             "environment.")
+
+    parser.add_argument("-F", "--fsl-sh", type=is_file, metavar="<path>",
+                        help="Bash script initializing FSL's environment.")
+
+    parser.add_argument("-v", "--verbose", type=int,
+                        choices=[0, 1, 2], default=2,
+                        help="Increase the verbosity level: 0 silent, [1, 2] "
+                             "verbose.")
+
+    # Create a dict of arguments to pass to the 'main' function
+    args = parser.parse_args()
+    kwargs = vars(args)
+    verbose = kwargs.pop("verbose")
+    if kwargs["fs_sh"] is None:
+        kwargs["fs_sh"] = DEFAULT_FREESURFER_PATH
+    if kwargs["fsl_sh"] is None:
+        kwargs["fsl_sh"] = DEFAULT_FSL_PATH
+
+    return kwargs, verbose
+
+
+"""
+Parse the command line.
+"""
+inputs, verbose = get_cmd_line_args()
+tool = "pyconnectome_mitk_connectome"
+timestamp = datetime.now().isoformat()
+tool_version = version
+fsl_version = FSLWrapper([], shfile=inputs["fsl_sh"]).version
+params = locals()
+runtime = dict([(name, params[name])
+               for name in ("tool", "tool_version", "fsl_version",
+                            "timestamp")])
+outputs = None
+if verbose > 0:
+    pprint(runtime)
+    pprint(inputs)
+
+
+"""
+Start the connectome computation.
+"""
+mitk_connectome_pipeline(**inputs)
+results_dir = inputs["outdir"]
+
+
+"""
+Update the outputs and save them and the inputs in a 'logs' directory.
+"""
+logdir = os.path.join(inputs["outdir"], "logs")
+if not os.path.isdir(logdir):
+    os.mkdir(logdir)
+params = locals()
+outputs = dict([(name, params[name]) for name in ("results_dir", )])
+for name, final_struct in [("inputs", inputs), ("outputs", outputs),
+                           ("runtime", runtime)]:
+    log_file = os.path.join(logdir, "{0}.json".format(name))
+    with open(log_file, "wt") as open_file:
+        json.dump(final_struct, open_file, sort_keys=True, check_circular=True,
+                  indent=4)
+if verbose > 1:
+    pprint("[info] Outputs:")
+    pprint(outputs)

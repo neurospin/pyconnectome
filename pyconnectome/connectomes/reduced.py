@@ -12,32 +12,35 @@ Compute the connectome of a given parcellation, like the FreeSurfer aparc+aseg
 segmentation, using MRtrix or FSL Probtrackx2.
 """
 
-# Standard import
+# Standard
 import os
 import subprocess
-import numpy
-import nibabel
+import shutil
+import tempfile
+from xml.etree import ElementTree
 
-# PyFreeSurfer import
-from pyfreesurfer import DEFAULT_FREESURFER_PATH
-from pyfreesurfer.wrapper import FSWrapper
-from pyfreesurfer.utils.filetools import get_or_check_freesurfer_subjects_dir
-from pyfreesurfer.utils.filetools import load_look_up_table
-
-# PyConnectomist
-from pyconnectomist.utils.dwitools import read_bvals_bvecs
-
-# Package import
+# Package
 from pyconnectome import DEFAULT_FSL_PATH
 from pyconnectome.wrapper import FSLWrapper
 from pyconnectome.tractography.probabilist import probtrackx2
 from pyconnectome.utils.segtools import fix_freesurfer_subcortical_parcellation
 from pyconnectome.utils.filetools import mrtrix_extract_b0s_and_mean_b0
 
+# Third-party
+import numpy
+import nibabel
+import tractconverter
+from pyfreesurfer import DEFAULT_FREESURFER_PATH
+from pyfreesurfer.wrapper import FSWrapper
+from pyfreesurfer.utils.filetools import get_or_check_freesurfer_subjects_dir
+from pyfreesurfer.utils.filetools import load_look_up_table
+from pyconnectomist.utils.dwitools import read_bvals_bvecs
+
 
 def connectome_snapshot(connectome, snapshot, labels=None, transform=None,
                         colorbar_title="", dpi=200, labels_size=4):
-    """ Create a PNG snapshot of the connectogram (i.e. connectivity matrix).
+    """
+    Create a PNG snapshot of the connectome (i.e. connectivity matrix).
 
     Parameters
     ----------
@@ -75,7 +78,6 @@ def connectome_snapshot(connectome, snapshot, labels=None, transform=None,
     if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1]:
         raise ValueError("Connectivity matrix should be a square matrix."
                          "Shape of matrix: {}".format(matrix.shape))
-    nrows, ncols = matrix.shape
 
     # Apply transformation if requested
     if transform is not None:
@@ -84,7 +86,6 @@ def connectome_snapshot(connectome, snapshot, labels=None, transform=None,
     # -------------------------------------------------------------------------
     # Create the figure with matplotlib
     fig, ax = plt.subplots()
-    heatmap = ax.pcolor(matrix, cmap=plt.cm.Reds)
     ax.invert_yaxis()
     ax.xaxis.tick_top()
 
@@ -95,19 +96,18 @@ def connectome_snapshot(connectome, snapshot, labels=None, transform=None,
 
     # Add the labels if passed
     if labels is not None:
-        labels = numpy.loadtxt(labels, dtype=str)
+        labels_array = numpy.loadtxt(labels, dtype=str)
 
-        if len(labels) != matrix.shape[0]:
+        if len(labels_array) != matrix.shape[0]:
             raise ValueError(
                 "Wrong number of labels: {}. Should be {}.".format(
-                    len(labels), matrix.shape[0]))
+                    len(labels_array), matrix.shape[0]))
 
-        ax.set_xticklabels(labels, size=labels_size, rotation=90)
-        ax.set_yticklabels(labels, size=labels_size)
+        ax.set_xticklabels(labels_array, size=labels_size, rotation=90)
+        ax.set_yticklabels(labels_array, size=labels_size)
 
     ax.set_aspect("equal")
-    plt.tight_layout(rect=[0, 0, 1, 1])
-
+    heatmap = ax.pcolor(matrix, cmap=plt.cm.Reds)
     colorbar = fig.colorbar(heatmap)
     colorbar.set_label(colorbar_title, rotation=270, labelpad=20)
 
@@ -153,7 +153,8 @@ def mrtrix_connectome_pipeline(outdir,
                                snapshots=True,
                                fs_sh=DEFAULT_FREESURFER_PATH,
                                fsl_sh=DEFAULT_FSL_PATH):
-    """ Compute the connectome using MRtrix.
+    """
+    Compute the connectome using MRtrix.
 
     Requirements:
         - FreeSurfer: result of recon-all on the T1.
@@ -168,7 +169,7 @@ def mrtrix_connectome_pipeline(outdir,
         Path to directory where to output.
     tempdir: str
         Path to the directory where temporary directories should be written.
-        If you be on a partition with 5+ GB available.
+        It should be a partition with 5+ GB available.
     subject_id: str
         Subject identifier.
     dwi: str
@@ -568,7 +569,8 @@ def mrtrix_connectome_pipeline(outdir,
 
 def voxel_to_node_connectivity(probtrackx2_dir, nodes, connectome_lut, outdir,
                                basename="connectome"):
-    """ When using the --omatrix3 option in Probtrackx2, the result is a
+    """
+    When using the --omatrix3 option in Probtrackx2, the result is a
     VOXELxVOXEL connectivity matrix. This function creates the NODExNODE
     (i.e. ROIxROI) connectivity matrix for the given parcellation.
 
@@ -682,7 +684,8 @@ def probtrackx2_connectome_pipeline(outdir,
                                     snapshots=True,
                                     fs_sh=DEFAULT_FREESURFER_PATH,
                                     fsl_sh=DEFAULT_FSL_PATH):
-    """ Compute the connectome of a given parcellation, like the FreeSurfer
+    """
+    Compute the connectome of a given parcellation, like the FreeSurfer
     aparc+aseg segmentation, using ProbTrackx2.
 
     Requirements:
@@ -711,7 +714,7 @@ def probtrackx2_connectome_pipeline(outdir,
         Directory where to output.
     tempdir: str
         Path to the directory where temporary directories should be written.
-        If you be on a partition with 5+ GB available.
+        It should be a partition with 5+ GB available.
     subject_id: str
         Subject id used with FreeSurfer 'recon-all' command.
     t1_parc: str
@@ -916,3 +919,324 @@ def probtrackx2_connectome_pipeline(outdir,
         connectome_snapshot(connectome, snapshot, labels=labels,
                             transform=numpy.log1p, dpi=300, labels_size=4,
                             colorbar_title="log(# of tracks)")
+
+
+def mitk_connectome_pipeline(outdir,
+                             subject_id,
+                             dwi,
+                             bvals,
+                             bvecs,
+                             nodif_brain,
+                             nodif_brain_mask,
+                             t1_parc,
+                             t1_parc_lut,
+                             connectome_lut,
+                             fix_freesurfer_subcortical=False,
+                             subjects_dir=None,
+                             sh_order=4,
+                             reg_factor=0.006,
+                             nb_iterations=5e8,
+                             particle_length=0,
+                             particle_width=0,
+                             particle_weight=0,
+                             start_temperature=0.1,
+                             end_temperature=0.001,
+                             inex_energy_balance=0,
+                             min_fiber_length=20,
+                             curvature_threshold=45,
+                             tempdir=None,
+                             snapshots=True,
+                             fs_sh=DEFAULT_FREESURFER_PATH,
+                             fsl_sh=DEFAULT_FSL_PATH):
+    """
+    Wrapper to the MITK global tractography tool (Gibbs Tracking).
+
+    Parameters
+    ----------
+    outdir: str
+        Directory where to output.
+    subject_id: str
+        Subject id used with FreeSurfer 'recon-all' command.
+    dwi: str
+        Path to the diffusion-weighted images (Nifti required).
+    bvals: str
+        Path to the bvalue list.
+    bvecs: str
+        Path to the list of diffusion-sensitized directions.
+    t1_parc: str
+        Path to the parcellation that defines the nodes of the connectome, e.g.
+        aparc+aseg.mgz from FreeSurfer.
+    t1_parc_lut: str
+        Path to the Look Up Table for the passed parcellation in the
+        FreeSurfer LUT format. If you T1 parcellation is from FreeSurfer, this
+        will most likely be <$FREESURFER_HOME>/FreeSurferColorLUT.txt.
+    connectome_lut: str
+        Path to a Look Up Table in the FreeSurfer LUT format, listing the
+        regions from the parcellation to use as nodes in the connectome. The
+        region names should match the ones used in the <t1_parc_lut> LUT and
+        the integer labels should be the row/col positions in the connectome.
+        Alternatively it can be set to 'Lausanne2008' to use the predefined
+        LUT for the Lausanne 2008 atlas, which is based on the FreeSurfer
+        aparc+aseg parcellation.
+    nodif_brain: str
+        Path to the preprocessed brain-only DWI volume.
+    nodif_brain_mask: str
+        Path to the brain binary mask.
+    fix_freesurfer_subcortical: bool, default False
+        If the <t1_parc> is aparc+aseg or aparc.a2009s+aseg from FreeSurfer,
+        set this option to True, to recompute the subcortical segmentations
+        of the 5 structures that are uncorrectly segmented by FreeSurfer,
+        using FSL FIRST.
+    subjects_dir: str or None, default None
+        Path to the FreeSurfer subjects directory. Required if the FreeSurfer
+        environment variable (i.e. $SUBJECTS_DIR) is not set.
+    sh_order: int, default 4
+        Qball reconstruction spherical harmonics order.
+    reg_factor: float, default
+        Qball reconstruction regularization factor..
+    nb_iterations: int, default 5E8
+        Gibbs tracking number of iterations.
+    particle_length: float, default 0
+         Gibbs tracking particle length, selected automatically if 0.
+    particle_width: float, default 0
+        Gibbs tracking particle width, selected automatically if 0.
+    particle_weight: float, default 0
+        Gibbs tracking particle weight, selected automatically if 0.
+    start_temperature: float, default 0.1
+        Gibbs tracking start temperature.
+    end_temperature: float, default 0.001
+        Gibbs tracking end temperature.
+    inex_energy_balance: float, default 0
+        Gibbs tracking weighting between in/ext energies.
+    min_fiber_length: int, default 20
+        Minimum fiber length in mm. Fibers that are shorter are discarded.
+    curvature_threshold: int, default 45
+        Maximum fiber curvature in degrees.
+    tempdir: str
+        Path to the directory where temporary directories should be written.
+        It should be a partition with 5+ GB available.
+    snapshots: bool, default True
+        If True, create PNG snapshots for QC.
+    fs_sh: str, default NeuroSpin path
+        Path to the Bash script setting the FreeSurfer environment
+    fsl_sh: str, default NeuroSpin path
+        Path to the Bash script setting the FSL environment.
+
+    Returns
+    -------
+
+    """
+    # -------------------------------------------------------------------------
+    # STEP 0 - Check arguments
+
+    # FreeSurfer subjects_dir
+    subjects_dir = get_or_check_freesurfer_subjects_dir(subjects_dir)
+
+    if connectome_lut.lower() == "lausanne2008":
+        module_dir = os.path.dirname(os.path.abspath(__file__))
+        connectome_lut = os.path.join(module_dir, "Lausanne2008LUT.txt")
+
+    # Check input paths
+    paths_to_check = [dwi, bvals, bvecs, t1_parc, t1_parc_lut, connectome_lut,
+                      nodif_brain_mask, fs_sh, fsl_sh]
+    for p in paths_to_check:
+        if not os.path.exists(p):
+            raise ValueError("File or directory does not exist: %s" % p)
+
+    # Create <outdir> if not existing
+    if not os.path.isdir(outdir):
+        os.makedirs(outdir)
+
+    # -------------------------------------------------------------------------
+    # STEP 1 - Compute T1 <-> DWI rigid transformation
+
+    # FreeSurfer T1 to Nifti
+    fs_t1_brain = os.path.join(subjects_dir, subject_id, "mri", "brain.mgz")
+    t1_brain = os.path.join(outdir, "t1_brain.nii.gz")
+    cmd_1a = ["mri_convert", fs_t1_brain, t1_brain]
+    FSWrapper(cmd_1a, shfile=fs_sh)()
+
+    # Register diffusion to T1
+    dif2anat_dat = os.path.join(outdir, "dif2anat.dat")
+    cmd_1b = ["bbregister",
+              "--s",      subject_id,
+              "--mov",    nodif_brain,
+              "--reg",    dif2anat_dat,
+              "--dti",
+              "--init-fsl"]
+    FSWrapper(cmd_1b, subjects_dir=subjects_dir, shfile=fs_sh,
+              add_fsl_env=True, fsl_sh=fsl_sh)()
+
+    # Align FreeSurfer T1 brain to diffusion without downsampling
+    fs_t1_brain = os.path.join(subjects_dir, subject_id, "mri", "brain.mgz")
+    t1_brain_to_dif = os.path.join(outdir, "fs_t1_brain_to_dif.nii.gz")
+    cmd_2b = ["mri_vol2vol",
+              "--mov", nodif_brain,
+              "--targ", fs_t1_brain,
+              "--inv",
+              "--no-resample",
+              "--o", t1_brain_to_dif,
+              "--reg", dif2anat_dat,
+              "--no-save-reg"]
+    FSWrapper(cmd_2b, shfile=fs_sh)()
+
+    # Align T1 parcellation to diffusion without downsampling
+    parc_name = os.path.basename(t1_parc).split(".nii")[0].split(".mgz")[0]
+    t1_parc_to_dif = os.path.join(outdir, parc_name + "_to_dif.nii.gz")
+    cmd_1c = ["mri_vol2vol",
+              "--mov",  nodif_brain,
+              "--targ", t1_parc,
+              "--inv",
+              "--no-resample",
+              "--interp", "nearest",
+              "--o",   t1_parc_to_dif,
+              "--reg", dif2anat_dat,
+              "--no-save-reg"]
+    FSWrapper(cmd_1c, shfile=fs_sh)()
+
+    # -------------------------------------------------------------------------
+    # STEP 2 - Convert LUT
+    # Change integer labels in the LUT so that the each label corresponds
+    # to the row/col position in the connectome
+    nodes = os.path.join(outdir, "nodes.nii.gz")
+    cmd_2 = ["labelconvert", t1_parc_to_dif, t1_parc_lut, connectome_lut,
+             nodes, "-nthreads", "0", "-failonwarn"]
+    subprocess.check_call(cmd_2)
+
+    # -------------------------------------------------------------------------
+    # STEP 3 - If the T1 parcellation is aparc+aseg or aparc.a2009s+aseg
+    # from FreeSurfer, this option allows the recompute the subcortical
+    # segmentations of 5 structures that are uncorrectly segmented by
+    # FreeSurfer, using FSL FIRST
+    if fix_freesurfer_subcortical:
+        fixed_nodes = os.path.join(outdir, "nodes_fixSGM.nii.gz")
+        nodes = fix_freesurfer_subcortical_parcellation(parc=nodes,
+                                                        t1_brain=t1_brain,
+                                                        lut=connectome_lut,
+                                                        output=fixed_nodes,
+                                                        tempdir=tempdir,
+                                                        nb_threads=0,
+                                                        fsl_sh=fsl_sh)
+
+    # -------------------------------------------------------------------------
+    # STEP 4 - Apply brain mask to DWI before Qball reconstruction
+    dwi_brain = os.path.join(outdir, "dwi_brain.nii.gz")
+    cmd_4 = ["fslmaths", dwi, "-mas", nodif_brain_mask, dwi_brain]
+    FSLWrapper(cmd_4, shfile=fsl_sh)()
+
+    # MITK requires the Nifti to have an .fslgz extension and the bvals/bvecs
+    # to have the same name with .bvals/.bvecs extension
+    dwi_brain_fslgz = os.path.join(outdir, "dwi_brain.fslgz")
+    shutil.copyfile(dwi_brain, dwi_brain_fslgz)
+    shutil.copyfile(bvals, "%s.bvals" % dwi_brain_fslgz)
+    shutil.copyfile(bvecs, "%s.bvecs" % dwi_brain_fslgz)
+
+    # -------------------------------------------------------------------------
+    # STEP 5 - Qball reconstruction
+    qball_coefs = os.path.join(outdir, "sphericalHarmonics_CSA_Qball.qbi")
+    cmd_5 = ["MitkQballReconstruction.sh",
+             "-i",  dwi_brain_fslgz,
+             "-o",  qball_coefs,
+             "-sh", "%i" % sh_order,
+             "-r",  "%f" % reg_factor,
+             "-csa"]
+    # TODO: create MITK wrapper with LD_LIBRARY_PATH and QT_PLUGIN_PATH
+    subprocess.check_call(cmd_5)
+
+    # -------------------------------------------------------------------------
+    # STEP 6 - Create white matter probability map with FSL Fast
+
+    # Create directory for temporary files
+    fast_tempdir = tempfile.mkdtemp(prefix="FSL_fast_", dir=tempdir)
+    base_outpath = os.path.join(fast_tempdir, "brain")
+    cmd_6 = ["fast", "-o", base_outpath, t1_brain_to_dif]
+    FSLWrapper(cmd_6, shfile=fsl_sh)()
+
+    # Save the white matter probability map
+    wm_prob_map = os.path.join(outdir, "wm_prob_map.nii.gz")
+    shutil.copyfile(base_outpath + "_pve_2.nii.gz", wm_prob_map)
+
+    # Clean temporary directory
+    shutil.rmtree(fast_tempdir)
+
+    # -------------------------------------------------------------------------
+    # STEP 7 - Gibbs tracking (global tractography)
+
+    # Create XML parameter file
+    root = ElementTree.Element("global_tracking_parameter_file")
+    root.set("version", "1.0")
+    attributes = {"iterations":          "%i" % nb_iterations,
+                  "particle_length":     "%f" % particle_length,
+                  "particle_width":      "%f" % particle_width,
+                  "particle_weight":     "%f" % particle_weight,
+                  "temp_start":          "%f" % start_temperature,
+                  "temp_end":            "%f" % end_temperature,
+                  "inexbalance":         "%f" % inex_energy_balance,
+                  "fiber_length":        "%i" % min_fiber_length,
+                  "curvature_threshold": "%i" % curvature_threshold}
+    ElementTree.SubElement(root, "parameter_set", attrib=attributes)
+    tree = ElementTree.ElementTree(element=root)
+    path_xml = os.path.join(outdir, "parameters.gtp")
+    tree.write(path_xml)
+
+    # Run tractography
+    mitk_tractogram = os.path.join(outdir, "fibers.fib")
+    cmd_7 = ["MitkGibbsTracking.sh",
+             "-i", qball_coefs,
+             "-p", path_xml,
+             "-m", wm_prob_map,
+             "-o", mitk_tractogram]
+    subprocess.check_call(cmd_7)
+
+    # -------------------------------------------------------------------------
+    # STEP 8 - Convert MITK streamlines so that they can be used in MRtrix
+
+    # Convert the streamlines to TRK format (nibabel readable) using the
+    # tractconverter package. If you directly request TRK format to MITK the
+    # affine matrix is missing in the header and nibabel refuses to load it.
+    tmp_trk_tractogram = os.path.join(outdir, "fibers.tmp.trk")
+    mitk_format = tractconverter.detect_format(mitk_tractogram)
+    in_fibers = mitk_format(mitk_tractogram, anatFile=nodif_brain)
+    out_fibers = tractconverter.TRK.create(tmp_trk_tractogram,
+                                           hdr=in_fibers.hdr,
+                                           anatFile=nodif_brain)
+    tractconverter.convert(in_fibers, out_fibers)
+
+    # Correct the orientation: the header stores 'RAS' but it is 'RPS'
+    fibers = nibabel.streamlines.load(tmp_trk_tractogram)
+    fibers.header["voxel_order"] = "RPS"
+
+    # Subtract the translation part of the affine to all coordinates
+    for array in fibers.streamlines:
+        array -= fibers.header["voxel_to_rasmm"][:3, 3]
+
+    # Save the result
+    trk_tractogram = os.path.join(outdir, "fibers.trk")
+    fibers.save(trk_tractogram)
+
+    # Use the tractconverter package to convert from TRK to TCK format
+    tck_tractogram = os.path.join(outdir, "fibers.tck")
+    trk_format = tractconverter.detect_format(trk_tractogram)
+    in_fibers = trk_format(trk_tractogram, anatFile=nodif_brain)
+    out_fibers = tractconverter.TCK.create(tck_tractogram, hdr=in_fibers.hdr,
+                                           anatFile=nodif_brain)
+    tractconverter.convert(in_fibers, out_fibers)
+
+    # -------------------------------------------------------------------------
+    # STEP 9 - Create connectome by combining fibers and nodes
+    connectome_csv = os.path.join(outdir, "connectome.csv")
+    cmd_9 = ["tck2connectome", tck_tractogram, nodes, connectome_csv]
+    subprocess.check_call(cmd_9)
+
+    # Read labels from LUT and create a list of labels: labels.txt
+    labels_array = numpy.loadtxt(connectome_lut, dtype=str, usecols=[1])
+    path_labels = os.path.join(outdir, "labels.txt")
+    numpy.savetxt(path_labels, labels_array, fmt="%s")
+
+    if snapshots:
+        snapshot = os.path.join(outdir, "connectome.png")
+        connectome_snapshot(connectome_csv, snapshot, labels=path_labels,
+                            transform=numpy.log1p, dpi=300, labels_size=4,
+                            colorbar_title="log(# of tracks)")
+
+    return connectome_csv
