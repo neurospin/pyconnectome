@@ -323,8 +323,7 @@ def get_region_names_of_lausanne_2008_atlas():
     -------
     atlas_names: list of str
         Ordered region names of the Lausanne 2008 atlas.
-    """
-
+    """    
     # All left cortical regions of the Desikan atlas except the corpus callosum
     lh_ctx_rois = [
         'ctx-lh-lateralorbitofrontal',
@@ -383,7 +382,7 @@ def get_region_names_of_lausanne_2008_atlas():
     # Non-hemispheric subcortical region
     axial_subctx_rois = ['Brain-Stem']
 
-    atlas_names = (lh_ctx_rois + lh_subctx_rois + rh_ctx_rois +
+    atlas_names = (["Unknown"] + lh_ctx_rois + lh_subctx_rois + rh_ctx_rois +
                    rh_subctx_rois + axial_subctx_rois)
 
     return atlas_names
@@ -420,7 +419,7 @@ def create_lausanne2008_lut(outdir, freesurfer_lut=None):
     table = numpy.array(sorted(table, key=lambda r: roi_names.index(r[1])))
 
     # Replace FreeSurfer label by row/col position in connectome
-    table[:, 0] = numpy.arange(1, table.shape[0] + 1)
+    table[:, 0] = numpy.arange(table.shape[0])
 
     # Header lines
     header_1 = "# Look up Table for Lausanne 2008 atlas\n"
