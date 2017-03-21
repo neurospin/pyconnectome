@@ -323,7 +323,7 @@ def get_region_names_of_lausanne_2008_atlas():
     -------
     atlas_names: list of str
         Ordered region names of the Lausanne 2008 atlas.
-    """    
+    """
     # All left cortical regions of the Desikan atlas except the corpus callosum
     lh_ctx_rois = [
         'ctx-lh-lateralorbitofrontal',

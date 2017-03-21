@@ -1,5 +1,6 @@
 # Look up Table for Lausanne 2008 atlas
 #<Label> <Label Name> <R> <G> <B> <A>
+0        Unknown                                            0    0    0    0   
 1        ctx-lh-lateralorbitofrontal                        35   75   50   0   
 2        ctx-lh-parsorbitalis                               20   100  50   0   
 3        ctx-lh-frontalpole                                 100  0    100  0   
