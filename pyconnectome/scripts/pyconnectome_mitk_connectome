@@ -26,6 +26,7 @@ except:
 
 # PyFreeSurfer import
 from pyfreesurfer import DEFAULT_FREESURFER_PATH
+from pyfreesurfer.utils.filetools import get_or_check_freesurfer_subjects_dir
 
 # Package import
 from pyconnectome import __version__ as version
@@ -87,7 +88,7 @@ def get_cmd_line_args():
              "[-W <particle width>] [-G <particle weight>] "
              "[-T <start temperature>] [-U <end temperature>] "
              "[-B <energies balance>] [-M <min length>] [-C <max curvature>] "
-             "[-D <tempdir>] [-Q] [-H] [-F] [-v <level>]")
+             "[-E <search radius>] [-D <tempdir>] [-Q] [-H] [-F] [-v <level>]")
     parser = argparse.ArgumentParser(prog="python probtrackx2_connectome.py",
                                      usage=usage, description=DOC)
 
@@ -200,6 +201,11 @@ def get_cmd_line_args():
     parser.add_argument("-C", "--curvature-threshold", type=int,
                         default=45, metavar="<int>",
                         help="Maximum fiber curvature in degrees.")
+
+    parser.add_argument("-E", "--search-radius", type=float, default=2.0,
+                        metavar="<float>",
+                        help="Search radius in mm, used to associate a fiber "
+                              "end to a node.")
 
     parser.add_argument("-D", "--tempdir", metavar="<path>",
                         help="Where to write temporary directories e.g. /tmp.")
