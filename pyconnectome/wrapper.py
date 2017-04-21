@@ -71,8 +71,13 @@ class FSLWrapper(object):
             if self.exitcode != 0:
                 raise FSLDependencyError("condor_qsub", "Condor")
 
-    def __call__(self):
+    def __call__(self, cwdir=None):
         """ Run the FSL command.
+
+        Parameters
+        ----------
+        cwdir: str (optional, default None)
+            the working directory that will be passed to the subprocess.
         """
         # Check FSL has been configured so the command can be found
         process = subprocess.Popen(["which", self.cmd[0]],
@@ -88,7 +93,8 @@ class FSLWrapper(object):
         process = subprocess.Popen(self.cmd,
                                    env=self.environment,
                                    stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE)
+                                   stderr=subprocess.PIPE,
+                                   cwd=cwdir)
         self.stdout, self.stderr = process.communicate()
         self.exitcode = process.returncode
 
