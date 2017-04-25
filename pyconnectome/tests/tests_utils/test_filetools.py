@@ -89,7 +89,7 @@ class Fslreorient2std(unittest.TestCase):
             mock.call(["fslreorient2std",
                       self.kwargs["input_image"],
                       self.kwargs["output_image"]],
-                      env={}, stderr=-1, stdout=-1)],
+                      cwd=None, env={}, stderr=-1, stdout=-1)],
             self.mock_popen.call_args_list)
         self.assertEqual(len(self.mock_env.call_args_list), 1)
 
@@ -158,7 +158,7 @@ class FslApplyMask(unittest.TestCase):
                        self.kwargs["input_file"],
                        "-mas", self.kwargs["mask_file"],
                        self.kwargs["output_fileroot"]],
-                      env={}, stderr=-1, stdout=-1)],
+                      cwd=None, env={}, stderr=-1, stdout=-1)],
             self.mock_popen.call_args_list)
         self.assertEqual(len(self.mock_env.call_args_list), 1)
 

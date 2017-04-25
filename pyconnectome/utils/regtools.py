@@ -95,10 +95,10 @@ def mcflirt(in_file, out_fileroot, cost="normcorr", bins=256, dof=6,
 
     # Get generated outputs
     func_files = [elem for elem in glob.glob(out_fileroot + ".*")
-                 if not elem.endswith(".par") and os.path.isfile(elem)]
+                  if not elem.endswith(".par") and os.path.isfile(elem)]
     if len(func_files) != 1:
-        raise ValueError("Expect only one mcflirt output file, not {0}.".format(
-            func_files))
+        raise ValueError(
+            "Expect only one mcflirt output file, not {0}.".format(func_files))
     func_file = func_files[0]
     mean_file = None
     if reg_to_mean:
@@ -272,7 +272,8 @@ def fnirt(in_file, ref_file, affine_file, outdir, inmask_file=None, verbose=0,
         cmd += ["--inmask={0}".format(inmask_file)]
     basename = os.path.basename(in_file).split(".")[0]
     outputs = []
-    for param in ("cout", "iout", "fout", "jout", "refout", "intout", "logout"):
+    for param in ("cout", "iout", "fout", "jout", "refout", "intout",
+                  "logout"):
         ext = ".nii.gz"
         if param in ("logout"):
             ext = ".txt"

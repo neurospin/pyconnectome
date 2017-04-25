@@ -9,6 +9,7 @@
 # System import
 import unittest
 import sys
+import os
 
 # COMPATIBILITY: since python 3.3 mock is included in unittest module
 python_version = sys.version_info
@@ -122,16 +123,21 @@ class FslBet2(unittest.TestCase):
 
         # Test execution
         returned_files = bet2(**self.kwargs)
+        output_fileroot = os.path.join(
+            self.kwargs["output_fileroot"],
+            os.path.basename(self.kwargs["input_file"]).split(".")[0] +
+            "_brain")
         self.assertEqual([
             mock.call(["which", "bet2"],
                       env={"FSLOUTPUTTYPE": "NIFTI"},
                       stderr=-1, stdout=-1),
             mock.call(["bet2",
                        self.kwargs["input_file"],
-                       self.kwargs["output_fileroot"],
+                       output_fileroot,
                        "-f", str(self.kwargs["f"]),
                        "-g", str(self.kwargs["g"])],
-                      env={"FSLOUTPUTTYPE": "NIFTI"}, stderr=-1, stdout=-1)],
+                      cwd=None, env={"FSLOUTPUTTYPE": "NIFTI"}, stderr=-1,
+                      stdout=-1)],
             self.mock_popen.call_args_list)
         self.assertEqual(len(self.mock_env.call_args_list), 1)
         self.assertEqual(len(returned_files), 11)

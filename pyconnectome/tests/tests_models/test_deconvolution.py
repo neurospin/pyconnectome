@@ -10,6 +10,7 @@
 import unittest
 import sys
 import os
+import pwd
 
 # COMPATIBILITY: since python 3.3 mock is included in unittest module
 python_version = sys.version_info
@@ -86,16 +87,17 @@ class FslBedpostx(unittest.TestCase):
         mock_isdir.side_effect = [True, False]
 
         # Test execution
+        login = pwd.getpwuid(os.getuid())[0]
         (outdir, merged_th, merged_ph,
          merged_f, mean_th, mean_ph,
          mean_f, mean_d, mean_S0, dyads) = bedpostx(**self.kwargs)
 
         self.assertEqual([
             mock.call(["which", "condor_qsub"],
-                      env={"FSLPARALLEL": "condor", "USER": os.getlogin()},
+                      env={"FSLPARALLEL": "condor", "USER": login},
                       stderr=-1, stdout=-1),
             mock.call(["which", "bedpostx"],
-                      env={"FSLPARALLEL": "condor", "USER": os.getlogin()},
+                      env={"FSLPARALLEL": "condor", "USER": login},
                       stderr=-1, stdout=-1),
             mock.call(["bedpostx",
                        self.kwargs["subjectdir"],
@@ -108,7 +110,7 @@ class FslBedpostx(unittest.TestCase):
                        "--rician",
                        "-g",
                        "-c"],
-                      env={"FSLPARALLEL": "condor", "USER": os.getlogin()},
+                      cwd=None, env={"FSLPARALLEL": "condor", "USER": login},
                       stderr=-1, stdout=-1)],
             self.mock_popen.call_args_list)
         self.assertEqual(len(self.mock_env.call_args_list), 1)
@@ -174,7 +176,7 @@ class FslBedpostxDatacheck(unittest.TestCase):
             mock.call(["which", "bedpostx_datacheck"],
                       env={}, stderr=-1, stdout=-1),
             mock.call(["bedpostx_datacheck", self.kwargs["data_dir"]],
-                      env={}, stderr=-1, stdout=-1)],
+                      cwd=None, env={}, stderr=-1, stdout=-1)],
             self.mock_popen.call_args_list)
         self.assertEqual(len(self.mock_env.call_args_list), 1)
 

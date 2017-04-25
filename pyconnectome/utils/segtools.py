@@ -232,8 +232,7 @@ def bet2(input_file, output_fileroot, outline=False, mask=False,
            input_file,
            output_fileroot,
            "-f", str(f),
-           "-g", str(g),
-           ]
+           "-g", str(g)]
 
     # Set optional arguments
     if outline:

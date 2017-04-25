@@ -109,7 +109,7 @@ class FslProbtrackx2(unittest.TestCase):
                        "--fibthresh=%f" % self.kwargs["fibthresh"],
                        "--sampvox=%f" % self.kwargs["sampvox"],
                        "--randfib=%i" % self.kwargs["randfib"]],
-                      env={}, stderr=-1, stdout=-1)],
+                      cwd=None, env={}, stderr=-1, stdout=-1)],
             self.mock_popen.call_args_list)
         self.assertEqual(len(self.mock_env.call_args_list), 1)
         self.assertEqual(len(returned_files), 2)

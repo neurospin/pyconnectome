@@ -8,6 +8,7 @@
 
 # System import
 import os
+import pwd
 import json
 import warnings
 import subprocess
@@ -60,7 +61,7 @@ class FSLWrapper(object):
         # Condor specific setting
         if fsl_parallel:
             self.environment["FSLPARALLEL"] = "condor"
-            self.environment["USER"] = os.getlogin()
+            self.environment["USER"] = pwd.getpwuid(os.getuid())[0]
             process = subprocess.Popen(
                 ["which", "condor_qsub"],
                 env=self.environment,
