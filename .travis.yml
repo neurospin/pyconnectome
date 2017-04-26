@@ -27,7 +27,7 @@ install:
     - pip install coveralls
     - pip install pep8
     - pip install nibabel
-    - pip install https://github.com/neurospin/pyfreesurfer
+    - pip install git+https://github.com/neurospin/pyfreesurfer
     - pip install .
 
 script:
