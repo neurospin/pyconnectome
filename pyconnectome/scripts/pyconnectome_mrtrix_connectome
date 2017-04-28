@@ -187,8 +187,16 @@ def get_cmd_line_args():
              "FreeSurfer set this option to True, to recompute the "
              "subcortical segmentations of 5 structures that are uncorrectly "
              "segmented by FreeSurfer, using FSL FIRST")
-    parser.add_argument("-u", "--fix-freesurfer-subcortical",
+    parser.add_argument("-X", "--fix-freesurfer-subcortical",
                         action="store_true", help=uhelp)
+
+    Fhelp = ("By default FSL FAST is run on the FreeSurfer 'brain.mgz'. If "
+             "you want the WM probability map to be computed from another T1, "
+             "pass the T1 brain-only volume. Note that it has to be aligned "
+             "with diffusion. This argument is useful for HCP, where some "
+             "FreeSurfer 'brain.mgz' cannot be processed by FSL FAST.")
+    parser.add_argument("-A", "--fast-t1-brain", type=is_file,
+                        metavar="<path>", help=Fhelp)
 
     parser.add_argument("-D", "--delete-raw-tracks", action="store_true",
                         help="To save disk space, delete the raw tracks when "
