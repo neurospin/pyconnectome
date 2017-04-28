@@ -146,6 +146,7 @@ def mrtrix_connectome_pipeline(outdir,
                                nodif_brain=None,
                                nodif_brain_mask=None,
                                fix_freesurfer_subcortical=False,
+                               fast_t1_brain=None,
                                subjects_dir=None,
                                mif_gz=True,
                                delete_raw_tracks=False,
@@ -229,6 +230,12 @@ def mrtrix_connectome_pipeline(outdir,
         set this option to True, to recompute the subcortical segmentations
         of the 5 structures that are uncorrectly segmented by FreeSurfer,
         using FSL FIRST.
+    fast_t1_brain: str, default None
+        By default FSL FAST is run on the FreeSurfer 'brain.mgz'. If you want
+        the WM probability map to be computed from another T1, pass the T1
+        brain-only volume. Note that it has to be aligned with diffusion.
+        This argument is useful for HCP, where some FreeSurfer 'brain.mgz'
+        cannot be processed by FSL FAST.
     subjects_dir: str, default None
         Path to the FreeSurfer subjects directory. Required if the environment
         variable $SUBJECTS_DIR is not set.
@@ -266,7 +273,7 @@ def mrtrix_connectome_pipeline(outdir,
     # Check input and optional paths
     paths_to_check = [dwi, bvals, bvecs, t1_parc, t1_parc_lut, connectome_lut,
                       fsl_sh]
-    for p in [nodif_brain, nodif_brain_mask]:
+    for p in [nodif_brain, nodif_brain_mask, fast_t1_brain]:
         if p is not None:
             paths_to_check.append(p)
     for p in paths_to_check:
@@ -380,7 +387,8 @@ def mrtrix_connectome_pipeline(outdir,
     # STEP 3 - "5 tissue types" segmentation
     # Generate the 5TT image based on a FSL FAST
     five_tissues = os.path.join(outdir, "5TT%s" % MIF_EXT)
-    cmd_3 = ["5ttgen", "fsl", t1_brain_to_dif, five_tissues, "-premasked",
+    fast_t1_brain = t1_brain_to_dif if fast_t1_brain is None else fast_t1_brain
+    cmd_3 = ["5ttgen", "fsl", fast_t1_brain, five_tissues, "-premasked",
              "-tempdir", tempdir, "-nthreads", "%i" % nb_threads]
     FSLWrapper(cmd_3, env=os.environ, shfile=fsl_sh)()
 
