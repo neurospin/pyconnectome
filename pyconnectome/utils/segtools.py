@@ -167,7 +167,7 @@ def bet2(input_file, output_fileroot, outline=False, mask=False,
     input_file: (mandatory)
         Input image.
     output_fileroot: (mandatory)
-        Output image.
+        Output directory.
     outline: bool (optional, default False)
         Generate brain surface outline overlaid onto original image.
     mask: bool (optional, default False)
@@ -226,14 +226,16 @@ def bet2(input_file, output_fileroot, outline=False, mask=False,
     # Check that the output directory exists
     if not os.path.isdir(output_fileroot):
         os.mkdir(output_fileroot)
+    output_fileroot = os.path.join(
+        output_fileroot,
+        os.path.basename(input_file).split(".")[0] + "_brain")
 
     # Define the FSL command
     cmd = ["bet2",
            input_file,
            output_fileroot,
            "-f", str(f),
-           "-g", str(g),
-           ]
+           "-g", str(g)]
 
     # Set optional arguments
     if outline:

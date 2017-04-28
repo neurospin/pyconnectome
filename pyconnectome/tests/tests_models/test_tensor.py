@@ -127,7 +127,8 @@ class FslDtiFit(unittest.TestCase):
                        "-o", os.path.join(self.kwargs["out"], "dtifit"),
                        "--wls",
                        "--save_tensor"],
-                      env={"FSLOUTPUTTYPE": "NIFTI"}, stderr=-1, stdout=-1)],
+                      cwd=None, env={"FSLOUTPUTTYPE": "NIFTI"}, stderr=-1,
+                      stdout=-1)],
             self.mock_popen.call_args_list)
         self.assertEqual(len(self.mock_env.call_args_list), 1)
         self.assertEqual(len(returned_files), 11)

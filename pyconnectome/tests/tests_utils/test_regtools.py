@@ -103,7 +103,7 @@ class FslFlirt(unittest.TestCase):
                        "-verbose", str(self.kwargs["verbose"]),
                        "-out", out,
                        "-omat", omat],
-                      env={}, stderr=-1, stdout=-1)],
+                      cwd=None, env={}, stderr=-1, stdout=-1)],
             self.mock_popen.call_args_list)
         self.assertEqual(len(self.mock_env.call_args_list), 1)
 

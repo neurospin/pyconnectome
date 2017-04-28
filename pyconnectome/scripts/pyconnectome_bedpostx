@@ -339,10 +339,9 @@ if not os.path.isdir(bedpostx_outdir) or len(os.listdir(bedpostx_outdir)) == 0:
         b=burnin,
         fslconfig=fsl_config,
         fsl_parallel=parallel)
-else:
-    merged_files = glob.glob(os.path.join(bedpostx_outdir, "merged*"))
-    if len(merged_files) == 0:
-        raise ValueError("FilesDoNotExist: in '{0}'.".format(bedpostx_outdir))
+merged_files = glob.glob(os.path.join(bedpostx_outdir, "merged*"))
+if len(merged_files) == 0:
+    raise ValueError("FilesDoNotExist: in '{0}'.".format(bedpostx_outdir))
 
 
 """

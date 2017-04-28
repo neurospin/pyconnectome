@@ -94,7 +94,12 @@ def mcflirt(in_file, out_fileroot, cost="normcorr", bins=256, dof=6,
     fslprocess()
 
     # Get generated outputs
-    func_file = glob.glob(out_fileroot + ".*")[0]
+    func_files = [elem for elem in glob.glob(out_fileroot + ".*")
+                  if not elem.endswith(".par") and os.path.isfile(elem)]
+    if len(func_files) != 1:
+        raise ValueError(
+            "Expect only one mcflirt output file, not {0}.".format(func_files))
+    func_file = func_files[0]
     mean_file = None
     if reg_to_mean:
         mean_file = glob.glob(out_fileroot + "_mean_reg.*")[0]
@@ -211,6 +216,76 @@ def flirt(in_file, ref_file, omat=None, out=None, init=None, cost="corratio",
     fslprocess()
 
     return out, omat
+
+
+def fnirt(in_file, ref_file, affine_file, outdir, inmask_file=None, verbose=0,
+          shfile=DEFAULT_FSL_PATH):
+    """ Wraps command fnirt.
+
+    Parameters
+    ----------
+    in_file: str (mandatory)
+        Input volume.
+    ref_file: str (mandatory)
+        Reference volume.
+    affine_file: str (optional, default None)
+        Affine matrix filename in 4x4 ascii format.
+    outdir: str
+        The destination folder.
+    inmask_file: str (optional, default None)
+        Name of file with mask in input image space.
+    verbose: int (optional)
+        0 is least and default.
+    shfile: str (optional, default DEFAULT_FSL_PATH)
+        The FSL configuration batch.
+
+    Returns
+    -------
+    cout: str
+        Name of output file with field coefficients.
+    iout: str
+        Name of output image.
+    fout: str
+        Name of output file with field.
+    jout: str
+        Name of file for writing out the Jacobian of the field.
+    refout: str
+        Name of file for writing out intensity modulated.
+    intout: str
+        Name of files for writing information pertaining to intensity mapping
+    logout: str
+        Name of log-file.
+    """
+    # Check the input parameters
+    for filename in (in_file, ref_file, affine_file, inmask_file):
+        if filename is not None and not os.path.isfile(filename):
+            raise ValueError(
+                "'{0}' is not a valid input file.".format(filename))
+
+    # Define the FSL command
+    cmd = ["fnirt",
+           "--ref={0}".format(ref_file),
+           "--in={0}".format(in_file),
+           "--aff={0}".format(affine_file),
+           "--verbose={0}".format(verbose)]
+    if inmask_file is not None:
+        cmd += ["--inmask={0}".format(inmask_file)]
+    basename = os.path.basename(in_file).split(".")[0]
+    outputs = []
+    for param in ("cout", "iout", "fout", "jout", "refout", "intout",
+                  "logout"):
+        ext = ".nii.gz"
+        if param in ("logout"):
+            ext = ".txt"
+        outputs.append(
+            os.path.join(outdir, "{0}_{1}{2}".format(param, basename, ext)))
+        cmd += ["--{0}={1}".format(param, outputs[-1])]
+
+    # Call fnirt
+    fslprocess = FSLWrapper(cmd, shfile=shfile)
+    fslprocess()
+
+    return outputs
 
 
 def flirt2aff(mat_file, in_file, ref_file):
