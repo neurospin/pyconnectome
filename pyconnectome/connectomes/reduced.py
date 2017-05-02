@@ -514,18 +514,24 @@ def mrtrix_connectome_pipeline(outdir,
     else:
         raw_connectome = os.path.join(outdir, "tckgen_connectome.csv")
     cmd_12a = ["tck2connectome", tracks, nodes, raw_connectome,
+               "-keep_unassigned",  # Keep 'Unknown' label
+               "-assignment_end_voxels",
                "-nthreads", "%i" % nb_threads, "-failonwarn"]
     subprocess.check_call(cmd_12a)
 
     if sift:
         sift_connectome = os.path.join(outdir, "sift_connectome.csv")
         cmd_12b = ["tck2connectome", sift_tracks, nodes, sift_connectome,
+                   "-keep_unassigned",  # Keep 'Unknown' label
+                   "-assignment_end_voxels",
                    "-nthreads", "%i" % nb_threads, "-failonwarn"]
         subprocess.check_call(cmd_12b)
 
     if sift2:
         sift2_connectome = os.path.join(outdir, "sift2_connectome.csv")
         cmd_12c = ["tck2connectome", tracks, nodes, sift2_connectome,
+                   "-keep_unassigned",  # Keep 'Unknown' label
+                   "-assignment_end_voxels",
                    "-tck_weights_in", sift2_weights,
                    "-nthreads", "%i" % nb_threads, "-failonwarn"]
         subprocess.check_call(cmd_12c)
