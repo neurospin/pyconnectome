@@ -11,27 +11,29 @@
 import os
 import argparse
 import json
-
 from pprint import pprint
 from datetime import datetime
+import textwrap
+from argparse import RawTextHelpFormatter
 
 # Bredala module
 try:
     import bredala
     bredala.USE_PROFILER = False
     bredala.register("pyconnectome.connectomes.reduced",
-                     names=["probtrackx2_connectome_pipeline"])
+                     names=["probtrackx2_connectome"])
 except:
     pass
 
 # PyFreeSurfer import
 from pyfreesurfer import DEFAULT_FREESURFER_PATH
+from pyfreesurfer.wrapper import FSWrapper
 
 # Package import
 from pyconnectome import __version__ as version
 from pyconnectome import DEFAULT_FSL_PATH
 from pyconnectome.wrapper import FSLWrapper
-from pyconnectome.connectomes.reduced import probtrackx2_connectome_pipeline
+from pyconnectome.connectomes.reduced import probtrackx2_connectome
 
 
 # Parameters to keep trace
@@ -43,12 +45,9 @@ Compute the connectome of a given parcellation, like the FreeSurfer aparc+aseg
 segmentation, using FSL Probtrackx2. Assuming you have run Freesurfer and
 bedpostx.
 
-Command:
+Example of command for HCP, propagation through the white-grey interface:
 
-subject=000009963964
-root_dir=/neurospin/imagen/BL/processed
-
-python ~/git/pyconnectome/pyconnectome/scripts/pyconnectome_probtrackx2_reduced \
+python ~/git/pyconnectome/pyconnectome/scripts/pyconnectome_reduced_probtrackx2 \
     -s ${subject} \
     -B ${root_dir}/dwi_preproc_wo_fieldmap/${subject}/nodif_brain.nii.gz \
     -m ${root_dir}/dwi_preproc_wo_fieldmap/${subject}/nodif_brain_mask.nii.gz \
@@ -64,6 +63,9 @@ python ~/git/pyconnectome/pyconnectome/scripts/pyconnectome_probtrackx2_reduced 
     -u \
     -S /neurospin/imagen/BL/processed/freesurfer \
     -v 2
+
+Example of command for HCP, propagation through the white matter with fiber
+length normalization:
 """
 
 
@@ -88,97 +90,102 @@ def get_cmd_line_args():
     Create a command line argument parser and return a dict mapping
     <argument name> -> <argument value>.
     """
-    usage = ("%(prog)s -s <subject id> -i <dwi> -b <bvals> -r <bvecs> "
-             "-n <nodif_brain> -m <nodif_brain_mask> -x <bedpostx_dir> "
-             "-p <t1 parc> -f <t1 parc LUT> -c <'lausanne2008'|connectome LUT>"
-             "-o <outdir> -d <tempdir>  -n <nsamples> -p <nsteps> "
-             "-l <steplength> [options]")
-    parser = argparse.ArgumentParser(prog="python probtrackx2_connectome.py",
-                                     usage=usage, description=DOC)
+    parser = argparse.ArgumentParser(
+        prog="pyconnectome_reduced_probtrackx2",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=textwrap.dedent(doc))
 
     # Required arguments
-
-    parser.add_argument("-s", "--subject-id", required=True, metavar="<id>",
-                        help="Subject identifier.")
-
-    parser.add_argument("-B", "--nodif-brain", type=is_file, required=True,
-                        metavar="<path>",
-                        help="Preprocessed brain-only volume with bvalue=0.")
-
-    parser.add_argument("-m", "--nodif-brain-mask", type=is_file,
-                        required=True, metavar="<path>",
-                        help="Brain binary mask in diffusion.")
-
-    parser.add_argument("-x", "--bedpostx-dir", type=is_dir, required=True,
-                        metavar="<path>", help="Bedpostx output directory.")
-
-    parser.add_argument("-p", "--t1-parc", type=is_file, required=True,
-                        metavar="<path>",
-                        help="Path to the parcellation that defines the nodes "
-                             "of the connectome, e.g. aparc+aseg.mgz from Free"
-                             "surfer. Has to be in Freesurfer T1 space.")
-
-    fhelp = ("Path to the Look Up Table for the passed parcellation in the "
+    required = parser.add_argument_group("required arguments")
+    required.add_argument(
+        "-s", "--subject-id",
+        required=True, metavar="<id>",
+        help="Subject identifier.")
+    required.add_argument(
+        "-b", "--nodif-brain",
+        type=is_file, required=True, metavar="<path>",
+        help="Preprocessed brain-only volume with bvalue=0.")
+    required.add_argument(
+        "-m", "--nodif-brain-mask",
+        type=is_file, required=True, metavar="<path>",
+        help="Brain binary mask in diffusion.")
+    required.add_argument(
+        "-x", "--bedpostx-dir",
+        type=is_dir, required=True, metavar="<path>",
+        help="Bedpostx output directory.")
+    required.add_argument(
+        "-p", "--t1-parc",
+        type=is_file, required=True, metavar="<path>",
+        help="Path to the parcellation that defines the nodes "
+             "of the connectome, e.g. aparc+aseg.mgz from Free"
+             "surfer. Has to be in Freesurfer T1 space.")
+    required.add_argument(
+        "-f", "--t1-parc-lut",
+        type=is_file, required=True, metavar="<path>",
+        help="Path to the Look Up Table for the passed parcellation in the "
              "Freesurfer LUT format. If your T1 parcellation comes from "
              "Freesurfer, this will most likely be "
              "<$FREESURFER_HOME>/FreeSurferColorLUT.txt.")
-    parser.add_argument("-f", "--t1-parc-lut", type=is_file, required=True,
-                        metavar="<path>", help=fhelp)
-
-    chelp = ("Path to a Look Up Table in the FreeSurfer LUT format, listing "
+    required.add_argument(
+        "-c", "--connectome-lut",
+        metavar="<path>", required=True,
+        help="Path to a Look Up Table in the FreeSurfer LUT format, listing "
              "the regions from the parcellation to use as nodes in the connec"
              "tome. The region names should match the ones used in the "
              "<t1_parc_lut> LUT and the integer labels should be the row/col "
              "positions in the connectome. Alternatively it can be set to "
              "'Lausanne2008' to use the predefined LUT for the Lausanne 2008 a"
              "tlas, which is based on the FreeSurfer aparc+aseg parcellation.")
-    parser.add_argument("-c", "--connectome-lut", metavar="<path>", help=chelp)
-
-    parser.add_argument("-N", "--nsamples", type=int, metavar="<int>",
-                        help="Number of samples per voxel to initiate in "
-                             "seed region")
-
-    parser.add_argument("-P", "--nsteps", type=int, metavar="<int>",
-                        help="Maximum number of steps for a sample.")
-
-    parser.add_argument('-L', "--steplength", type=float, metavar="<float>",
-                        help="Step length in mm.")
-
-    parser.add_argument("-o", "--outdir", required=True, metavar="<path>",
-                        help="Directory where to output.")
-
-    parser.add_argument("-d", "--tempdir", required=True, metavar="<path>",
-                        help="Where to write temporary directories e.g. /tmp.")
+    required.add_argument(
+        "-n", "--nsamples",
+        type=int, required=True, metavar="<int>",
+        help="Number of samples per voxel to initiate in seed region")
+    required.add_argument(
+        "-e", "--nsteps",
+        type=int, required=True, metavar="<int>",
+        help="Maximum number of steps for a sample.")
+    required.add_argument(
+        "-l", "--steplength",
+        type=float, required=True, metavar="<float>",
+        help="Step length in mm.")
+    required.add_argument(
+        "-o", "--outdir",
+        required=True, metavar="<path>",
+        help="Directory where to output.")
+    required.add_argument(
+        "-d", "--tempdir",
+        required=True, metavar="<path>",
+        help="Where to write temporary directories e.g. /tmp.")
 
     # Optional arguments
-
-    uhelp = ("If the <t1_parc> is aparc+aseg or aparc.a2009s+aseg from "
+    parser.add_argument(
+        "-U", "--fix-freesurfer-subcortical",
+        action="store_true",
+        help="If the <t1_parc> is aparc+aseg or aparc.a2009s+aseg from "
              "FreeSurfer set this option to True, to recompute the "
              "subcortical segmentations of 5 structures that are uncorrectly "
              "segmented by FreeSurfer, using FSL FIRST")
-    parser.add_argument("-u", "--fix-freesurfer-subcortical",
-                        action="store_true", help=uhelp)
-
-    parser.add_argument("-S", "--subjects-dir", metavar="<path>",
-                        help="To set or bypass the $SUBJECTS_DIR environment "
-                             "variable.")
-
-    parser.add_argument("-Q", "--no-snapshots", action="store_false",
-                        dest="snapshots", default=True,
-                        help="To not create snapshots of the results. "
-                             "Useful if matplotlib is not installed.")
-
-    parser.add_argument("-H", "--fs-sh", type=is_file, metavar="<path>",
-                        help="Bash script initializing FreeSurfer's "
-                             "environment.")
-
-    parser.add_argument("-F", "--fsl-sh", type=is_file, metavar="<path>",
-                        help="Bash script initializing FSL's environment.")
-
-    parser.add_argument("-v", "--verbose", type=int,
-                        choices=[0, 1, 2], default=2,
-                        help="Increase the verbosity level: 0 silent, [1, 2] "
-                             "verbose.")
+    parser.add_argument(
+        "-S", "--subjects-dir",
+        metavar="<path>",
+        help="To set or bypass the $SUBJECTS_DIR environment variable.")
+    parser.add_argument(
+        "-Q", "--no-snapshots",
+        action="store_false", dest="snapshots", default=True,
+        help="To not create snapshots of the results. "
+             "Useful if matplotlib is not installed.")
+    parser.add_argument(
+        "-H", "--fs-sh",
+        type=is_file, metavar="<path>",
+        help="Bash script initializing FreeSurfer's environment.")
+    parser.add_argument(
+        "-F", "--fsl-sh",
+        type=is_file, metavar="<path>",
+        help="Bash script initializing FSL's environment.")
+    parser.add_argument(
+        "-v", "--verbose",
+        type=int, choices=[0, 1, 2], default=2,
+        help="Increase the verbosity level: 0 silent, [1, 2] verbose.")
 
     # Create a dict of arguments to pass to the 'main' function
     args = parser.parse_args()
@@ -196,14 +203,15 @@ def get_cmd_line_args():
 Parse the command line.
 """
 inputs, verbose = get_cmd_line_args()
-tool = "pyconnectome_probtrackx2_reduced"
+tool = "pyconnectome_reduced_probtrackx2"
 timestamp = datetime.now().isoformat()
 tool_version = version
 fsl_version = FSLWrapper([], shfile=inputs["fsl_sh"]).version
+freesurfer_version = FSWrapper([], inputs["fs_sh"]).version
 params = locals()
 runtime = dict([(name, params[name])
                for name in ("tool", "tool_version", "fsl_version",
-                            "timestamp")])
+                            "timestamp", "freesurfer_version")])
 outputs = None
 if verbose > 0:
     pprint(runtime)
@@ -213,8 +221,8 @@ if verbose > 0:
 """
 Start the connectome computation.
 """
-probtrackx2_connectome_pipeline(**inputs)
-results_dir = inputs["outdir"]
+connectome_file, labels_file, connectome_snap_file = probtrackx2_connectome(
+    **inputs)
 
 
 """
@@ -224,7 +232,9 @@ logdir = os.path.join(inputs["outdir"], "logs")
 if not os.path.isdir(logdir):
     os.mkdir(logdir)
 params = locals()
-outputs = dict([(name, params[name]) for name in ("results_dir", )])
+outputs = dict([(name, params[name])
+               for name in ("connectome_file", "labels_file",
+                            "connectome_snap_file")])
 for name, final_struct in [("inputs", inputs), ("outputs", outputs),
                            ("runtime", runtime)]:
     log_file = os.path.join(logdir, "{0}.json".format(name))

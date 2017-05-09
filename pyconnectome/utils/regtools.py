@@ -13,12 +13,94 @@ Registration utilities.
 # System import
 import os
 import glob
-import numpy
-import nibabel
 
 # Package import
 from pyconnectome import DEFAULT_FSL_PATH
 from pyconnectome.wrapper import FSLWrapper
+
+# Third patry
+import numpy
+import nibabel
+from pyfreesurfer import DEFAULT_FREESURFER_PATH
+from pyfreesurfer.wrapper import FSWrapper
+from pyfreesurfer.utils.filetools import get_or_check_freesurfer_subjects_dir
+
+
+def freesurfer_bbregister_t1todif(
+        outdir,
+        subject_id,
+        nodif_brain,
+        subjects_dir=None,
+        fs_sh=DEFAULT_FREESURFER_PATH,
+        fsl_sh=DEFAULT_FSL_PATH):
+    """ Compute DWI to T1 transformation and project the T1 to the diffusion
+    space without resampling.
+
+    Parameters
+    ----------
+    outdir: str
+        Directory where to output.
+    subject_id: str
+        Subject id used with FreeSurfer 'recon-all' command.
+    nodif_brain: str
+        Path to the preprocessed brain-only DWI volume.
+    subjects_dir: str or None, default None
+        Path to the FreeSurfer subjects directory. Required if the FreeSurfer
+        environment variable (i.e. $SUBJECTS_DIR) is not set.
+    fs_sh: str, default NeuroSpin path
+        Path to the Bash script setting the FreeSurfer environment
+    fsl_sh: str, default NeuroSpin path
+        Path to the Bash script setting the FSL environment.
+
+    Returns
+    -------
+    t1_brain_to_dif: str
+        The anatomical image in the diffusion space (without resampling).
+    dif2anat_dat, dif2anat_mat: str
+        The DWI to T1 transformation in FreeSurfer or FSL space respectivelly.
+    """
+    # -------------------------------------------------------------------------
+    # STEP 0 - Check arguments
+
+    # FreeSurfer subjects_dir
+    subjects_dir = get_or_check_freesurfer_subjects_dir(subjects_dir)
+
+    # Check input paths
+    paths_to_check = [nodif_brain, fs_sh, fsl_sh]
+    for p in paths_to_check:
+        if not os.path.exists(p):
+            raise ValueError("File or directory does not exist: %s" % p)
+
+    # -------------------------------------------------------------------------
+    # STEP 1 - Compute T1 <-> DWI rigid transformation
+
+    # Register diffusion to T1
+    dif2anat_dat = os.path.join(outdir, "dif2anat.dat")
+    dif2anat_mat = os.path.join(outdir, "dif2anat.mat")
+    cmd_1a = ["bbregister",
+              "--s",      subject_id,
+              "--mov",    nodif_brain,
+              "--reg",    dif2anat_dat,
+              "--fslmat", dif2anat_mat,
+              "--dti",
+              "--init-fsl"]
+    FSWrapper(cmd_1a, subjects_dir=subjects_dir, shfile=fs_sh,
+              add_fsl_env=True, fsl_sh=fsl_sh)()
+
+    # Align FreeSurfer T1 brain to diffusion without downsampling
+    fs_t1_brain = os.path.join(subjects_dir, subject_id, "mri", "brain.mgz")
+    t1_brain_to_dif = os.path.join(outdir, "fs_t1_brain_to_dif.nii.gz")
+    cmd_1b = ["mri_vol2vol",
+              "--mov", nodif_brain,
+              "--targ", fs_t1_brain,
+              "--inv",
+              "--no-resample",
+              "--o", t1_brain_to_dif,
+              "--reg", dif2anat_dat,
+              "--no-save-reg"]
+    FSWrapper(cmd_1b, shfile=fs_sh)()
+
+    return t1_brain_to_dif, dif2anat_dat, dif2anat_mat
 
 
 def mcflirt(in_file, out_fileroot, cost="normcorr", bins=256, dof=6,
