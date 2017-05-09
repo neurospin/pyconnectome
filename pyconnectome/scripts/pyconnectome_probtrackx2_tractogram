@@ -304,7 +304,7 @@ elif inputs["t1_parc"] is not None:
                     print("[info] Number of seeds for label {0}: "
                           "{1}.".format(label, len(seeds)))
                 if len(seeds) > 0:
-                    numpy.savetxt(open_file, seeds[:10])
+                    numpy.savetxt(open_file, seeds)
 else:
     raise ValueError("One seeding strategy must be selected.")
 
