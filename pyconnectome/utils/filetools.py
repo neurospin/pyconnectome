@@ -24,8 +24,6 @@ from pyconnectome.wrapper import FSLWrapper
 # Third party
 import numpy
 import nibabel
-import vtk
-from vtk.util.numpy_support import vtk_to_numpy
 
 
 def convert_connectomist_trk_fibers_to_tck(dwi, trk_tractogram, tck_tractogram,
@@ -94,6 +92,10 @@ def convert_mitk_vtk_fibers_to_tck(vtk_tractogram, tck_tractogram):
         Path to the output TCK tractogram. Extension .tck is added if
         not present.
     """
+    # Function import
+    import vtk
+    from vtk.util.numpy_support import vtk_to_numpy
+
     # Check existence of input file
     if not os.path.isfile(vtk_tractogram):
         raise ValueError("File does not exist: %s" % vtk_tractogram)
