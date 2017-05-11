@@ -40,8 +40,7 @@ def convert_connectomist_trk_fibers_to_tck(dwi, trk_tractogram, tck_tractogram,
     trk_tractogram: str
         Path to the input Connectomist TRK tractogram.
     tck_tractogram: str
-        Path to the output TCK tractogram. Extension .tck is added if
-        not present.
+        Path to the output TCK tractogram.
     tempdir: str, default None
         A temporary directory to store intermediate tractogram.
     """
@@ -61,10 +60,6 @@ def convert_connectomist_trk_fibers_to_tck(dwi, trk_tractogram, tck_tractogram,
     trk.header["voxel_order"] = "LPI"
     tmp_trk_tractogram = os.path.join(tempdir, "tmp.trk")
     trk.save(tmp_trk_tractogram)
-
-    # Add .tck extension to output path if not the case
-    if not tck_tractogram.endswith(".tck"):
-        tck_tractogram += ".tck"
 
     # Convert TRK to TCK using tractconverter
     trk_fibers = tractconverter.TRK(tmp_trk_tractogram)
@@ -89,8 +84,7 @@ def convert_mitk_vtk_fibers_to_tck(vtk_tractogram, tck_tractogram):
     vtk_tractogram: str
         Path to the input .fib tractogram (VTK polydata format).
     tck_tractogram: str
-        Path to the output TCK tractogram. Extension .tck is added if
-        not present.
+        Path to the output TCK tractogram.
     """
     # Function import
     import vtk
@@ -130,8 +124,6 @@ def convert_mitk_vtk_fibers_to_tck(vtk_tractogram, tck_tractogram):
                                                 affine_to_rasmm=lps_to_ras)
 
     # Create the TCK file with Nibabel
-    if not tck_tractogram.endswith(".tck"):
-        tck_tractogram += ".tck"
     nibabel.streamlines.TckFile(tractogram=tractogram).save(tck_tractogram)
 
     return tck_tractogram
@@ -151,42 +143,54 @@ def convert_probtrackx2_saved_paths_to_tck(dwi, saved_paths, tck_tractogram):
         Path to the 'saved_paths.txt' created by Probtrackx2 when requesting
         the fibers with the --savepaths option.
     tck_tractogram: str
-        Path to the output TCK tractogram. Extension .tck is added if
-        not present.
+        Path to the output TCK tractogram.
     """
     # Check existence of input files
     for path in (dwi, saved_paths):
         if not os.path.isfile(path):
             raise ValueError("File does not exist: %s" % path)
 
-    # fibers: list of coordinate arrays
+    # fibers: each fiber is stored as a Nx3 numpy array (N-point coordinates)
     fibers = []
 
     with open(saved_paths) as f:
         for line in f:
+            # '#' indicates the start of a fiber's list of points
             if line.startswith("#"):
-                index = 0
                 nb_fibers = int(line.strip().split()[1])
+                if nb_fibers == 0:
+                    continue
                 fiber_points = numpy.zeros((nb_fibers, 3), dtype=float)
                 fibers.append(fiber_points)
+                index = 0  # row index in fiber_points
             else:
                 fiber_points[index, :] = map(float, line.strip().split())
                 index += 1
 
-    # Some fibers could be splitted in 2 halves: merge them
+    # When a fiber is constructed from a constitutive point (not from an
+    # endpoint) there are 2 parts (not always, sometimes one part is
+    # discarded). In that case the seed point appears twice in the fiber's
+    # list of points. For each fiber:
     for i, fiber in enumerate(fibers):
         seed_point = fiber[0, :]  # Coordinates of seed_point
+        # Compare the seed coordinates to all other points to check whether
+        # it appears again. If its the case inverse the order of points of
+        # the 2nd part and put them at the beginning.
         for j, point in enumerate(fiber[1:], start=1):
-            if all(point == seed_point):
+            if all(point == seed_point):  # if seed point appears again
                 fibers[i] = numpy.concatenate((fiber[:j:-1], fiber[:j]),
                                               axis=0)
                 break
 
+    # Read the affine matrix from the DWI reference
     affine = nibabel.load(dwi).affine
+    # Create a Nibabel tractogram by combining the fibers and the affine
     tractogram = nibabel.streamlines.Tractogram(fibers, affine_to_rasmm=affine)
+    # Save the result as a TCK file
     tck = nibabel.streamlines.TckFile(tractogram=tractogram)
-
     tck.save(tck_tractogram)
+
+    return tck_tractogram
 
 
 def mrtrix_extract_b0s_and_mean_b0(dwi, b0s, mean_b0, bvals=None, bvecs=None,
