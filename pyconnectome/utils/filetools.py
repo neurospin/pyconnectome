@@ -189,7 +189,8 @@ def convert_probtrackx2_saved_paths_to_tck(dwi, saved_paths, tck_tractogram):
     tck.save(tck_tractogram)
 
 
-def mrtrix_extract_b0s_and_mean_b0(dwi, b0s, mean_b0, nb_threads=1):
+def mrtrix_extract_b0s_and_mean_b0(dwi, b0s, mean_b0, bvals=None, bvecs=None,
+                                   nb_threads=1):
     """ Extract b=0 (bvalue=0) volumes from DWI and compute mean b=0 volume.
 
     Parameters
@@ -200,12 +201,21 @@ def mrtrix_extract_b0s_and_mean_b0(dwi, b0s, mean_b0, nb_threads=1):
         The b0 volumes file.
     mean_b0:
         The mean b0 volumes file.
+    bvals, bvecs: str
+        Path to bvals/bvecs, required if dwi is not a MIF file.
     nb_threads: int, default None
         Number of threads that MRtrix is allowed to use.
     """
+    # Check arguments
+    is_mif = dwi.endswith(".mif")
+    if (not is_mif) and (None in {bvals, bvecs}):
+        raise ValueError("bvals/bvecs required if DWI is not in MIF format.")
+
     # Extract the b0 volumes
     cmd_1 = ["dwiextract", "-bzero", dwi, b0s,
              "-nthreads", "%i" % nb_threads, "-failonwarn"]
+    if not is_mif:
+        cmd_1 += ["-fslgrad", bvecs, bvals]
     subprocess.check_call(cmd_1)
 
     # Average the b0 volumes
