@@ -45,7 +45,7 @@ Compute the connectome of a given parcellation, like the FreeSurfer aparc+aseg
 segmentation, using MRtrix.
 
 Requirements:
-    - a tractogram in VTK or TRK format.
+    - a tractogram in VTK, TXT or TRK format.
     - parcellation: image of labeled regions, e.g. FreeSurfer aparc+aseg
     - T1 aligned to diffusion: T1 can be kept in its native resolution as
       long as it is registered to diffusion.
@@ -74,7 +74,7 @@ python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_reduced_connecto
     -p /neurospin/imagen/BL/processed/freesurfer/000000022453/mri/aparc+aseg.mgz \
     -f /i2bm/local/freesurfer/FreeSurferColorLUT.txt \
     -c 'lausanne2008' \
-    -o /tmp/nsap/connectomes/mitk \
+    -o /neurospin/nsap/cati/imagen/data/connectome/BL/000000022453 \
     -d /tmp/nsap/connectomes/mitk/tmp \
     -b /neurospin/imagen/BL/processed/dwi_preproc_wo_fieldmap/000000022453/nodif_brain.nii.gz \
     -a /neurospin/imagen/BL/processed/freesurfer/000000022453/mri/brain.mgz \
@@ -94,7 +94,7 @@ python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_reduced_connecto
     -d /tmp/nsap/connectomes/connectomist/tmp \
     -b /neurospin/hcp/ANALYSIS/3T_mrtrix/889579/nodif_brain.nii.gz \
     -a /neurospin/hcp/ANALYSIS/3T_freesurfer/889579/T1w/889579/mri/brain.mgz \
-    -t /neurospin/hcp/ANALYSIS/3T_connectomist/889579/tract/3000/bundles/interhemispheric/CorpusCallosum_Body.trk \
+    -t /neurospin/hcp/ANALYSIS/3T_connectomist/101006/tract/3000/bundles/interhemispheric/CorpusCallosum_Body.trk /neurospin/hcp/ANALYSIS/3T_connectomist/101006/tract/3000/bundles/interhemispheric/CorpusCallosum_Genu.trk \
     -T connectomist \
     -D /neurospin/hcp/ANALYSIS/3T_mrtrix/889579/dif2anat.dat \
     -R 1. \
@@ -132,8 +132,9 @@ def get_cmd_line_args():
         help="Where to write temporary directories e.g. /tmp.")
     required.add_argument(
         "-t", "--tractogram",
-        required=True, type=is_file, metavar="<path>",
-        help="The tractogram in VTK or TCK format.")
+        required=True, type=is_file, nargs="+", metavar="<path>",
+        help="The tractogram in VTK, TRK, TXT or TCK format. It is possible "
+             "to provide a list of tractograms only for Connectomist.")
     required.add_argument(
         "-a", "--t1-brain",
         required=True, type=is_file, metavar="<path>",
@@ -174,7 +175,7 @@ def get_cmd_line_args():
         help="The weight associated to each fiber: one weight per line.")
     parser.add_argument(
         "-T", "--tractogram-type",
-        choices=("mrtrix", "mitk", "connectomist"), metavar="<type>",
+        choices=("mrtrix", "mitk", "connectomist", "fsl"), metavar="<type>",
         help="The software used to generate the tractogram. "
              "This parameter is used for format conversion purposes.")
     parser.add_argument(

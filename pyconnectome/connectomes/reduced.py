@@ -513,8 +513,9 @@ def mrtrix_connectomes(
     tempdir: str
         Path to the directory where temporary directories should be written.
         It should be a partition with 5+ GB available.
-    tractogram: str
-        The tractogram to be used in VTK or TRK format.
+    tractogram: str of list of str
+        The tractogram to be used in VTK, TRK, TXT or TRK format. It is
+        possible to provide a list of tractograms only for Connectomist.
     t1_brain: str
         The anatomical image.
     nodif_brain: str, default None
@@ -579,14 +580,15 @@ def mrtrix_connectomes(
         connectome_lut = os.path.join(module_dir, "Lausanne2008LUT.txt")
 
     # Check input paths
-    paths_to_check = [t1_parc, t1_parc_lut, connectome_lut, tractogram,
-                      t1_brain, nodif_brain]
+    paths_to_check = [t1_parc, t1_parc_lut, connectome_lut, t1_brain,
+                      nodif_brain]
+    paths_to_check.extend(tractogram)
     for p in paths_to_check:
         if not os.path.exists(p):
             raise ValueError("File or directory does not exist: %s" % p)
 
     # Check supported tractogram
-    if tractogram_type not in ["mrtrix", "mitk", "connectomist"]:
+    if tractogram_type not in ["mrtrix", "mitk", "connectomist", "fsl"]:
         raise ValueError("Unsupported tractogram: {0}".format(tractogram_type))
 
     # Create <outdir> and/or <tempdir> if not existing
@@ -646,12 +648,16 @@ def mrtrix_connectomes(
     # Convert streamlines so that they can be used in MRtrix
     tck_tractogram = os.path.join(outdir, "fibers.tck")
     if tractogram_type == "mitk":
-        convert_mitk_vtk_fibers_to_tck(tractogram, tck_tractogram)
+        if len(tractogram) != 1:
+            raise ValueError("A one-file tractogram is expected.")
+        convert_mitk_vtk_fibers_to_tck(tractogram[0], tck_tractogram)
     elif tractogram_type == "connectomist":
         convert_connectomist_trk_fibers_to_tck(
             nodif_brain, tractogram, tck_tractogram, tempdir)
     else:
-        tck_tractogram = tractogram
+        if len(tractogram) != 1:
+            raise ValueError("A one-file tractogram is expected.")
+        tck_tractogram = tractogram[0]
 
     # Read labels from LUT and create a list of labels: labels.txt
     labels_array = numpy.loadtxt(connectome_lut, dtype=str, usecols=[1])

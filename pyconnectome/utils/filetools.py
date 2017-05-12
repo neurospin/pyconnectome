@@ -37,7 +37,7 @@ def convert_connectomist_trk_fibers_to_tck(dwi, trk_tractogram, tck_tractogram,
     ----------
     dwi: str
         Path to dwi (or nodif_brain) to specify diffusion space.
-    trk_tractogram: str
+    trk_tractogram: list of str
         Path to the input Connectomist TRK tractogram.
     tck_tractogram: str
         Path to the output TCK tractogram. Extension .tck is added if
@@ -49,7 +49,7 @@ def convert_connectomist_trk_fibers_to_tck(dwi, trk_tractogram, tck_tractogram,
     import tractconverter
 
     # Check existence of input file
-    for path in (dwi, trk_tractogram):
+    for path in [dwi] + trk_tractogram:
         if not os.path.isfile(path):
             raise ValueError("File does not exist: %s" % path)
 
@@ -57,7 +57,10 @@ def convert_connectomist_trk_fibers_to_tck(dwi, trk_tractogram, tck_tractogram,
     tempdir = tempfile.mkdtemp(prefix="tractconverter_", dir=tempdir)
 
     # Change orientation: LAS -> LPI
-    trk = nibabel.streamlines.load(trk_tractogram)
+    trk = nibabel.streamlines.load(trk_tractogram[0])
+    for trk_path in trk_tractogram[1:]:
+        part_trk = nibabel.streamlines.load(trk_path)
+        trk.streamlines.extend(part_trk.streamlines)
     trk.header["voxel_order"] = "LPI"
     tmp_trk_tractogram = os.path.join(tempdir, "tmp.trk")
     trk.save(tmp_trk_tractogram)

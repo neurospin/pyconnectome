@@ -14,6 +14,7 @@ Segmentation utilities.
 import os
 import glob
 import numpy
+import subprocess
 
 # Package import
 from pyconnectome import DEFAULT_FSL_PATH
@@ -22,10 +23,55 @@ from pyconnectome.wrapper import FSLWrapper
 # PyFreeSurfer import
 from pyfreesurfer.utils.filetools import get_or_check_path_of_freesurfer_lut
 
+def white_matter_interface(
+        t1_brain_file,
+        outdir,
+        tempdir,
+        fsl_sh=DEFAULT_FSL_PATH):
+    """ Generate a probabilist mask image appropriate for seeding streamlines
+    on the grey matter-white matter interface using MRtrix.
+    This mask deals with partial volume effects.
 
-def fix_freesurfer_subcortical_parcellation(parc, t1_brain, lut, output,
-                                            tempdir=None, nb_threads=None,
-                                            fsl_sh=DEFAULT_FSL_PATH):
+    Parameters
+    ----------
+    t1_brain_file: str
+        the anatomical file used to generate the probabilist mask using MRtrix
+        and FSL FAST.
+    outdir: str
+        the destination folder.
+    tempdir: str
+        a temporary folder for MRtrix with sufficient space.
+    fsl_sh: str, default DEFAULT_FSL_PATH
+        the FSL configuration script.
+
+    Returns
+    -------
+    gmwmi_mask_file: str
+        the generated probabilist seed mask.
+    """
+    # 5 tissue types segmentation
+    # Generate the 5TT image based on a FSL FAST
+    five_tissues_file = os.path.join(outdir, "5TT.nii.gz")
+    cmd = ["5ttgen", "fsl", t1_brain_file, five_tissues_file, "-premasked",
+           "-tempdir", tempdir, "-nocrop"]
+    FSLWrapper(cmd, env=os.environ, shfile=fsl_sh)()
+
+    # Generate probabilist seed mask
+    gmwmi_mask_file = os.path.join(outdir, "gmwmi_mask.nii.gz")
+    cmd = ["5tt2gmwmi", five_tissues_file, gmwmi_mask_file]
+    subprocess.check_call(cmd)
+
+    return gmwmi_mask_file
+
+
+def fix_freesurfer_subcortical_parcellation(
+        parc,
+        t1_brain,
+        lut,
+        output,
+        tempdir=None,
+        nb_threads=None,
+        fsl_sh=DEFAULT_FSL_PATH):
     """ Use the MRtrix labelsgmfix command to correct the FreeSurfer
     subcortical parcellation.
     It uses FSL First to recompute 5 subcortical structures.
@@ -46,6 +92,8 @@ def fix_freesurfer_subcortical_parcellation(parc, t1_brain, lut, output,
         Directory that MRtrix will use as temporary directory.
     nb_threads: int, default None
         Number of threads that MRtrix is allowed to use.
+    fsl_sh: str, default DEFAULT_FSL_PATH
+        The FSL configuration script.
 
     Returns
     -------
