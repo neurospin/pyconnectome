@@ -21,10 +21,12 @@ from xml.etree import ElementTree
 # Package
 from pyconnectome import DEFAULT_FSL_PATH
 from pyconnectome.wrapper import FSLWrapper
+from pyconnectome.utils.filetools import mrtrix_extract_b0s_and_mean_b0
 from pyconnectome.utils.regtools import freesurfer_bbregister_t1todif
 
 # Third-party
 from pyfreesurfer import DEFAULT_FREESURFER_PATH
+from pyfreesurfer.wrapper import FSWrapper
 from pyfreesurfer.utils.filetools import get_or_check_freesurfer_subjects_dir
 
 
@@ -34,8 +36,8 @@ def mitk_gibbs_tractogram(
         dwi,
         bvals,
         bvecs,
-        nodif_brain,
-        nodif_brain_mask,
+        nodif_brain=None,
+        nodif_brain_mask=None,
         subjects_dir=None,
         sh_order=4,
         reg_factor=0.006,
@@ -66,10 +68,12 @@ def mitk_gibbs_tractogram(
         Path to the bvalue list.
     bvecs: str
         Path to the list of diffusion-sensitized directions.
-    nodif_brain: str
-        Path to the preprocessed brain-only DWI volume.
-    nodif_brain_mask: str
-        Path to the brain binary mask.
+    nodif_brain: str, default None
+        Diffusion brain-only Nifti volume with bvalue ~ 0. If not passed, it is
+        generated automatically by averaging all the b0 volumes of the DWI.
+    nodif_brain_mask: str, default None
+        Path to the Nifti brain binary mask in diffusion. If not passed, it is
+        created with MRtrix 'dwi2mask'.
     subjects_dir: str or None, default None
         Path to the FreeSurfer subjects directory. Required if the FreeSurfer
         environment variable (i.e. $SUBJECTS_DIR) is not set.
@@ -115,8 +119,10 @@ def mitk_gibbs_tractogram(
     subjects_dir = get_or_check_freesurfer_subjects_dir(subjects_dir)
 
     # Check input paths
-    paths_to_check = [dwi, bvals, bvecs, nodif_brain_mask, nodif_brain, fs_sh,
-                      fsl_sh]
+    paths_to_check = [dwi, bvals, bvecs, nodif_brain_mask, fs_sh, fsl_sh]
+    for p in [nodif_brain, nodif_brain_mask]:
+        if p is not None:
+            paths_to_check.append(p)
     for p in paths_to_check:
         if not os.path.exists(p):
             raise ValueError("File or directory does not exist: %s" % p)
@@ -129,6 +135,28 @@ def mitk_gibbs_tractogram(
     # -------------------------------------------------------------------------
     # STEP 1 - Compute DWI to T1 transformation and project the T1
     #          to the diffusion space without resampling.
+
+    # If user has not provided a 'nodif_brain_mask', compute one with
+    # MRtrix 'dwi2mask'
+    if nodif_brain_mask is None:
+        nodif_brain_mask = os.path.join(outdir, "nodif_brain_mask.nii.gz")
+        cmd_1a = ["dwi2mask", dwi, nodif_brain_mask, "-fslgrad", bvecs, bvals]
+        subprocess.check_call(cmd_1a)
+
+    # If user has not provided a 'nodif_brain', apply 'nodif_brain_mask' to
+    # mean b=0 volume
+    if nodif_brain is None:
+        # Extract b=0 volumes and compute mean b=0 volume
+        b0s = os.path.join(outdir, "b0s.nii.gz")
+        mean_b0 = os.path.join(outdir, "mean_b0.nii.gz")
+        mrtrix_extract_b0s_and_mean_b0(dwi=dwi, b0s=b0s, mean_b0=mean_b0,
+                                       bvals=bvals, bvecs=bvecs, nb_threads=1)
+        # Apply nodif_brain_mask to dwi
+        nodif_brain = os.path.join(outdir, "nodif_brain.nii.gz")
+        cmd_1b = ["mri_mask", mean_b0, nodif_brain_mask, nodif_brain]
+        FSWrapper(cmd_1b, shfile=fs_sh)()
+
+    # Register nodif_brain to FreeSurfer T1
     t1_brain_to_dif, dif2anat_dat, _ = freesurfer_bbregister_t1todif(
         outdir=outdir,
         subject_id=subject_id,
