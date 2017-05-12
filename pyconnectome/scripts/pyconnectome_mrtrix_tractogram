@@ -173,12 +173,14 @@ def get_cmd_line_args():
     parser.add_argument(
         "-B", "--nodif-brain",
         type=is_file, metavar="<path>",
-        help="Diffusion brain-only volume to use to estimate "
-             "the registration between diffusion and T1.")
+        help="Diffusion brain-only Nifti volume with bvalue ~ 0. If not "
+              "passed, it is generated automatically by averaging all the b0 "
+              "volumes of the DWI.")
     parser.add_argument(
         "-M", "--nodif-brain-mask",
         type=is_file, metavar="<path>",
-        help="Path to diffusion brain binary mask.")
+        help="Path to the Nifti brain binary mask in diffusion. If not "
+        "passed, it is created with MRtrix 'dwi2mask'.")
     parser.add_argument(
         "-A", "--fast-t1-brain",
         type=is_file, metavar="<path>",
