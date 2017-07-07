@@ -99,6 +99,22 @@ python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_reduced_connecto
     -D /neurospin/hcp/ANALYSIS/3T_mrtrix/889579/dif2anat.dat \
     -R 1. \
     -A 2.
+
+FSL command example on the HCP data:
+
+python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_reduced_connectome \
+    -p /neurospin/hcp/ANALYSIS/3T_freesurfer/102008/T1w/102008/mri/aparc+aseg.mgz \
+    -f /i2bm/local/freesurfer/FreeSurferColorLUT.txt \
+    -c 'lausanne2008' \
+    -o /tmp/nsap/tractograms/fsl/nomask_connectome \
+    -d /tmp/nsap/tractograms/fsl/nomask_connectome/tmp \
+    -b /neurospin/hcp/ANALYSIS/3T_mrtrix/102008/nodif_brain.nii.gz \
+    -a /neurospin/hcp/ANALYSIS/3T_freesurfer/102008/T1w/102008/mri/brain.mgz \
+    -t /tmp/nsap/tractograms/fsl/nomask/0.1_0.15/saved_paths.txt /tmp/nsap/tractograms/fsl/nomask/0.15_0.2/saved_paths.txt /tmp/nsap/tractograms/fsl/nomask/0.2_0.25/saved_paths.txt /tmp/nsap/tractograms/fsl/nomask/0.25_0.3/saved_paths.txt /tmp/nsap/tractograms/fsl/nomask/0.3_0.35/saved_paths.txt /tmp/nsap/tractograms/fsl/nomask/0.35_0.4/saved_paths.txt /tmp/nsap/tractograms/fsl/nomask/0.4_0.45/saved_paths.txt /tmp/nsap/tractograms/fsl/nomask/0.45_0.5/saved_paths.txt /tmp/nsap/tractograms/fsl/nomask/0.5_0.55/saved_paths.txt /tmp/nsap/tractograms/fsl/nomask/0.55_0.6/saved_paths.txt /tmp/nsap/tractograms/fsl/nomask/0.6_0.65/saved_paths.txt \
+    -T fsl \
+    -D /neurospin/hcp/ANALYSIS/3T_mrtrix/102008/dif2anat.dat \
+    -R 1. \
+    -A 2.
 """
 
 

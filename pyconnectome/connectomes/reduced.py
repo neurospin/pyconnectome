@@ -22,6 +22,7 @@ from pyconnectome.tractography.probabilist import probtrackx2
 from pyconnectome.utils.segtools import fix_freesurfer_subcortical_parcellation
 from pyconnectome.utils.filetools import convert_mitk_vtk_fibers_to_tck
 from pyconnectome.utils.filetools import convert_connectomist_trk_fibers_to_tck
+from pyconnectome.utils.filetools import convert_probtrackx2_saved_paths_to_tck
 from pyconnectome.utils.regtools import freesurfer_bbregister_t1todif
 
 # Third-party
@@ -653,6 +654,9 @@ def mrtrix_connectomes(
         convert_mitk_vtk_fibers_to_tck(tractogram[0], tck_tractogram)
     elif tractogram_type == "connectomist":
         convert_connectomist_trk_fibers_to_tck(
+            nodif_brain, tractogram, tck_tractogram, tempdir)
+    elif tractogram_type == "fsl":
+        convert_probtrackx2_saved_paths_to_tck(
             nodif_brain, tractogram, tck_tractogram, tempdir)
     else:
         if len(tractogram) != 1:
