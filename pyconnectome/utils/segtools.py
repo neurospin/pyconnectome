@@ -14,6 +14,7 @@ Segmentation utilities.
 import os
 import glob
 import numpy
+import nibabel
 import subprocess
 
 # Package import
@@ -109,6 +110,84 @@ def fix_freesurfer_subcortical_parcellation(
     fsl_process()
 
     return output
+
+
+def roi_from_bbox(
+        input_file,
+        bbox,
+        output_file):
+    """ Create a ROI image from a bounding box.
+
+    Parameters
+    ----------
+    input_file: str
+        the reference image where the bbox is defined.
+    bbox: 6-uplet
+        the corner of the bbox in voxel coordinates: xmin, xmax, ymin, ymax,
+        zmin, zmax.
+    output_file: str
+        the desired ROI image file.
+    """
+    # Load the reference image and generate a grid
+    im = nibabel.load(input_file)
+    xv, yv, zv = numpy.meshgrid(
+        numpy.linspace(0, im.shape[0] - 1, im.shape[0]),
+        numpy.linspace(0, im.shape[1] - 1, im.shape[1]),
+        numpy.linspace(0, im.shape[2] - 1, im.shape[2]))
+    xv = xv.astype(int)
+    yv = yv.astype(int)
+    zv = zv.astype(int)
+
+    # Intersect the grid with the bbox
+    xa = numpy.bitwise_and(xv >= bbox[0], xv <= bbox[1])
+    ya = numpy.bitwise_and(yv >= bbox[2], yv <= bbox[3])
+    za = numpy.bitwise_and(zv >= bbox[4], zv <= bbox[5])
+
+    # Generate bbox indices
+    indices = numpy.bitwise_and(numpy.bitwise_and(xa, ya), za)
+
+    # Generate/save ROI
+    roi = numpy.zeros(im.shape, dtype=int)
+    roi[xv[indices].tolist(), yv[indices].tolist(), zv[indices].tolist()] = 1
+    roi_im = nibabel.Nifti1Image(roi, affine=im.get_affine())
+    nibabel.save(roi_im, output_file)
+    
+
+def robustfov(
+        input_file,
+        output_file,
+        brain_size=170,
+        matrix_file=None,
+        fsl_sh=DEFAULT_FSL_PATH):
+    """ Reduce FOV of image to remove lower head and neck.
+    It is based on FSL robustfov command.
+
+    Parameters
+    ----------
+    input_file: str
+        the file to be cropped.
+    output_file: str
+        the cropped file name.
+    brain_size: float (default 170)
+        the size of brain in z-dimension (in mm).
+    matrix_file: str (default None)
+        if set, write the transformation matrix.
+    fsl_sh: str, default DEFAULT_FSL_PATH
+        The FSL configuration script.
+    """
+    # Check input parameters
+    if not os.path.isfile(input_file):
+        raise ValueError("'{0}' is not a valid input file.".format(input_file))
+
+    # Define the FSL command
+    cmd = ["robustfov", "-b", str(brain_size)]
+    if matrix_file is not None:
+        cmd += ["-m", matrix_file]
+    cmd += ["-i", input_file, "-r", output_file]
+
+    # Call FSL robustfov
+    fslprocess = FSLWrapper(cmd, shfile=fsl_sh)
+    fslprocess()
 
 
 def fast(input_file, out_fileroot, klass=3, im_type=1, segments=False,

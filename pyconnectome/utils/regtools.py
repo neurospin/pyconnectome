@@ -288,8 +288,9 @@ def flirt(in_file, ref_file, omat=None, out=None, init=None, cost="corratio",
         cmd += ["-out", out]
 
     if omat is None:
-        omat = os.path.join(dirname, "flirt_omat_{0}".format(basename))
-        cmd += ["-omat", omat]
+        if not applyxfm:
+            omat = os.path.join(dirname, "flirt_omat_{0}.txt".format(basename))
+            cmd += ["-omat", omat]
     else:
         cmd += ["-omat", omat]
 

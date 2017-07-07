@@ -23,9 +23,11 @@ try:
     import bredala
     bredala.USE_PROFILER = False
     bredala.register("pyconnectome.utils.segtools",
-                     names=["bet2", "fast"])
+                     names=["bet2", "fast", "robustfov", "roi_from_bbox"])
     bredala.register("pyconnectome.utils.regtools",
                      names=["flirt", "fnirt"])
+    bredala.register("pydcmio.plotting.slicer",
+                     names=["mosaic"])
 except:
     pass
 
@@ -35,8 +37,14 @@ from pyconnectome import DEFAULT_FSL_PATH
 from pyconnectome.wrapper import FSLWrapper
 from pyconnectome.utils.segtools import bet2
 from pyconnectome.utils.segtools import fast
+from pyconnectome.utils.segtools import robustfov
+from pyconnectome.utils.segtools import roi_from_bbox
 from pyconnectome.utils.regtools import flirt
 from pyconnectome.utils.regtools import fnirt
+
+# Third party import
+import numpy
+from pydcmio.plotting.slicer import mosaic
 
 
 # Parameters to keep trace
@@ -44,9 +52,8 @@ __hopla__ = ["runtime", "inputs", "outputs"]
 
 
 # Script documentation
-doc = """
+DOC = """
 FSL registration
-~~~~~~~~~~~~~~~~
 
 Rigid/affine or non linear registration with FSL using flirt and fnirt.
 
@@ -68,6 +75,39 @@ python $HOME/git/pyfsl/pyconnectome/scripts/pyconnectome_register \
     -a normmi \
     -n \
     -d
+
+
+Command example for T1 to atlas affine registration with cropping on
+the Metastasis data:
+
+python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_register \
+    -o /volatile/nsap/recalage_cathy/results \
+    -s 585521174283 \
+    -i /neurospin/radiomics/studies/metastasis/base/585521174283/anat/585521174283_enh-gado_T1w.nii.gz \
+    -r /usr/share/fsl/data/standard/MNI152_T1_1mm.nii.gz \
+    -O \
+    -R 0 181 0 217 79 121 \
+    -D \
+    -Q /volatile/nsap/recalage_cathy/results/585521174283/brain.nii.gz \
+    -S \
+    -v 2
+
+Command example for T1 to atlas non linear registration with cropping on
+the Metastasis data:
+
+python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_register \
+    -o /volatile/nsap/recalage_cathy/results/nl \
+    -s 585521174283 \
+    -i /neurospin/radiomics/studies/metastasis/base/585521174283/anat/585521174283_enh-gado_T1w.nii.gz \
+    -r /usr/share/fsl/data/standard/MNI152_T1_1mm.nii.gz \
+    -O \
+    -N \
+    -J /usr/share/fsl/data/standard/MNI152_T1_1mm_brain.nii.gz \
+    -R 0 181 0 217 79 121 \
+    -D \
+    -Q /volatile/nsap/recalage_cathy/results/585521174283/brain.nii.gz \
+    -S \
+    -v 2
 """
 
 
@@ -89,99 +129,219 @@ def is_directory(dirarg):
     return dirarg
 
 
-parser = argparse.ArgumentParser(
-    prog="pyconnectome_register",
-    description=textwrap.dedent(DOC),
-    formatter_class=RawTextHelpFormatter))
-parser.add_argument(
-    "-v", "--verbose", dest="verbose", type=int, choices=[0, 1, 2], default=0,
-    help="increase the verbosity level: 0 silent, [1, 2] verbose.")
-parser.add_argument(
-    "-e", "--erase", dest="erase", action="store_true",
-    help="if activated, clean the result folder if already created.")
-parser.add_argument(
-    "-o", "--outdir", dest="outdir", metavar="PATH", type=is_directory,
-    help="the analysis output directory.")
-parser.add_argument(
-    "-s", "--sid", dest="sid", required=True,
-    help="the subject identifier.")
-parser.add_argument(
-    "-i", "--inputfile", dest="inputfile", type=is_file,
-    required=True, help="the input MRI volume.")
-parser.add_argument(
-    "-r", "--referencefile", dest="referencefile", type=is_file,
-    required=True, help="the template file used as the reference volume.")
-parser.add_argument(
-    "-j", "--referencebrainfile", dest="referencebrainfile", type=is_file,
-    required=True, help="the template brain file used as the reference volume.")
-parser.add_argument(
-    "-x", "--extrafiles", dest="extrafiles", type=is_file, nargs="*",
-    help="list of files to apply transform to.")
-parser.add_argument(
-    "-c", "--fslconfig", dest="fslconfig", type=is_file,
-    help="path to the FSL configuration file.")
-parser.add_argument(
-    "-d", "--dotissues", dest="dotissues", action="store_true",
-    help="if activated, segment the scan tissues with FAST and apply spatial "
-         "intensity variations correction.")
-parser.add_argument(
-    "-t", "--intype", dest="intype", default=1, type=int, choices=range(1, 4),
-    help="type of the input image 1=T1, 2=T2, 3=PD")
-parser.add_argument(
-    "-k", "--nbklass", dest="nbklass", default=3, type=int,
-    help="the number of class in the FAST modelization.")
-parser.add_argument(
-    "-b", "--dobrain", dest="dobrain", action="store_true",
-    help="if set, use the BET2 routine to segment the subject brain.")
-parser.add_argument(
-    "-f", "--brainthr", dest="brainthr", type=float, default=0.5,
-    help="the BET2 fractional intensity threshold (0->1).")
-parser.add_argument(
-    "-a", "--cost", dest="cost", default="normmi",
-    choices=("mutualinfo", "corratio", "normcorr", "normmi", "leastsq",
-             "labeldiff", "bbr"),
-    help="the affine cost function type.")
-parser.add_argument(
-    "-n", "--dononlinear", dest="dononlinear", action="store_true",
-    help="if set, use the FNIRT routine to align the subject brain to the "
-         "template with a non linear transformation.")
-args = parser.parse_args()
-inputs = vars(args)
-verbose = inputs.pop("verbose")
+def get_cmd_line_args():
+    """
+    Create a command line argument parser and return a dict mapping
+    <argument name> -> <argument value>.
+    """
+    parser = argparse.ArgumentParser(
+        prog="pyconnectome_register",
+        description=textwrap.dedent(DOC),
+        formatter_class=RawTextHelpFormatter)
+
+    # Required arguments
+    required = parser.add_argument_group("required arguments")
+    required.add_argument(
+        "-o", "--outdir",
+        required=True, metavar="<path>", type=is_directory,
+        help="the analysis output directory where <outdir>/<sid> will be "
+             "generated.")
+    required.add_argument(
+        "-s", "--sid",
+        required=True,
+        help="the subject identifier.")
+    required.add_argument(
+        "-i", "--inputfile",
+        required=True, type=is_file,
+        help="the input MRI volume to be registered.")
+    required.add_argument(
+        "-r", "--referencefile", 
+        required=True, type=is_file,
+        help="the template file used as a reference volume during the linear "
+             "registration.")
+
+    # Optional arguments
+    parser.add_argument(
+        "-P", "--dof",
+        type=int, default=12, choices=[6, 12],
+        help="the number of DOF in the linear registration.")    
+    parser.add_argument(
+        "-S", "--dosnap",
+        action="store_true",
+        help="if activated, generate QC snaps.")
+    parser.add_argument(
+        "-R", "--bbox",
+        type=int, nargs=6,
+        help="if activated, generate QC snaps.")
+    parser.add_argument(
+        "-E", "--erase",
+        action="store_true",
+        help="if activated, clean the result folder if already created.")
+    parser.add_argument(
+        "-X", "--extrafiles",
+        type=is_file, nargs="*",
+        help="list of files to apply transform to.")
+    parser.add_argument(
+        "-D", "--dotissues",
+        action="store_true",
+        help="if activated, segment the scan tissues with FAST and apply "
+             "spatial intensity variations correction.")
+    parser.add_argument(
+        "-T", "--intype",
+        default=1, type=int, choices=range(1, 4),
+        help="type of the input image 1=T1, 2=T2, 3=PD")
+    parser.add_argument(
+        "-K", "--nbklass",
+        default=3, type=int,
+        help="the number of class in the FAST modelization.")
+    parser.add_argument(
+        "-O", "--docrop",
+        action="store_true",
+        help="if set, reduce the FOC of the input image to remove lower head "
+             "and neck.")
+    parser.add_argument(
+        "-I", "--brainsize",
+        type=int, default=170,
+        help="the brain size used during the cropping.")
+    parser.add_argument(
+        "-B", "--dobrain",
+        action="store_true",
+        help="if set, use the BET2 routine to segment the subject brain.")
+    parser.add_argument(
+        "-Q", "--brain",
+        type=is_file,
+        help="the subject brain.")
+    parser.add_argument(
+        "-H", "--brainthr", dest="brainthr",
+        default=0.5, type=float,
+        help="the BET2 fractional intensity threshold (0->1).")
+    parser.add_argument(
+        "-A", "--cost",
+        default="normmi",
+        choices=("mutualinfo", "corratio", "normcorr", "normmi", "leastsq",
+                 "labeldiff", "bbr"),
+        help="the affine cost function type.")
+    parser.add_argument(
+        "-N", "--dononlinear", 
+        action="store_true",
+        help="if set, use the FNIRT routine to align the subject brain to the "
+             "template with a non linear transformation.")
+    parser.add_argument(
+        "-J", "--referencebrainfile",
+        type=is_file,
+        help="the template brain file used as a reference volume during the "
+             "non linear registration.")
+    parser.add_argument(
+        "-F", "--fsl-sh",
+        type=is_file, metavar="<path>",
+        help="bash script initializing FSL's environment.")
+    parser.add_argument(
+        "-v", "--verbose",
+        type=int, choices=[0, 1, 2], default=0,
+        help="increase the verbosity level: 0 silent, [1, 2] verbose.")
+
+    # Create a dict of arguments to pass to the 'main' function
+    args = parser.parse_args()
+    kwargs = vars(args)
+    verbose = kwargs.pop("verbose")
+    if kwargs["fsl_sh"] is None:
+        kwargs["fsl_sh"] = DEFAULT_FSL_PATH
+
+    return kwargs, verbose
 
 
 """
-First construct the subject working directory and check its existance on
-the file system.
+Parse the command line.
 """
+inputs, verbose = get_cmd_line_args()
 tool = "pyconnectome_register"
 timestamp = datetime.now().isoformat()
 tool_version = version
-fsl_config = args.fslconfig or DEFAULT_FSL_PATH
-fsl_version = FSLWrapper([], shfile=fsl_config).version
+fsl_version = FSLWrapper([], shfile=inputs["fsl_sh"]).version
 params = locals()
 runtime = dict([(name, params[name])
-               for name in ("fsl_config", "tool", "tool_version",
-                            "fsl_version", "timestamp")])
-outputs = None
+               for name in ("tool", "tool_version", "fsl_version",
+                            "timestamp")])
 subjdir = os.path.join(inputs["outdir"], inputs["sid"])
 if inputs["erase"] and os.path.isdir(subjdir):
     shutil.rmtree(subjdir)
 if not os.path.isdir(subjdir):
     os.mkdir(subjdir)
+outputs = None
+snaps = []
+if inputs["dosnap"]:
+    snap_dir = os.path.join(subjdir, "snap")
+    if not os.path.isdir(snap_dir):
+        os.mkdir(snap_dir)
+if verbose > 0:
+    pprint("[info] Starting registration ...")
+    pprint("[info] Runtime:")
+    pprint(runtime)
+    pprint("[info] Inputs:")
+    pprint(inputs)
+
+
+"""
+Step 0: Remove lower head and neck.
+"""
+if inputs["docrop"]:
+
+    # Crop
+    basename = os.path.basename(inputs["inputfile"])
+    crop_dir = os.path.join(subjdir, "robustfov")
+    if not os.path.isdir(crop_dir):
+        os.mkdir(crop_dir)
+    cropped_file = os.path.join(crop_dir, "robustfov_" + basename)
+    cropped_trf = os.path.join(
+        crop_dir, "robustfov_" + basename.split(".")[0] + ".txt")
+    robustfov(
+        input_file=inputs["inputfile"],
+        output_file=cropped_file,
+        brain_size=inputs["brainsize"],
+        matrix_file=cropped_trf,
+        fsl_sh=inputs["fsl_sh"])
+
+    # Restore orginial shape
+    cropped_und_file = os.path.join(crop_dir, "robustfov_und_" + basename)
+    cropped_und_file, _ = flirt(
+        in_file=cropped_file,
+        ref_file=inputs["inputfile"],
+        out=cropped_und_file,
+        init=cropped_trf,
+        applyxfm=True,
+        verbose=verbose,
+        shfile=inputs["fsl_sh"])
+
+    # Perform QC
+    if inputs["dosnap"]:
+        snaps.append(mosaic(impath=cropped_file,
+                            title="robustfov",
+                            outdir=snap_dir))
+
+else:
+    cropped_file = inputs["inputfile"]
+    cropped_trf = None
 
 
 """
 Step 1: Brain extraction
 """
-if inputs["dobrain"]:
+if inputs["brain"] is not None:
+    mask_file, mesh_file, outline_file, inskull_mask_file = (None, ) * 4
+    nskull_mesh_file, outskull_mesh_file, outskin_mask_file = (None, ) * 3
+    skull_mask_file, outskin_mesh_file, outskull_mask_file = (None, ) * 3
+    brain_file = inputs["brain"]
+    # No BET, use full FOV
+    if inputs["docrop"]:
+        cropped_file = cropped_und_file
+elif inputs["dobrain"]:
     bet_dir = os.path.join(subjdir, "bet")
     if not os.path.isdir(bet_dir):
         os.mkdir(bet_dir)
     (brain_file, mask_file, mesh_file, outline_file, inskull_mask_file,
      inskull_mesh_file, outskull_mask_file, outskull_mesh_file,
      outskin_mask_file, outskin_mesh_file, skull_mask_file) = bet2(
-        input_file=inputs["inputfile"],
+        input_file=cropped_file,
         output_fileroot=bet_dir,
         outline=False,
         mask=True,
@@ -194,12 +354,16 @@ if inputs["dobrain"]:
         c=None,
         threshold=False,
         mesh=False,
-        shfile=fsl_config)
+        shfile=inputs["fsl_sh"])
+    if inputs["dosnap"]:
+        snaps.append(mosaic(impath=brain_file,
+                            title="bet",
+                            outdir=snap_dir))
 else:
     mask_file, mesh_file, outline_file, inskull_mask_file = (None, ) * 4
     nskull_mesh_file, outskull_mesh_file, outskin_mask_file = (None, ) * 3
     skull_mask_file, outskin_mesh_file, outskull_mask_file = (None, ) * 3
-    brain_file =  biascorrected_anatfile
+    brain_file =  cropped_file
 if verbose > 0:
     print("[result] Brain image: {0}.".format(brain_file))
     print("[result] Brain mask image: {0}.".format(mask_file))
@@ -223,7 +387,11 @@ if inputs["dotissues"]:
         bias_field=True,
         bias_corrected_im=True,
         probabilities=True,
-        shfile=fsl_config)
+        shfile=inputs["fsl_sh"])
+    if inputs["dosnap"]:
+        snaps.append(mosaic(impath=segmentation_anatfile,
+                            title="fast_segmentation",
+                            outdir=snap_dir))
 else:
     tpm, tsm, segmentation_anatfile, bias_anatfile = (None, None, None, None)
     biascorrected_anatfile = brain_file
@@ -237,14 +405,14 @@ if verbose > 0:
 """
 Step 3: Affine registration
 """
+basename = os.path.basename(biascorrected_anatfile).split(".")[0]
 flirt_dir = os.path.join(subjdir, "flirt")
 if not os.path.isdir(flirt_dir):
     os.mkdir(flirt_dir)
-basename = os.path.basename(biascorrected_anatfile).split(".")[0]
 affine_file, affine_omat = flirt(
-    in_file=inputs["inputfile"],
+    in_file=cropped_file,
     ref_file=inputs["referencefile"],
-    omat=os.path.join(flirt_dir, "flirt_omat_{0}.txt".format(basename)),
+    omat=os.path.join(flirt_dir, "flirt_{0}_to_template.txt".format(basename)),
     out=os.path.join(flirt_dir, "flirt_{0}.nii.gz".format(basename)),
     init=None,
     cost=inputs["cost"],
@@ -253,11 +421,16 @@ affine_file, affine_omat = flirt(
     anglerep="euler",
     bins=256,
     interp="trilinear",
-    dof=12,
+    dof=inputs["dof"],
     applyxfm=False,
     applyisoxfm=None,
     verbose=verbose,
-    shfile=fsl_config)
+    shfile=inputs["fsl_sh"])
+if inputs["dosnap"]:
+    snaps.append(mosaic(impath=inputs["referencefile"],
+                        overlay=affine_file,
+                        title="affine_registration",
+                        outdir=snap_dir))
 if verbose > 0:
     print("[result] Affine: {0}.".format(affine_file))
     print("[result] Affine transformation: {0}.".format(affine_omat))
@@ -277,9 +450,88 @@ if inputs["dononlinear"]:
         outdir=fnirt_dir,
         inmask_file=None,
         verbose=verbose,
-        shfile=fsl_config)
+        shfile=inputs["fsl_sh"])
+    if inputs["dosnap"]:
+        snaps.append(mosaic(impath=inputs["referencefile"],
+                            overlay=iout,
+                            title="nonlinear_registration",
+                            outdir=snap_dir))
 else:
     cout, iout, fout, jout, refout, intout, logout = (None, ) * 7
+
+
+"""
+Step 5: Create bounding box
+"""
+if inputs["bbox"] is not None:
+
+    # Create bbox
+    bbox_dir = os.path.join(subjdir, "bbox")
+    if not os.path.isdir(bbox_dir):
+        os.mkdir(bbox_dir)
+    bbox_file = os.path.join(bbox_dir, "bbox.nii.gz")
+    roi_from_bbox(
+        input_file=inputs["referencefile"],
+        bbox=inputs["bbox"],
+        output_file=bbox_file)
+
+    # Invert anat2dif transform
+    inv_affine_omat = os.path.join(
+        bbox_dir, "flirt_template_to_{0}.txt".format(basename))
+    m = numpy.loadtxt(affine_omat)
+    m_inv = numpy.linalg.inv(m)
+    numpy.savetxt(inv_affine_omat, m_inv)
+
+    # Send bbox to native space
+    native_bbox_file = os.path.join(bbox_dir, "native_bbox.nii.gz")
+    native_bbox_file, _ = flirt(
+        in_file=bbox_file,
+        ref_file=inputs["inputfile"],
+        out=native_bbox_file,
+        init=inv_affine_omat,
+        applyxfm=True,
+        interp="nearestneighbour",
+        verbose=verbose,
+        shfile=inputs["fsl_sh"])
+
+    # Snap
+    if inputs["dosnap"]:
+        snaps.append(mosaic(impath=inputs["inputfile"],
+                            overlay=native_bbox_file,
+                            title="bbox native",
+                            outdir=snap_dir))
+
+else:
+    bbox_file = None
+    native_bbox_file = None
+
+
+"""
+Step 6: Apply deformation to extra files
+"""
+extramnifiles = []
+if inputs["extrafiles"] is not None:
+    extra_dir = os.path.join(subjdir, "extra")
+    if not os.path.isdir(extra_dir):
+        os.mkdir(extra_dir)
+    for path in inputs["extrafiles"]:
+        if inputs["dononlinear"]:
+            raise NotImplementedError(
+                "Use applywarp -r MNI152_T1_1mm.nii -i myvolume.nii "
+                "-o myvolumeInMNI.nii -w warp_struct2mni.nii "
+                "--premat=func2struct.mat")
+        else:
+            path_mni_file = os.path.join(extra_dir, os.path.basename(path))
+            path_mni_file, _ = flirt(
+                in_file=path,
+                ref_file=inputs["referencefile"],
+                out=path_mni_file,
+                init=affine_omat,
+                applyxfm=True,
+                interp="spline",
+                verbose=verbose,
+                shfile=inputs["fsl_sh"])
+            extramnifiles.append(path_mni_file)              
 
 
 """
@@ -290,11 +542,13 @@ if not os.path.isdir(logdir):
     os.mkdir(logdir)
 params = locals()
 outputs = dict([(name, params[name])
-               for name in ("tpm", "tsm", "segmentation_anatfile",
-                            "bias_anatfile", "biascorrected_anatfile",
-                            "brain_file", "mask_file",
+               for name in ("cropped_file", "cropped_trf", "tpm", "tsm",
+                            "segmentation_anatfile", "bias_anatfile",
+                            "biascorrected_anatfile", "brain_file", "mask_file",
                             "affine_file", "affine_omat", "cout", "iout",
-                            "fout", "jout", "refout", "intout", "logout")])
+                            "fout", "jout", "refout", "intout", "logout",
+                            "native_bbox_file", "bbox_file", "extramnifiles",
+                            "snaps")])
 for name, final_struct in [("inputs", inputs), ("outputs", outputs),
                            ("runtime", runtime)]:
     log_file = os.path.join(logdir, "{0}.json".format(name))
