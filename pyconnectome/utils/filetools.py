@@ -174,7 +174,8 @@ def convert_probtrackx2_saved_paths_to_tck(dwi, saved_paths, tck_tractogram,
     with open(tractogram_file) as f:
         for cnt, line in enumerate(f):
             if verbose > 0 and (cnt % 1000000 == 0):
-                print("[info] Converting chunk starting at index {0}...".format(cnt))
+                print("[info] Converting chunk starting at index "
+                      "{0}...".format(cnt))
             # '#' indicates the start of a fiber's list of points
             if line.startswith("#"):
                 nb_fibers = int(line.strip().split()[1])
@@ -193,7 +194,8 @@ def convert_probtrackx2_saved_paths_to_tck(dwi, saved_paths, tck_tractogram,
     # list of points. For each fiber:
     for i, fiber in enumerate(fibers):
         if verbose > 0 and (i % 100000 == 0):
-            print("[info] Postprocessing fibers starting at index {0}...".format(i))
+            print("[info] Postprocessing fibers starting at index "
+                  "{0}...".format(i))
         seed_point = fiber[0, :]  # Coordinates of seed_point
         # Compare the seed coordinates to all other points to check whether
         # it appears again. If its the case inverse the order of points of

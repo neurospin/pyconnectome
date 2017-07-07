@@ -24,6 +24,7 @@ from pyconnectome.wrapper import FSLWrapper
 # PyFreeSurfer import
 from pyfreesurfer.utils.filetools import get_or_check_path_of_freesurfer_lut
 
+
 def white_matter_interface(
         t1_brain_file,
         outdir,
@@ -151,7 +152,7 @@ def roi_from_bbox(
     roi[xv[indices].tolist(), yv[indices].tolist(), zv[indices].tolist()] = 1
     roi_im = nibabel.Nifti1Image(roi, affine=im.get_affine())
     nibabel.save(roi_im, output_file)
-    
+
 
 def robustfov(
         input_file,
