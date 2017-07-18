@@ -13,7 +13,6 @@ import types
 import os
 
 # Caps import
-from clindmri.estimation.gdti.monomials import construct_matrix_of_monomials
 from .colors import *
 from .animate import images_to_gif
 
@@ -225,6 +224,9 @@ def tensor(coeff, order, position=(0, 0, 0),
            radius=0.5, thetares=20, phires=20, opacity=1, tessel=0):
     """ Generate a generic tensor actor.
     """
+    from clindmri.estimation.gdti.monomials import (
+        construct_matrix_of_monomials)
+
     # Create a sphere that we will deform
     sphere = vtk.vtkSphereSource()
     sphere.SetRadius(radius)
@@ -509,7 +511,10 @@ def dots(points, color=(1, 0, 0), psize=1, opacity=1):
 
     aPolyVertexGrid.SetPoints(polyVertexPoints)
     aPolyVertexMapper = vtk.vtkDataSetMapper()
-    aPolyVertexMapper.SetInput(aPolyVertexGrid)
+    if vtk.VTK_MAJOR_VERSION <= 5:
+        aPolyVertexMapper.SetInput(aPolyVertexGrid)
+    else:
+        aPolyVertexMapper.SetInputData(aPolyVertexGrid)
     aPolyVertexActor = vtk.vtkActor()
     aPolyVertexActor.SetMapper(aPolyVertexMapper)
 
