@@ -54,7 +54,7 @@ def basic_network_analysis(graph, outdir=None):
         clustering coefficient is a measure of the degree to which nodes in
         a graph tend to cluster together.
     avg_ccs:
-        the average clustering cofficient.
+        the average clustering coefficient.
     components:
         the sorted by size connected components in the graph.
     bet_cen:

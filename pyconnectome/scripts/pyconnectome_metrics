@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 ##########################################################################
-# NSAp - Copyright (C) CEA, 2016
+# NSAp - Copyright (C) CEA, 2016 - 2017
 # Distributed under the terms of the CeCILL-B license, as published by
 # the CEA-CNRS-INRIA. Refer to the LICENSE file or to
 # http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html
@@ -21,6 +21,8 @@ import networkx
 import bct
 import csv
 import copy
+import textwrap
+from argparse import RawTextHelpFormatter
 
 # Bredala module
 try:
@@ -46,6 +48,7 @@ from pyconnectome.plotting.network import plot_network
 from pyconnectome.plotting.network import dict2list
 
 # Pyfreesurfer import
+from pyfreesurfer import DEFAULT_FREESURFER_PATH
 from pyfreesurfer.utils.surftools import TriSurface
 
 
@@ -53,23 +56,19 @@ from pyfreesurfer.utils.surftools import TriSurface
 __hopla__ = ["runtime", "inputs", "outputs"]
 
 
-# Command parameters
-doc = """
-Network Analysis
-~~~~~~~~~~~~~~~~
+DOC = """
+Network Analysis: compute different features of a network.
 
-Compute different features of a network.
+Command example on the HCP data:
 
-Command:
-
-python $HOME/git/pyfsl/pyconnectome/scripts/pyconnectome_metrics \
-    -s 100307 \
-    -o /volatile/nsap/hcp \
-    -m /neurospin/population/HCP/tmp/MRtrix/100307/sift2_connectome.csv \
-    -l /neurospin/population/HCP/tmp/MRtrix/100307/labels.txt \
-    -f /neurospin/population/HCP/processed/freesurfer/100307/T1w \
+python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_metrics \
+    -s 100206 \
+    -o /neurospin/hcp/ANALYSIS/3T_mrtrix_reduced_graph_metrics \
+    -m /neurospin/hcp/ANALYSIS/3T_mrtrix_reduced_connectome/mrtrix/100206/connectome_endvox.txt \
+    -l /neurospin/hcp/ANALYSIS/3T_mrtrix_reduced_connectome/mrtrix/100206/labels.txt \
+    -f /neurospin/hcp/ANALYSIS/3T_freesurfer/100206/T1w \
     -g \
-    -a \
+    -i \
     -v 2
 """
 
@@ -92,52 +91,78 @@ def is_directory(dirarg):
     return dirarg
 
 
-parser = argparse.ArgumentParser(
-    formatter_class=argparse.RawDescriptionHelpFormatter,
-    description=textwrap.dedent(doc))
-required = parser.add_argument_group("required arguments")
-required.add_argument(
-    "-s", "--subjectid", required=True, metavar="<id>",
-    help="Subject identifier.")
-required.add_argument(
-    "-o", "--outdir", required=True, metavar="<path>",
-    help="directory where to output.", type=is_directory)
-required.add_argument(
-    "-m", "--connectomefile", required=True, metavar="<file>",
-    help="the connectome matrix in CSV format with white space sparators.",
-    type=is_file)
-required.add_argument(
-    "-l", "--labelfile", required=True, metavar="<file>",
-    help="the connectome labels.", type=is_file)
-required.add_argument(
-    "-f", "--fsdir", metavar="<path>",
-    help="the Freesurfer home directory.", type=is_directory)
-parser.add_argument(
-    "-g", dest="graphics", action="store_true",
-    help="if activated compute quality controls.")
-parser.add_argument(
-    "-i", dest="interactive", action="store_true",
-    help="if activated display interactive windows.")
-parser.add_argument(
-    "-p", dest="snapnx", action="store_true",
-    help="if activated generate a snap of the network.")
-parser.add_argument(
-    "-a", dest="animatenx", action="store_true",
-    help="if activated generate a animation of the network.")
-parser.add_argument(
-    "-e", "--erase", dest="erase", action="store_true",
-    help="if activated, clean the subject folder.")
-parser.add_argument(
-    "-v", "--verbose", dest="verbose", type=int, choices=[0, 1, 2], default=0,
-    help="increase the verbosity level: 0 silent, [1, 2] verbose.")
-args = parser.parse_args()
-inputs = vars(args)
-verbose = inputs.pop("verbose")
+def get_cmd_line_args():
+    """
+    Create a command line argument parser and return a dict mapping
+    <argument name> -> <argument value>.
+    """
+    parser = argparse.ArgumentParser(
+        prog="python pyconnectome_metrics",
+        description=textwrap.dedent(DOC),
+        formatter_class=RawTextHelpFormatter)
+
+    # Required arguments
+    required = parser.add_argument_group("required arguments")
+    required.add_argument(
+        "-s", "--subjectid",
+        required=True, metavar="<id>",
+        help="Subject identifier.")
+    required.add_argument(
+        "-o", "--outdir",
+        required=True, metavar="<path>", type=is_directory,
+        help="directory where to output.")
+    required.add_argument(
+        "-m", "--connectomefile",
+        required=True, metavar="<file>", type=is_file,
+        help="the connectome matrix in CSV format with white space sparators.")
+    required.add_argument(
+        "-l", "--labelfile",
+        required=True, metavar="<file>", type=is_file,
+        help="the connectome labels.")
+
+    # Optional arguments
+    parser.add_argument(
+        "-g", dest="graphics",
+        action="store_true",
+        help="if activated compute quality controls.")
+    parser.add_argument(
+        "-i", dest="interactive",
+        action="store_true",
+        help="if activated display an interactive windows.")
+    parser.add_argument(
+        "-p", dest="snapnx", action="store_true",
+        help="if activated generate a snap of the network.")
+    parser.add_argument(
+        "-a", dest="animatenx",
+        action="store_true",
+        help="if activated display animate the network.")
+    parser.add_argument(
+        "-f", "--fsdir",
+        metavar="<path>", type=is_directory,
+        help="the Freesurfer home directory.")
+    parser.add_argument(
+        "-e", "--erase",
+        action="store_true",
+        help="if activated, clean the subject folder.")
+    parser.add_argument(
+        "-v", "--verbose",
+        type=int, choices=[0, 1, 2], default=0,
+        help="increase the verbosity level: 0 silent, [1, 2] verbose.")
+
+    # Create a dict of arguments to pass to the 'main' function
+    args = parser.parse_args()
+    kwargs = vars(args)
+    verbose = kwargs.pop("verbose")
+    if kwargs["fsdir"] is None:
+        kwargs["fsdir"] = DEFAULT_FREESURFER_PATH
+
+    return kwargs, verbose
 
 
 """
-First clean the output directory if requested.
+Parse the command line.
 """
+inputs, verbose = get_cmd_line_args()
 tool = "pyconnectome_metrics"
 timestamp = datetime.now().isoformat()
 tool_version = version
@@ -162,7 +187,7 @@ if not os.path.isdir(subjectdir):
 
 
 """
-Read/ symmetrize the connectome: remove loops
+Read/symmetrize the connectome and remove loops
 """
 connectome = []
 with open(inputs["connectomefile"], "rt") as csvfile:
@@ -176,9 +201,21 @@ for i in range(connectome.shape[0]):
 
 
 """
-Read labels
+Read labels and remove unknown regions
 """
-connectome_labels = open(inputs["labelfile"]).readlines()
+connectome_labels = [
+    l.rstrip("\n") for l in open(inputs["labelfile"]).readlines()]
+try:
+    index = connectome_labels.index("Unknown")
+    connectome_labels.pop(index)
+    connectome = numpy.delete(connectome, index, axis=0)
+    connectome = numpy.delete(connectome, index, axis=1)
+except:
+    pass
+if verbose > 0:
+    print("[info] Processing connectome with shape {0}...".format(
+        connectome.shape))
+print(connectome_labels)
 
 
 """
