@@ -1,0 +1,192 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*
+##########################################################################
+# NSAp - Copyright (C) CEA, 2017
+# Distributed under the terms of the CeCILL-B license, as published by
+# the CEA-CNRS-INRIA. Refer to the LICENSE file or to
+# http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html for details.
+##########################################################################
+
+# System import
+import os
+import argparse
+import json
+from pprint import pprint
+from datetime import datetime
+import textwrap
+from argparse import RawTextHelpFormatter
+
+# Bredala module
+try:
+    import bredala
+    bredala.USE_PROFILER = False
+    bredala.register("pyconnectome.tractography.filtering",
+                     names=["life"])
+except:
+    pass
+
+# Package import
+from pyconnectome import __version__ as version
+from pyconnectome.tractography.filtering import life
+
+# Third party import
+import dipy
+
+
+# Parameters to keep trace
+__hopla__ = ["runtime", "inputs", "outputs"]
+
+
+DOC = """
+Linear fascicle evaluation (LiFE)
+---------------------------------
+
+Evaluating the results of tractography algorithms is one of the biggest
+challenges for diffusion MRI. One proposal for evaluation of tractography
+results is to use a forward model that predicts the signal from each of a set
+of streamlines, and then fit a linear model to these simultaneous predictions.
+
+Requirements:
+    - a tractogram in TRK or TCK format.
+    - the diffusion data
+
+Command example on the HCP data:
+
+python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_life \
+    -o /volatile/nsap/hcp/life \
+    -t /neurospin/hcp/ANALYSIS/3T_mrtrix/889579/10M.tck  \
+    -i /neurospin/hcp/ANALYSIS/3T_freesurfer/889579/T1w/Diffusion/data.nii.gz \
+    -b /neurospin/hcp/ANALYSIS/3T_freesurfer/889579/T1w/Diffusion/bvals \
+    -r /neurospin/hcp/ANALYSIS/3T_freesurfer/889579/T1w/Diffusion/bvecs \
+    -v 2
+
+Command example on the Bpolf data:
+
+python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_life \
+    -o /volatile/nsap/hcp/life \
+    -t /neurospin/nsap/processed/bpolf/data/connectomist/aa170085-5574_001/tract/bundles/interhemispheric/CorpusCallosum_Body.trk  \
+    -i /neurospin/nsap/processed/bpolf/data/connectomist/aa170085-5574_001/preproc/dwi.nii.gz \
+    -b /neurospin/nsap/processed/bpolf/data/connectomist/aa170085-5574_001/preproc/dwi.bval \
+    -r /neurospin/nsap/processed/bpolf/data/connectomist/aa170085-5574_001/preproc/dwi.bvec \
+    -v 2
+"""
+
+
+def is_file(filepath):
+    """ Check file's existence - argparse 'type' argument.
+    """
+    if not os.path.isfile(filepath):
+        raise argparse.ArgumentError("File does not exist: %s" % filepath)
+    return filepath
+
+def is_directory(dirarg):
+    """ Type for argparse - checks that directory exists.
+    """
+    if not os.path.isdir(dirarg):
+        raise argparse.ArgumentError(
+            "The directory '{0}' does not exist!".format(dirarg))
+    return dirarg
+
+
+def get_cmd_line_args():
+    """
+    Create a command line argument parser and return a dict mapping
+    <argument name> -> <argument value>.
+    """
+    parser = argparse.ArgumentParser(
+        prog="python pyconnectome_life",
+        description=textwrap.dedent(DOC),
+        formatter_class=RawTextHelpFormatter)
+
+    # Required arguments
+    required = parser.add_argument_group("required arguments")
+    required.add_argument(
+        "-o", "--outdir",
+        type=is_directory, required=True, metavar="<path>",
+        help="Directory where to output.")
+    required.add_argument(
+        "-t", "--tractogram",
+        type=is_file, required=True, metavar="<path>",
+        help="Path to the tractogram in TRK or TCK format.")
+    required.add_argument(
+        "-i", "--dwi",
+        type=is_file, required=True, metavar="<path>",
+        help="Path to the diffusion data.")
+    required.add_argument(
+        "-b", "--bvals",
+        type=is_file, required=True, metavar="<path>",
+        help="Path to the bvalue list.")
+    required.add_argument(
+        "-r", "--bvecs",
+        type=is_file, required=True, metavar="<path>",
+        help="Path to the list of diffusion-sensitized directions.")
+
+    # Optional arguments
+    parser.add_argument(
+        "-v", "--verbose",
+        type=int, choices=[0, 1, 2], default=2,
+        help="Increase the verbosity level: 0 silent, [1, 2] verbose.")
+
+    # Create a dict of arguments to pass to the 'main' function
+    args = parser.parse_args()
+    kwargs = vars(args)
+    verbose = kwargs.pop("verbose")
+
+    return kwargs, verbose
+
+
+"""
+Parse the command line.
+"""
+inputs, verbose = get_cmd_line_args()
+tool = "pyconnectome_life"
+timestamp = datetime.now().isoformat()
+tool_version = version
+dipy_version = dipy.__version__
+params = locals()
+runtime = dict([(name, params[name])
+               for name in ("tool", "tool_version", "dipy_version",
+                            "timestamp")])
+outputs = None
+if verbose > 0:
+    pprint("[info] Starting LiFE tractogram evaluation...")
+    pprint("[info] Runtime:")
+    pprint(runtime)
+    pprint("[info] Inputs:")
+    pprint(inputs)
+
+
+"""
+Start the LiFE evaluation.
+"""
+(life_weights_file, life_weights_snap, model_error_file, mean_error_file,
+ improvment_error_file, tracks_snap) = life(
+    dwifile=inputs["dwi"],
+    bvecsfile=inputs["bvecs"],
+    bvalsfile=inputs["bvals"],
+    tractogramfile=inputs["tractogram"],
+    outdir=inputs["outdir"],
+    display_tracks=False,
+    verbose=verbose)
+
+
+"""
+Update the outputs and save them and the inputs in a 'logs' directory.
+"""
+logdir = os.path.join(inputs["outdir"], "logs")
+if not os.path.isdir(logdir):
+    os.mkdir(logdir)
+params = locals()
+outputs = dict([(name, params[name])
+               for name in ("life_weights_file", "life_weights_snap",
+                            "model_error_file", "mean_error_file",
+                            "improvment_error_file", "tracks_snap")])
+for name, final_struct in [("inputs", inputs), ("outputs", outputs),
+                           ("runtime", runtime)]:
+    log_file = os.path.join(logdir, "{0}.json".format(name))
+    with open(log_file, "wt") as open_file:
+        json.dump(final_struct, open_file, sort_keys=True, check_circular=True,
+                  indent=4)
+if verbose > 1:
+    pprint("[info] Outputs:")
+    pprint(outputs)
