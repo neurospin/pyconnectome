@@ -1,0 +1,170 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*
+##########################################################################
+# NSAp - Copyright (C) CEA, 2017
+# Distributed under the terms of the CeCILL-B license, as published by
+# the CEA-CNRS-INRIA. Refer to the LICENSE file or to
+# http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html for details.
+##########################################################################
+
+# System import
+import os
+import argparse
+import json
+from pprint import pprint
+from datetime import datetime
+import textwrap
+from argparse import RawTextHelpFormatter
+
+# Bredala module
+try:
+    import bredala
+    bredala.USE_PROFILER = False
+    bredala.register("pyconnectome.tractography.filtering",
+                     names=["lossy_compression_of_tractogram"])
+except:
+    pass
+
+# Package import
+from pyconnectome import __version__ as version
+from pyconnectome.tractography.filtering import lossy_compression_of_tractogram
+
+# Third party import
+import dipy
+
+
+# Parameters to keep trace
+__hopla__ = ["runtime", "inputs", "outputs"]
+
+
+DOC = """
+Tractogram Lossy compression
+-----------------------------
+
+Reduce the number of points of the track by keeping intact the start and
+endpoints of the track and trying to remove as many points as possible
+without distorting much the shape of the track, ie. more points in curvy
+regions and less points in less curvy regions.
+
+Requirements:
+    - a tractogram in TRK or TCK format.
+    - a weight for each streamline (optional)
+
+Command example on the Bpolf data:
+
+python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_compress_tractogram \
+    -o /volatile/nsap/hcp/compress \
+    -t /neurospin/nsap/processed/bpolf/data/connectomist/aa170085-5574_001/tract/bundles/interhemispheric/CorpusCallosum_Body.trk  \
+    -w /volatile/nsap/hcp/life2/life_weights.txt \
+    -v 2
+"""
+
+
+def is_file(filepath):
+    """ Check file's existence - argparse 'type' argument.
+    """
+    if not os.path.isfile(filepath):
+        raise argparse.ArgumentError("File does not exist: %s" % filepath)
+    return filepath
+
+def is_directory(dirarg):
+    """ Type for argparse - checks that directory exists.
+    """
+    if not os.path.isdir(dirarg):
+        raise argparse.ArgumentError(
+            "The directory '{0}' does not exist!".format(dirarg))
+    return dirarg
+
+
+def get_cmd_line_args():
+    """
+    Create a command line argument parser and return a dict mapping
+    <argument name> -> <argument value>.
+    """
+    parser = argparse.ArgumentParser(
+        prog="python pyconnectome_compress_tractogram",
+        description=textwrap.dedent(DOC),
+        formatter_class=RawTextHelpFormatter)
+
+    # Required arguments
+    required = parser.add_argument_group("required arguments")
+    required.add_argument(
+        "-o", "--outdir",
+        type=is_directory, required=True, metavar="<path>",
+        help="Directory where to output.")
+    required.add_argument(
+        "-t", "--tractogram",
+        type=is_file, required=True, metavar="<path>",
+        help="Path to the tractogram in TRK or TCK format.")
+
+    # Optional arguments
+    required.add_argument(
+        "-w", "--weights",
+        type=is_file, required=True, metavar="<path>",
+        help="Path to the streamline weights.")
+    parser.add_argument(
+        "-v", "--verbose",
+        type=int, choices=[0, 1, 2], default=2,
+        help="Increase the verbosity level: 0 silent, [1, 2] verbose.")
+
+    # Create a dict of arguments to pass to the 'main' function
+    args = parser.parse_args()
+    kwargs = vars(args)
+    verbose = kwargs.pop("verbose")
+
+    return kwargs, verbose
+
+
+"""
+Parse the command line.
+"""
+inputs, verbose = get_cmd_line_args()
+tool = "pyconnectome_compress_tractogram"
+timestamp = datetime.now().isoformat()
+tool_version = version
+dipy_version = dipy.__version__
+params = locals()
+runtime = dict([(name, params[name])
+               for name in ("tool", "tool_version", "dipy_version",
+                            "timestamp")])
+outputs = None
+if verbose > 0:
+    pprint("[info] Starting lossy tractogram compression...")
+    pprint("[info] Runtime:")
+    pprint(runtime)
+    pprint("[info] Inputs:")
+    pprint(inputs)
+
+
+"""
+Start the compression.
+"""
+compressed_tractogramfile, nb_points_file = lossy_compression_of_tractogram(
+        tractogramfile=inputs["tractogram"],
+        outdir=inputs["outdir"],
+        rate=0.25,
+        search_optimal_rate=True,
+        weightsfile=inputs["weights"],
+        weights_thr=0.,
+        max_search_dist=2.2,
+        verbose=verbose)
+
+
+"""
+Update the outputs and save them and the inputs in a 'logs' directory.
+"""
+logdir = os.path.join(inputs["outdir"], "logs")
+if not os.path.isdir(logdir):
+    os.mkdir(logdir)
+params = locals()
+outputs = dict([(name, params[name])
+               for name in ("compressed_tractogramfile", "nb_points_file")])
+for name, final_struct in [("inputs", inputs), ("outputs", outputs),
+                           ("runtime", runtime)]:
+    log_file = os.path.join(logdir, "{0}.json".format(name))
+    with open(log_file, "wt") as open_file:
+        json.dump(final_struct, open_file, sort_keys=True, check_circular=True,
+                  indent=4)
+if verbose > 1:
+    pprint("[info] Outputs:")
+    pprint(outputs)
