@@ -21,7 +21,7 @@ from pyconnectome import DEFAULT_FSL_PATH
 from pyconnectome.tractography.probabilist import probtrackx2
 from pyconnectome.utils.segtools import fix_freesurfer_subcortical_parcellation
 from pyconnectome.utils.filetools import convert_mitk_vtk_fibers_to_tck
-from pyconnectome.utils.filetools import convert_connectomist_trk_fibers_to_tck
+from pyconnectome.utils.filetools import convert_trk_fibers_to_tck
 from pyconnectome.utils.filetools import convert_probtrackx2_saved_paths_to_tck
 from pyconnectome.utils.regtools import freesurfer_bbregister_t1todif
 
@@ -514,9 +514,10 @@ def mrtrix_connectomes(
     tempdir: str
         Path to the directory where temporary directories should be written.
         It should be a partition with 5+ GB available.
-    tractogram: str of list of str
+    tractogram: str or list of str
         The tractogram to be used in VTK, TRK, TXT or TRK format. It is
-        possible to provide a list of tractograms only for Connectomist.
+        possible to provide a list of tractograms only for Connectomist and
+        Tracula.
     t1_brain: str
         The anatomical image.
     nodif_brain: str, default None
@@ -589,7 +590,8 @@ def mrtrix_connectomes(
             raise ValueError("File or directory does not exist: %s" % p)
 
     # Check supported tractogram
-    if tractogram_type not in ["mrtrix", "mitk", "connectomist", "fsl"]:
+    if tractogram_type not in ["mrtrix", "mitk", "connectomist", "fsl",
+                               "tracula"]:
         raise ValueError("Unsupported tractogram: {0}".format(tractogram_type))
 
     # Create <outdir> and/or <tempdir> if not existing
@@ -652,8 +654,8 @@ def mrtrix_connectomes(
         if len(tractogram) != 1:
             raise ValueError("A one-file tractogram is expected.")
         convert_mitk_vtk_fibers_to_tck(tractogram[0], tck_tractogram)
-    elif tractogram_type == "connectomist":
-        convert_connectomist_trk_fibers_to_tck(
+    elif tractogram_type in ("connectomist", "tracula"):
+        convert_trk_fibers_to_tck(
             nodif_brain, tractogram, tck_tractogram, tempdir)
     elif tractogram_type == "fsl":
         convert_probtrackx2_saved_paths_to_tck(

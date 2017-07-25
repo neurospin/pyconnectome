@@ -115,6 +115,23 @@ python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_reduced_connecto
     -D /neurospin/hcp/ANALYSIS/3T_mrtrix/102008/dif2anat.dat \
     -R 1. \
     -A 2.
+
+
+Tracula command example on the Imagen data:
+
+python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_reduced_connectome \
+    -p /neurospin/imagen/BL/processed/freesurfer/000000022453/mri/aparc+aseg.mgz \
+    -f /i2bm/local/freesurfer/FreeSurferColorLUT.txt \
+    -c 'lausanne2008' \
+    -o /neurospin/nsap/processed/imagen/data/connectome/BL/tracula/000000022453 \
+    -d /tmp/nsap/connectomes/tracula/tmp \
+    -b /neurospin/imagen/BL/processed/dwi_preproc_wo_fieldmap/000000022453/nodif_brain.nii.gz \
+    -a /neurospin/imagen/BL/processed/freesurfer/000000022453/mri/brain.mgz \
+    -t /neurospin/nsap/processed/imagen/data/tracula/BL/000000022453/dpath/fmajor_PP_avg33_mni_bbr/path.pd.trk /neurospin/nsap/processed/imagen/data/tracula/BL/000000022453/dpath/fminor_PP_avg33_mni_bbr/path.pd.trk \
+    -T tracula \
+    -D /neurospin/nsap/processed/imagen/data/mitk/BL/000000022453/dif2anat.dat \
+    -R 2. \
+    -A 5.
 """
 
 
@@ -191,7 +208,8 @@ def get_cmd_line_args():
         help="The weight associated to each fiber: one weight per line.")
     parser.add_argument(
         "-T", "--tractogram-type",
-        choices=("mrtrix", "mitk", "connectomist", "fsl"), metavar="<type>",
+        choices=("mrtrix", "mitk", "connectomist", "fsl", "tracula"),
+        metavar="<type>", default="mrtrix",
         help="The software used to generate the tractogram. "
              "This parameter is used for format conversion purposes.")
     parser.add_argument(
