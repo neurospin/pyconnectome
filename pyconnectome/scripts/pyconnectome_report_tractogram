@@ -1,0 +1,306 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*
+##########################################################################
+# NSAp - Copyright (C) CEA, 2017
+# Distributed under the terms of the CeCILL-B license, as published by
+# the CEA-CNRS-INRIA. Refer to the LICENSE file or to
+# http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html for details.
+##########################################################################
+
+# System import
+import os
+import argparse
+import json
+from pprint import pprint
+from datetime import datetime
+import textwrap
+import shutil
+from argparse import RawTextHelpFormatter
+
+# Bredala module
+try:
+    import bredala
+    bredala.USE_PROFILER = False
+    bredala.register("pyconnectome.plotting.tractography",
+                     names=["fiber_density_map", "fiber_length_histogram",
+                            "fsleyes_snapshot"])
+    bredala.register("pyconnectome.utils.filetools",
+                     names=["merge_fibers"])
+    bredala.register("pyconnectomist.utils.pdftools",
+                     names=["generate_pdf"])
+except:
+    pass
+
+# Package import
+import pyconnectome
+from pyconnectome import __version__ as version
+from pyconnectome.plotting.tractography import fiber_density_map
+from pyconnectome.plotting.tractography import fiber_length_histogram
+from pyconnectome.plotting.tractography import fsleyes_snapshot
+from pyconnectome.utils.filetools import merge_fibers
+
+# Third party import
+import dipy
+import pydcmio
+from pyconnectomist.utils.pdftools import generate_pdf
+
+
+# Parameters to keep trace
+__hopla__ = ["runtime", "inputs", "outputs"]
+
+
+DOC = """
+Tractogram report
+-----------------
+
+Generate a report to simplify the manual QC of the data.
+
+Requirements:
+    - a tractogram in TRK or TCK format.
+    - a tractography mask (optional)
+
+Command example on the Bpolf data:
+
+python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_report_tractogram \
+    -o /volatile/nsap/hcp/report \
+    -t /neurospin/nsap/processed/bpolf/data/connectomist/fz160349-5400_001/tract/tractogram/tractography-streamline-regularized-deterministic_1_8.trk /neurospin/nsap/processed/bpolf/data/connectomist/fz160349-5400_001/tract/tractogram/tractography-streamline-regularized-deterministic_2_8.trk /neurospin/nsap/processed/bpolf/data/connectomist/fz160349-5400_001/tract/tractogram/tractography-streamline-regularized-deterministic_3_8.trk /neurospin/nsap/processed/bpolf/data/connectomist/fz160349-5400_001/tract/tractogram/tractography-streamline-regularized-deterministic_4_8.trk /neurospin/nsap/processed/bpolf/data/connectomist/fz160349-5400_001/tract/tractogram/tractography-streamline-regularized-deterministic_5_8.trk /neurospin/nsap/processed/bpolf/data/connectomist/fz160349-5400_001/tract/tractogram/tractography-streamline-regularized-deterministic_6_8.trk /neurospin/nsap/processed/bpolf/data/connectomist/fz160349-5400_001/tract/tractogram/tractography-streamline-regularized-deterministic_7_8.trk /neurospin/nsap/processed/bpolf/data/connectomist/fz160349-5400_001/tract/tractogram/tractography-streamline-regularized-deterministic_8_8.trk \
+    -i /neurospin/nsap/processed/bpolf/data/connectomist/fz160349-5400_001/dtifit/dti_lambda_transverse.nii.gz \
+    -M /neurospin/nsap/processed/bpolf/data/connectomist/fz160349-5400_001/tract/mask.nii.gz \
+    -A LAS \
+    -v 2
+"""
+
+
+def is_file(filepath):
+    """ Check file's existence - argparse 'type' argument.
+    """
+    if not os.path.isfile(filepath):
+        raise argparse.ArgumentError("File does not exist: %s" % filepath)
+    return filepath
+
+def is_directory(dirarg):
+    """ Type for argparse - checks that directory exists.
+    """
+    if not os.path.isdir(dirarg):
+        raise argparse.ArgumentError(
+            "The directory '{0}' does not exist!".format(dirarg))
+    return dirarg
+
+
+def get_cmd_line_args():
+    """
+    Create a command line argument parser and return a dict mapping
+    <argument name> -> <argument value>.
+    """
+    parser = argparse.ArgumentParser(
+        prog="python pyconnectome_report_tractogram",
+        description=textwrap.dedent(DOC),
+        formatter_class=RawTextHelpFormatter)
+
+    # Required arguments
+    required = parser.add_argument_group("required arguments")
+    required.add_argument(
+        "-o", "--outdir",
+        type=is_directory, required=True, metavar="<path>",
+        help="Directory where to output.")
+    required.add_argument(
+        "-t", "--tractograms",
+        type=is_file, required=True, metavar="<path>", nargs="+",
+        help="Path to the tractogram in TRK or TCK format.")
+    required.add_argument(
+        "-i", "--input",
+        type=is_file, required=True, metavar="<path>",
+        help="Path to an input 3D image in the diffusion space (FA, MD, "
+             "nodiff, ...).")
+
+    # Optional arguments
+    required.add_argument(
+        "-M", "--mask",
+        type=is_file, metavar="<path>",
+        help="Path to the tractography mask.")
+    required.add_argument(
+        "-A", "--axes",
+        metavar="<axes>", default="RAS",
+        help="Orientation of the original axes X, Y, and Z.")
+    parser.add_argument(
+        "-S", "--sid",
+        default="NC",
+        help="the subject identifer.")
+    parser.add_argument(
+        "-C", "--clientname",
+        default="NC",
+        help="the client name.")
+    parser.add_argument(
+        "-P", "--projectname",
+        default="NC",
+        help="the project name.")
+    parser.add_argument(
+        "-T", "--timepoint",
+        default="NC",
+        help="the time step assocaited to the diffusion dataset.")
+    parser.add_argument(
+        "-v", "--verbose",
+        type=int, choices=[0, 1, 2], default=2,
+        help="Increase the verbosity level: 0 silent, [1, 2] verbose.")
+
+    # Create a dict of arguments to pass to the 'main' function
+    args = parser.parse_args()
+    kwargs = vars(args)
+    verbose = kwargs.pop("verbose")
+
+    return kwargs, verbose
+
+
+"""
+Parse the command line.
+"""
+inputs, verbose = get_cmd_line_args()
+tool = "pyconnectome_report_tractogram"
+timestamp = datetime.now().isoformat()
+tool_version = version
+dipy_version = dipy.__version__
+pydcmio_version = pydcmio.__version__
+params = locals()
+runtime = dict([(name, params[name])
+               for name in ("tool", "tool_version", "dipy_version",
+                            "timestamp", "pydcmio_version")])
+outputs = None
+if verbose > 0:
+    pprint("[info] Starting tractogram reporting...")
+    pprint("[info] Runtime:")
+    pprint(runtime)
+    pprint("[info] Inputs:")
+    pprint(inputs)
+
+
+"""
+Merge all the input tractograms.
+"""
+tractogram = merge_fibers(
+    inputs["tractograms"],
+    tempdir=inputs["outdir"])
+
+
+"""
+Create a fiber density map.
+"""
+density_map, density_snap = fiber_density_map(
+    tracks=tractogram,
+    template=inputs["input"],
+    outdir=inputs["outdir"],
+    basename="fiber_density",
+    fiber_ends_only=False,
+    overlay=False,
+    ext=".png",
+    axes=inputs["axes"])
+density_large_snap = fsleyes_snapshot(
+    inputfile=density_map,
+    outdir=inputs["outdir"],
+    basename="fiber_density_large",
+    mask_alpha=100,
+    cmap="hot")
+
+
+"""
+Create the fiber endpoints map
+"""
+ends_density_map, ends_density_snap = fiber_density_map(
+    tracks=tractogram,
+    template=inputs["input"],
+    outdir=inputs["outdir"],
+    basename="fiber_ends_density",
+    fiber_ends_only=True,
+    overlay=True,
+    overlay_alpha=1,
+    ext=".png",
+    axes=inputs["axes"])
+ends_density_large_snap = fsleyes_snapshot(
+    inputfile=inputs["input"],
+    overlayfile=ends_density_map,
+    outdir=inputs["outdir"],
+    basename="fiber_ends_density_large",
+    mask_alpha=100,
+    mask_dr=(0, 1))
+
+
+"""
+Create the tractography mask map
+"""
+if inputs["mask"] is not None:
+    mask_snap = fsleyes_snapshot(
+        inputfile=inputs["mask"],
+        outdir=inputs["outdir"],
+        basename="tractography_mask")
+else:
+    mask_snap = None
+
+
+"""
+Generate the fiber lengths histogram
+"""
+fiber_lengths_hist = fiber_length_histogram(
+    tracks=tractogram,
+    outdir=inputs["outdir"],
+    basename="hist_fiber_lengths",
+    ext=".png",
+    bins=20)
+
+
+"""
+Remove the merge tractogram
+"""
+shutil.rmtree(os.path.dirname(tractogram))
+
+
+"""
+Generate QC reporting
+"""
+reportfile = os.path.join(inputs["outdir"], "Tractogram_{0}_{1}_{2}.pdf".format(
+    inputs["projectname"], inputs["sid"], inputs["timepoint"]))
+tic = datetime.now()
+generate_pdf(
+    datapath=inputs["outdir"],
+    struct_file=os.path.join(
+        os.path.abspath(os.path.dirname(pyconnectome.__file__)), "plotting",
+        "resources", "tractogram.json"),
+    author="NeuroSpin",
+    client=inputs["clientname"],
+    poweredby="PyConnectome-{0}".format(tool_version),
+    project=inputs["projectname"],
+    timepoint=inputs["timepoint"],
+    subject=inputs["sid"],
+    date="{0}-{1}-{2}".format(tic.year, tic.month, tic.day),
+    title="Tractogram QC Reporting",
+    filename=reportfile,
+    pagesize=None,
+    left_margin=10,
+    right_margin=10,
+    top_margin=20,
+    bottom_margin=20,
+    show_boundary=False,
+    verbose=0)
+if verbose > 1:
+    print("[info] Repor in '{0}'.".format(reportfile))
+
+
+"""
+Update the outputs and save them and the inputs in a 'logs' directory.
+"""
+logdir = os.path.join(inputs["outdir"], "logs")
+if not os.path.isdir(logdir):
+    os.mkdir(logdir)
+params = locals()
+outputs = dict([(name, params[name])
+               for name in ("density_map", "density_snap", "density_large_snap",
+                            "ends_density_map", "ends_density_snap",
+                            "ends_density_large_snap", "fiber_lengths_hist",
+                            "reportfile")])
+for name, final_struct in [("inputs", inputs), ("outputs", outputs),
+                           ("runtime", runtime)]:
+    log_file = os.path.join(logdir, "{0}.json".format(name))
+    with open(log_file, "wt") as open_file:
+        json.dump(final_struct, open_file, sort_keys=True, check_circular=True,
+                  indent=4)
+if verbose > 1:
+    pprint("[info] Outputs:")
+    pprint(outputs)

@@ -1,0 +1,55 @@
+{
+    "cover": {
+        "type": "cover"
+    },
+    "page1": {
+        "type": "triplanar",
+        "style": "OneColLandscape",
+        "images": [
+            ["tractography_mask.png"]
+        ],
+        "texts": [
+            "The tractography mask."
+        ],
+        "topmargin": 0.1,
+        "linecount": 120
+    },
+    "page2": {
+        "type": "triplanar",
+        "style": "OneCol",
+        "images": [
+            ["fiber_density.png"],
+            ["fiber_density_large.png"]
+        ],
+        "texts": [
+            "The fiber density map."
+        ],
+        "topmargin": 0.1,
+        "linecount": 120
+    },
+    "page3": {
+        "type": "triplanar",
+        "style": "OneCol",
+        "images": [
+            ["fiber_ends_density.png"],
+            ["fiber_ends_density_large.png"]
+        ],
+        "texts": [
+            "The tractogram endpoints map."
+        ],
+        "topmargin": 0.1,
+        "linecount": 120
+    },
+    "page4": {
+        "type": "triplanar",
+        "style": "OneColLandscape",
+        "images": [
+            ["hist_fiber_lengths.png"]
+        ],
+        "texts": [
+            "The fiber lengths distribution."
+        ],
+        "topmargin": 0.05,
+        "linecount": 120
+    }
+}
