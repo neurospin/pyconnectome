@@ -14,9 +14,104 @@ Mapping of the Structural Core of the Human Cerebral Cortex.
 import os
 import numpy
 import networkx as nx
+import scipy.stats as stt
 
 # Bct import
 import bct
+
+
+def metric_profile(features):
+    """ Compute the metric profile.
+
+    Parameters
+    ----------
+    features: dict
+        the network features.
+
+    Returns
+    -------
+    profile: list (N, )
+        the metric profile.
+    header: list (N, )
+        the associated labels.
+    """
+    profile_metrics = {
+        "centrality_mean_degree":
+            numpy.mean(features["degrees"].values()),
+        "centrality_variance_degree":
+            numpy.var(features["degrees"].values()),
+        "centrality_skewness_degree":
+            stt.skew(features["degrees"].values()),
+        "centrality_kurtosis_degree":
+            stt.kurtosis(features["degrees"].values()),
+        "centrality_high_closeness":
+            max(features["clo_cen"].values()),
+        "centrality_mean_closeness":
+            numpy.mean(features["clo_cen"].values()),
+        "centrality_variance_closeness":
+            numpy.var(features["clo_cen"].values()),
+        "centrality_skewness_closeness":
+            stt.skew(features["clo_cen"].values()),
+        "centrality_kurtosis_closeness":
+            stt.kurtosis(features["clo_cen"].values()),
+        "centrality_high_eigen":
+            max(features["eig_cen"].values()),
+        "centrality_mean_eigen":
+            numpy.mean(features["eig_cen"].values()),
+        "centrality_variance_eigen":
+            numpy.var(features["eig_cen"].values()),
+        "centrality_skewness_eigen":
+            stt.skew(features["eig_cen"].values()),
+        "centrality_kurtosis_eigen":
+            stt.kurtosis(features["eig_cen"].values()),
+        "centrality_high_betweeness":
+            max(features["bet_cen"].values()),
+        "strenghts_high":
+            max(features["strengths"].values()),
+        "strenghts_mean":
+            numpy.mean(features["strengths"].values()),
+        "strengths_variance":
+            numpy.var(features["strengths"].values()),
+        "strengths_skewness":
+            stt.skew(features["strengths"].values()),
+        "strengths_kurtosis":
+            stt.kurtosis(features["strengths"].values()),
+        "connectivity_average_node":
+            features["avg_node_con"],
+        "connectivity_node":
+            features["node_con"],
+        "connectivity_edge":
+            features["edge_con"],
+        "assortativity_degree":
+            features["deg_assortativity"],
+        "assortativity_skewness_rich_club":
+            stt.skew(features["rich_clubs"], nan_policy="omit"),
+        "assortativity_kurtosis_rich_club":
+            stt.kurtosis(features["rich_clubs"], nan_policy="omit"),
+        "density":
+            features["density"],
+        "transitivity":
+            features["transitivity"],
+        "clustering_average":
+            features["avg_ccs"],
+        "kcores_high_knumber":
+            max(features["kcores"]),
+        "kcores_mean_knumber":
+            numpy.mean(features["kcores"]),
+        "kcores_variance_knumber":
+            numpy.var(features["kcores"]),
+        "kcores_skewness_knumber":
+            stt.skew(features["kcores"]),
+        "kcores_kurtosis_knumber":
+            stt.kurtosis(features["kcores"]),
+        "community_qstat_louvain":
+            features["qstat"],
+        "efficiency_global":
+            features["global_efficiency"],
+        "efficiency_mean_local":
+            numpy.mean(features["local_efficiency"]),
+    }
+    return profile_metrics.values(), profile_metrics.keys()
 
 
 def create_graph(connectome, labels):
@@ -75,6 +170,18 @@ def basic_network_analysis(graph, outdir=None):
         nodes in the network based on the concept that connections to
         high-scoring nodes contribute more to the score of the node in
         question than equal connections to low-scoring nodes.
+    avg_node_con:
+         nx.average_node_connectivity(graph)
+    edge_con:
+        nx.edge_connectivity(graph)
+    node_con:
+        nx.node_connectivity(graph)
+    deg_assortativity
+        nx.degree_assortativity_coefficient(graph)
+    density:
+        nx.density(graph)
+    transitivity:
+        nx.transitivity(graph)
 
     Note:
 
@@ -98,6 +205,20 @@ def basic_network_analysis(graph, outdir=None):
     snaps: list of file
         the generates snaps.
     """
+    # Connectivity
+    avg_node_con = nx.average_node_connectivity(graph)
+    edge_con = nx.edge_connectivity(graph)
+    node_con = nx.node_connectivity(graph)
+
+    # Assortativity
+    deg_assortativity = nx.degree_assortativity_coefficient(graph)
+
+    # Density
+    density = nx.density(graph)
+
+    # Transitivity
+    transitivity = nx.transitivity(graph)
+
     # Degree distribution
     degrees = graph.degree()
 
@@ -125,7 +246,9 @@ def basic_network_analysis(graph, outdir=None):
                     for name in ("degrees", "strengths", "ccs", "avg_ccs",
                                  "components", "bet_cen", "clo_cen",
                                  "eig_cen", "high_bet_cen", "high_clo_cen",
-                                 "high_eig_cen")])
+                                 "high_eig_cen", "avg_node_con", "edge_con",
+                                 "node_con", "deg_assortativity", "density",
+                                 "transitivity")])
 
     # Snaps
     snaps = []
@@ -207,6 +330,12 @@ def advanced_network_analysis(graph, kstep=1, sstep=600., outdir=None):
     rich_clubs:
         vector of rich-club coefficients for levels 1 to klevel=the maximum
         degree of the adjacency matrix.
+    global_efficiency:
+        the global efficiency is the average of inverse shortest path
+        length, and is inversely related to the characteristic path length.
+    local_efficiency:
+        the local efficiency is the global efficiency computed on the
+        neighborhood of the node, and is related to the clustering coefficient.
 
     Parameters
     ----------
@@ -227,6 +356,10 @@ def advanced_network_analysis(graph, kstep=1, sstep=600., outdir=None):
         the generates snaps.
     """
     adjacency_matrix = numpy.ascontiguousarray(nx.to_numpy_matrix(graph))
+
+    # Efficiency
+    global_efficiency = bct.efficiency_wei(adjacency_matrix)
+    local_efficiency = bct.efficiency_wei(adjacency_matrix, local=True)
 
     # K-core decomposition
     k = 0
@@ -291,7 +424,8 @@ def advanced_network_analysis(graph, kstep=1, sstep=600., outdir=None):
     outputs = dict([(name, params[name])
                     for name in ("kcores", "klevels", "kxs", "scores",
                                  "slevels", "sxs", "community", "qstat",
-                                 "rich_clubs")])
+                                 "rich_clubs", "global_efficiency",
+                                 "local_efficiency")])
 
     # Snaps
     snaps = []

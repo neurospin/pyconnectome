@@ -26,6 +26,40 @@ import numpy
 import nibabel
 
 
+def merge_fibers(tractograms, tempdir=None):
+    """ Merge tractograms.
+
+    Parameters
+    ----------
+    tractograms: list of str
+        paths to the input tractograms.
+    tempdir: str, default None
+        a temporary directory to store intermediate tractogram.
+
+    Returns
+    -------
+    merge_tractogram_file: str
+        all the streamlines in one TRK file.
+    """
+    # Check existence of input file
+    for path in tractograms:
+        if not os.path.isfile(path):
+            raise ValueError("File does not exist: {0}.".format(path))
+
+    # Create a temporary directory to store an intermediate tractogram
+    tempdir = tempfile.mkdtemp(prefix="tractconverter_", dir=tempdir)
+
+    # Combine tractograms in one file
+    trk = nibabel.streamlines.load(tractograms[0])
+    for trk_path in tractograms[1:]:
+        part_trk = nibabel.streamlines.load(trk_path)
+        trk.streamlines.extend(part_trk.streamlines)
+    merge_tractogram_file = os.path.join(tempdir, "tmp.trk")
+    trk.save(merge_tractogram_file)
+
+    return merge_tractogram_file
+
+
 def convert_trk_fibers_to_tck(dwi, trk_tractograms, tck_tractogram,
                               tempdir=None):
     """
@@ -37,7 +71,7 @@ def convert_trk_fibers_to_tck(dwi, trk_tractograms, tck_tractogram,
     dwi: str
         Path to dwi (or nodif_brain) to specify diffusion space.
     trk_tractogram: list of str
-        Paths to the input Connectomist TRK tractograms.
+        Paths to the input TRK tractograms.
     tck_tractogram: str
         Path to the output TCK tractogram.
     tempdir: str, default None
@@ -47,20 +81,11 @@ def convert_trk_fibers_to_tck(dwi, trk_tractograms, tck_tractogram,
     import tractconverter
 
     # Check existence of input file
-    for path in [dwi] + trk_tractograms:
-        if not os.path.isfile(path):
-            raise ValueError("File does not exist: %s" % path)
+    if not os.path.isfile(dwi):
+        raise ValueError("File does not exist: {0}.".format(dwi))
 
-    # Create a temporary directory to store an intermediate tractogram
-    tempdir = tempfile.mkdtemp(prefix="tractconverter_", dir=tempdir)
-
-    # Combine tractograms in one file
-    trk = nibabel.streamlines.load(trk_tractograms[0])
-    for trk_path in trk_tractograms[1:]:
-        part_trk = nibabel.streamlines.load(trk_path)
-        trk.streamlines.extend(part_trk.streamlines)
-    tmp_trk_tractogram = os.path.join(tempdir, "tmp.trk")
-    trk.save(tmp_trk_tractogram)
+    # Merge the input tractograms
+    tmp_trk_tractogram = merge_fibers(trk_tractograms, tempdir=tempdir)
 
     # Convert TRK to TCK using tractconverter
     trk_fibers = tractconverter.TRK(tmp_trk_tractogram)
@@ -69,7 +94,7 @@ def convert_trk_fibers_to_tck(dwi, trk_tractograms, tck_tractogram,
     tractconverter.convert(trk_fibers, tck_fibers)
 
     # Clean temporary directory
-    shutil.rmtree(tempdir)
+    shutil.rmtree(os.path.dirname(tmp_trk_tractogram))
 
     return tck_tractogram
 

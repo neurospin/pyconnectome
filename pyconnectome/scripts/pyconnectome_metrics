@@ -15,7 +15,6 @@ import json
 import argparse
 from datetime import datetime
 from pprint import pprint
-import textwrap
 import numpy
 import networkx
 import bct
@@ -63,7 +62,7 @@ Command example on the HCP data:
 
 python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_metrics \
     -s 100206 \
-    -o /neurospin/hcp/ANALYSIS/3T_mrtrix_reduced_graph_metrics \
+    -o /volatile/nsap/hcp/metrics \
     -m /neurospin/hcp/ANALYSIS/3T_mrtrix_reduced_connectome/mrtrix/100206/connectome_endvox.txt \
     -l /neurospin/hcp/ANALYSIS/3T_mrtrix_reduced_connectome/mrtrix/100206/labels.txt \
     -f /neurospin/hcp/ANALYSIS/3T_freesurfer/100206/T1w \
@@ -215,7 +214,7 @@ except:
 if verbose > 0:
     print("[info] Processing connectome with shape {0}...".format(
         connectome.shape))
-print(connectome_labels)
+    print(connectome_labels)
 
 
 """
