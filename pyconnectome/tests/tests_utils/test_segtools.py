@@ -128,14 +128,15 @@ class FslBet2(unittest.TestCase):
             os.path.basename(self.kwargs["input_file"]).split(".")[0] +
             "_brain")
         self.assertEqual([
-            mock.call(["which", "bet2"],
+            mock.call(["which", "bet"],
                       env={"FSLOUTPUTTYPE": "NIFTI"},
                       stderr=-1, stdout=-1),
-            mock.call(["bet2",
+            mock.call(["bet",
                        self.kwargs["input_file"],
                        output_fileroot,
                        "-f", str(self.kwargs["f"]),
-                       "-g", str(self.kwargs["g"])],
+                       "-g", str(self.kwargs["g"]),
+                       "-R"],
                       cwd=None, env={"FSLOUTPUTTYPE": "NIFTI"}, stderr=-1,
                       stdout=-1)],
             self.mock_popen.call_args_list)
