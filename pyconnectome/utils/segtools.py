@@ -359,32 +359,33 @@ def bet2(input_file, output_fileroot, outline=False, mask=False,
         os.path.basename(input_file).split(".")[0] + "_brain")
 
     # Define the FSL command
-    cmd = ["bet2",
+    cmd = ["bet",
            input_file,
            output_fileroot,
            "-f", str(f),
-           "-g", str(g)]
+           "-g", str(g),
+           "-R"]
 
     # Set optional arguments
     if outline:
-        cmd += ["--outline"]
+        cmd += ["-o"]
     if mask:
-        cmd += ["--mask"]
+        cmd += ["-m"]
     if skull:
-        cmd += ["--skull"]
+        cmd += ["-s"]
     if nooutput:
-        cmd += ["--nooutput"]
+        cmd += ["-n"]
     if mesh:
-        cmd += ["--mesh"]
+        cmd += ["-e"]
     if threshold:
-        cmd += ["--threshold"]
+        cmd += ["-t"]
 
     if c is not None:
         cmd += ["-c", c]
     if radius is not None:
-        cmd += ["--radius", radius]
+        cmd += ["-r", radius]
     if smooth is not None:
-        cmd += ["--smooth", smooth]
+        cmd += ["-s", smooth]
 
     # Call bet2
     fslprocess = FSLWrapper(cmd, shfile=shfile)
