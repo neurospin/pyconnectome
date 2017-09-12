@@ -171,8 +171,8 @@ def get_cmd_line_args():
         help="if activated, generate QC snaps.")
     parser.add_argument(
         "-R", "--bbox",
-        type=int, nargs=6,
-        help="if activated, generate QC snaps.")
+        type=int, nargs=6, metavar="<INT>",
+        help="a bounding box that will be wraped into the reference space.")
     parser.add_argument(
         "-E", "--erase",
         action="store_true",
@@ -197,7 +197,7 @@ def get_cmd_line_args():
     parser.add_argument(
         "-O", "--docrop",
         action="store_true",
-        help="if set, reduce the FOC of the input image to remove lower head "
+        help="if set, reduce the FOV of the input image to remove lower head "
              "and neck.")
     parser.add_argument(
         "-I", "--brainsize",
