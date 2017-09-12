@@ -186,35 +186,59 @@ if not os.path.isdir(subjectdir):
 
 
 """
-Read/symmetrize the connectome and remove loops
-"""
-connectome = []
-with open(inputs["connectomefile"], "rt") as csvfile:
-    reader = csv.reader(csvfile, delimiter=" ")
-    for row in reader:
-        connectome.append(row)
-connectome = numpy.asarray(connectome).astype(numpy.single)
-connectome += connectome.T
-for i in range(connectome.shape[0]):
-    connectome[i, i] = 0
-
-
-"""
 Read labels and remove unknown regions
 """
-connectome_labels = [
-    l.rstrip("\n") for l in open(inputs["labelfile"]).readlines()]
-try:
-    index = connectome_labels.index("Unknown")
-    connectome_labels.pop(index)
-    connectome = numpy.delete(connectome, index, axis=0)
-    connectome = numpy.delete(connectome, index, axis=1)
-except:
-    pass
+fsl_inputs = False
+if inputs["connectomefile"].endswith(".dot"):
+    fsl_inputs = True
+# FSL case: list of coords with label
+if fsl_inputs:
+    labels_array = numpy.loadtxt(inputs["labelfile"])
+    connectome_labels = ["{0}-{1}".format(hemi, idx)
+                         for _, _, _, hemi, idx in labels_array]
+# Simple list with region names
+else:
+    connectome_labels = [
+        l.rstrip("\n") for l in open(inputs["labelfile"]).readlines()]
+    try:
+        index = connectome_labels.index("Unknown")
+        connectome_labels.pop(index)
+        connectome = numpy.delete(connectome, index, axis=0)
+        connectome = numpy.delete(connectome, index, axis=1)
+    except:
+        pass
+if verbose > 0:
+    print("[info] Processing connectome with {0} labels...".format(
+        len(connectome_labels)))
+    
+
+"""
+Read/symmetrize the connectome and remove loops
+"""
+# FSL case: not a connectome matrix yet
+if fsl_inputs:
+    matrix_size = len(connectome_labels)
+    connectome = numpy.zeros((matrix_size, matrix_size), dtype=numpy.single)
+    with open(inputs["connectomefile"]) as dotfile:
+        for line in dotfile:
+            split = line.strip().split()
+            idx1, idx2 = map(int, split[:2])
+            nb_connections = float(split[2])
+            connectome[idx1 - 1, idx2 - 1] = nb_connections
+# A connectome matrix is provided
+else:
+    connectome = []
+    with open(inputs["connectomefile"], "rt") as csvfile:
+        reader = csv.reader(csvfile, delimiter=" ")
+        for row in reader:
+            connectome.append(row)
+    connectome = numpy.asarray(connectome).astype(numpy.single)
+    connectome += connectome.T
+for i in range(connectome.shape[0]):
+    connectome[i, i] = 0
 if verbose > 0:
     print("[info] Processing connectome with shape {0}...".format(
         connectome.shape))
-    print(connectome_labels)
 
 
 """
