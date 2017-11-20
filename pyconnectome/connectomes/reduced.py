@@ -35,7 +35,8 @@ from pyfreesurfer.utils.filetools import (get_or_check_freesurfer_subjects_dir,
 
 
 def connectome_snapshot(connectome, snapshot, labels=None, transform=None,
-                        colorbar_title="", dpi=200, labels_size=4):
+                        colorbar_title="", dpi=200, labels_size=4,
+                        vmin=None, vmax=None):
     """
     Create a PNG snapshot of the connectome (i.e. connectivity matrix).
 
@@ -58,6 +59,8 @@ def connectome_snapshot(connectome, snapshot, labels=None, transform=None,
         "Dot Per Inch", set higher for better resolution.
     labels_size: int, default 4
         The label font size.
+    vmin, vmax: float, default None
+        The display range.
 
     Returns
     -------
@@ -103,7 +106,12 @@ def connectome_snapshot(connectome, snapshot, labels=None, transform=None,
         ax.set_yticklabels(labels_array, size=labels_size)
 
     ax.set_aspect("equal")
-    heatmap = ax.pcolor(matrix, cmap=plt.cm.Reds)
+    kwargs = {}
+    if vmin is not None:
+        kwargs["vmin"] = vmin
+    if vmax is not None:
+        kwargs["vmax"] = vmax
+    heatmap = ax.pcolor(matrix, cmap=plt.cm.Reds, **kwargs)
     colorbar = fig.colorbar(heatmap)
     colorbar.set_label(colorbar_title, rotation=270, labelpad=20)
 
