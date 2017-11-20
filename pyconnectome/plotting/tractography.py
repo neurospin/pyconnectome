@@ -15,6 +15,9 @@ import subprocess
 # Package import
 from pyconnectome.utils.reorient import reorient_image
 
+# Third party import
+from nilearn import plotting
+
 
 def fiber_density_map(tracks, template, outdir, basename=None,
                       fiber_ends_only=False, overlay=False, overlay_alpha=None,
@@ -163,10 +166,10 @@ def fsleyes_snapshot(inputfile, outdir, overlayfile=None,
     ----------
     inputfile: str
         path to the input image to snap.
-    overlayfile: str
-        path to the image to overlay.
     outdir: str
         directoy where to output.
+    overlayfile: str, default None
+        path to the image to overlay.
     basename: str, default 'fsleyes_snap'
         basename without extension of the output snapshot.
     mask_alpha: int, default 50
@@ -176,9 +179,9 @@ def fsleyes_snapshot(inputfile, outdir, overlayfile=None,
     mask_cmap: str, default 'red'
         a valid FSLeyes color map for the mask file.
     dr: 2-uplet, default None
-        athe display range (LO, HI) for the input file.
+        the display range (LO, HI) for the input file.
     mask_dr: 2-uplet, default None
-        athe display range (LO, HI) for the mask file.
+        the display range (LO, HI) for the mask file.
 
     Return
     ------
@@ -195,5 +198,75 @@ def fsleyes_snapshot(inputfile, outdir, overlayfile=None,
         if mask_dr is not None:
             cmd += ["-dr", str(mask_dr[0]), str(mask_dr[1])]
     subprocess.check_call(cmd)
+
+    return snap
+
+
+def nilearn_snapshot(inputfile, outdir, overlayfile=None,
+                     basename="nilearn_snap", mask_alpha=50,
+                     cmap=None, mask_cmap=None,
+                     dr=None, mask_dr=None, black_bg=True):
+    """ Create a tri-view snapshot with one overlay.
+
+    Parameters
+    ----------
+    inputfile: str
+        path to the input image to snap.
+    outdir: str
+        directoy where to output.
+    overlayfile: str, default None
+        path to the image to overlay.
+    basename: str, default 'nilearn_snap'
+        basename without extension of the output snapshot.
+    mask_alpha: int, default 50
+        a overlay alpha value (0-100).
+    cmap: str, default None
+        a valid nilearn color map for the input file.
+    mask_cmap: str, default None
+        a valid nilearn color map for the mask file.
+    dr: 2-uplet, default None
+        athe display range (LO, HI) for the input file.
+    mask_dr: 2-uplet, default None
+        athe display range (LO, HI) for the mask file.
+    black_bg: bool, default True
+        If True, the background of the image is set to be black
+
+    Return
+    ------
+    snap: str
+        path to the output snapshot: <outdir>/<basename>.png
+    """
+    # Display the image
+    kwargs = {}
+    if cmap is not None:
+        try:
+            kwargs["cmap"] = getattr(plotting.cm, cmap)
+        except:
+            raise ValueError("Invalid color map '{0}'.".format(cmap))
+    if dr is not None:
+        kwargs["vmin"] = dr[0]
+        kwargs["vmax"] = dr[1]
+    display = plotting.plot_anat(inputfile, black_bg=black_bg,
+                                 draw_cross=False, **kwargs)
+
+    # Add the overlay
+    if overlayfile is not None:
+        kwargs = {}
+        if mask_cmap is not None:
+            try:
+                kwargs["cmap"] = getattr(plotting.cm, mask_cmap)
+            except:
+                raise ValueError("Invalid color map '{0}'.".format(mask_cmap))
+        if mask_dr is not None:
+            kwargs["vmin"] = mask_dr[0]
+            kwargs["vmax"] = mask_dr[1]
+        if mask_alpha is not None:
+            kwargs["alpha"] = mask_alpha / 100.
+        display.add_overlay(inputfile, **kwargs)
+
+    # Save the result
+    snap = os.path.join(outdir, basename + ".png")
+    display.savefig(snap)
+    display.close()
 
     return snap
