@@ -24,6 +24,8 @@ try:
     bredala.USE_PROFILER = False
     bredala.register("pyconnectome.utils.segtools",
                      names=["bet2", "fast", "robustfov", "roi_from_bbox"])
+    bredala.register("pyconnectome.utils.filetools",
+                     names=["fslreorient2std"])
     bredala.register("pyconnectome.utils.regtools",
                      names=["flirt", "fnirt"])
     bredala.register("pydcmio.plotting.slicer",
@@ -41,6 +43,7 @@ from pyconnectome.utils.segtools import robustfov
 from pyconnectome.utils.segtools import roi_from_bbox
 from pyconnectome.utils.regtools import flirt
 from pyconnectome.utils.regtools import fnirt
+from pyconnectome.utils.filetools import fslreorient2std
 
 # Third party import
 import numpy
@@ -162,6 +165,11 @@ def get_cmd_line_args():
 
     # Optional arguments
     parser.add_argument(
+        "-C", "--nosearch", 
+        action="store_true",
+        help="if set, perform no search to initializa the linear "
+             "optimization.")
+    parser.add_argument(
         "-P", "--dof",
         type=int, default=12, choices=[6, 12],
         help="the number of DOF in the linear registration.")    
@@ -195,10 +203,18 @@ def get_cmd_line_args():
         default=3, type=int,
         help="the number of class in the FAST modelization.")
     parser.add_argument(
+        "-Z", "--doreorient",
+        action="store_true",
+        help="if set, use the FSL routine to reorient input images.")
+    parser.add_argument(
         "-O", "--docrop",
         action="store_true",
         help="if set, reduce the FOV of the input image to remove lower head "
              "and neck.")
+    parser.add_argument(
+        "-W", "--cropwho",
+        default="moving", choices=("moving", "reference", "both"),
+        help="select which input images will be cropped.")
     parser.add_argument(
         "-I", "--brainsize",
         type=int, default=170,
@@ -282,45 +298,89 @@ if verbose > 0:
 
 
 """
+Step -1: Reorient images.
+"""
+if inputs["doreorient"]:
+    reorient_dir = os.path.join(subjdir, "reorient")
+    if not os.path.isdir(reorient_dir):
+        os.mkdir(reorient_dir)
+    inputfile = os.path.join(
+        reorient_dir, os.path.basename(inputs["inputfile"]))
+    fslreorient2std(
+        inputs["inputfile"], inputfile, fslconfig=inputs["fsl_sh"])
+    referencefile = os.path.join(
+        reorient_dir, os.path.basename(inputs["referencefile"]))
+    fslreorient2std(
+        inputs["referencefile"], referencefile, fslconfig=inputs["fsl_sh"])
+else:
+    inputfile = inputs["inputfile"]
+    referencefile = inputs["referencefile"]
+
+
+"""
 Step 0: Remove lower head and neck.
 """
+crop_outputs = [None, None]
+crop_outputs_und = [None, None]
+crop_outputs_trf = [None, None]
 if inputs["docrop"]:
+    
+    # Select step inputs
+    step_inputs = [None, None]
+    if inputs["cropwho"] in ("moving", "both"):
+        step_inputs[0] = inputfile
+    if inputs["cropwho"] in ("reference", "both"):
+        step_inputs[1] = referencefile
 
-    # Crop
-    basename = os.path.basename(inputs["inputfile"])
-    crop_dir = os.path.join(subjdir, "robustfov")
-    if not os.path.isdir(crop_dir):
-        os.mkdir(crop_dir)
-    cropped_file = os.path.join(crop_dir, "robustfov_" + basename)
-    cropped_trf = os.path.join(
-        crop_dir, "robustfov_" + basename.split(".")[0] + ".txt")
-    robustfov(
-        input_file=inputs["inputfile"],
-        output_file=cropped_file,
-        brain_size=inputs["brainsize"],
-        matrix_file=cropped_trf,
-        fsl_sh=inputs["fsl_sh"])
+    # Go through each input
+    for cnt, path in enumerate(step_inputs):
 
-    # Restore orginial shape
-    cropped_und_file = os.path.join(crop_dir, "robustfov_und_" + basename)
-    cropped_und_file, _ = flirt(
-        in_file=cropped_file,
-        ref_file=inputs["inputfile"],
-        out=cropped_und_file,
-        init=cropped_trf,
-        applyxfm=True,
-        verbose=verbose,
-        shfile=inputs["fsl_sh"])
+        # Stop cas
+        if path is None:
+            continue
 
-    # Perform QC
-    if inputs["dosnap"]:
-        snaps.append(mosaic(impath=cropped_file,
-                            title="robustfov",
-                            outdir=snap_dir))
+        # Crop
+        basename = os.path.basename(path)
+        crop_dir = os.path.join(subjdir, "robustfov")
+        if not os.path.isdir(crop_dir):
+            os.mkdir(crop_dir)
+        cropped_file = os.path.join(crop_dir, "robustfov_" + basename)
+        cropped_trf = os.path.join(
+            crop_dir, "robustfov_" + basename.split(".")[0] + ".txt")
+        robustfov(
+            input_file=path,
+            output_file=cropped_file,
+            brain_size=inputs["brainsize"],
+            matrix_file=cropped_trf,
+            fsl_sh=inputs["fsl_sh"])
+        crop_outputs[cnt] = cropped_file
+        crop_outputs_trf[cnt] = cropped_trf
 
+        # Restore orginial shape
+        cropped_und_file = os.path.join(crop_dir, "robustfov_und_" + basename)
+        cropped_und_file, _ = flirt(
+            in_file=cropped_file,
+            ref_file=path,
+            out=cropped_und_file,
+            init=cropped_trf,
+            applyxfm=True,
+            verbose=verbose,
+            shfile=inputs["fsl_sh"])
+        crop_outputs[cnt] = cropped_und_file
+
+        # Perform QC
+        if inputs["dosnap"]:
+            snaps.append(mosaic(impath=cropped_file,
+                                title="robustfov_{0}".format(cnt),
+                                outdir=snap_dir))
+if crop_outputs[0] is not None:
+    cropped_moving_file = crop_outputs[0]
 else:
-    cropped_file = inputs["inputfile"]
-    cropped_trf = None
+    cropped_moving_file = inputfile
+if crop_outputs[1] is not None:
+    cropped_reference_file = crop_outputs[1]
+else:
+    cropped_reference_file = referencefile
 
 
 """
@@ -332,8 +392,8 @@ if inputs["brain"] is not None:
     skull_mask_file, outskin_mesh_file, outskull_mask_file = (None, ) * 3
     brain_file = inputs["brain"]
     # No BET, use full FOV
-    if inputs["docrop"]:
-        cropped_file = cropped_und_file
+    if inputs["docrop"] and inputs["cropwho"] in ("moving", "both"):
+        cropped_moving_file = crop_outputs_und[0]
 elif inputs["dobrain"]:
     bet_dir = os.path.join(subjdir, "bet")
     if not os.path.isdir(bet_dir):
@@ -341,7 +401,7 @@ elif inputs["dobrain"]:
     (brain_file, mask_file, mesh_file, outline_file, inskull_mask_file,
      inskull_mesh_file, outskull_mask_file, outskull_mesh_file,
      outskin_mask_file, outskin_mesh_file, skull_mask_file) = bet2(
-        input_file=cropped_file,
+        input_file=cropped_moving_file,
         output_fileroot=bet_dir,
         outline=False,
         mask=True,
@@ -363,7 +423,7 @@ else:
     mask_file, mesh_file, outline_file, inskull_mask_file = (None, ) * 4
     nskull_mesh_file, outskull_mesh_file, outskin_mask_file = (None, ) * 3
     skull_mask_file, outskin_mesh_file, outskull_mask_file = (None, ) * 3
-    brain_file =  cropped_file
+    brain_file =  cropped_moving_file
 if verbose > 0:
     print("[result] Brain image: {0}.".format(brain_file))
     print("[result] Brain mask image: {0}.".format(mask_file))
@@ -410,8 +470,8 @@ flirt_dir = os.path.join(subjdir, "flirt")
 if not os.path.isdir(flirt_dir):
     os.mkdir(flirt_dir)
 affine_file, affine_omat = flirt(
-    in_file=cropped_file,
-    ref_file=inputs["referencefile"],
+    in_file=cropped_moving_file,
+    ref_file=cropped_reference_file,
     omat=os.path.join(flirt_dir, "flirt_{0}_to_template.txt".format(basename)),
     out=os.path.join(flirt_dir, "flirt_{0}.nii.gz".format(basename)),
     init=None,
@@ -424,10 +484,11 @@ affine_file, affine_omat = flirt(
     dof=inputs["dof"],
     applyxfm=False,
     applyisoxfm=None,
+    nosearch=inputs["nosearch"],
     verbose=verbose,
     shfile=inputs["fsl_sh"])
 if inputs["dosnap"]:
-    snaps.append(mosaic(impath=inputs["referencefile"],
+    snaps.append(mosaic(impath=cropped_reference_file,
                         overlay=affine_file,
                         title="affine_registration",
                         outdir=snap_dir))
@@ -452,7 +513,7 @@ if inputs["dononlinear"]:
         verbose=verbose,
         shfile=inputs["fsl_sh"])
     if inputs["dosnap"]:
-        snaps.append(mosaic(impath=inputs["referencefile"],
+        snaps.append(mosaic(impath=cropped_reference_file,
                             overlay=iout,
                             title="nonlinear_registration",
                             outdir=snap_dir))
@@ -471,7 +532,7 @@ if inputs["bbox"] is not None:
         os.mkdir(bbox_dir)
     bbox_file = os.path.join(bbox_dir, "bbox.nii.gz")
     roi_from_bbox(
-        input_file=inputs["referencefile"],
+        input_file=cropped_reference_file,
         bbox=inputs["bbox"],
         output_file=bbox_file)
 
@@ -524,7 +585,7 @@ if inputs["extrafiles"] is not None:
             path_mni_file = os.path.join(extra_dir, os.path.basename(path))
             path_mni_file, _ = flirt(
                 in_file=path,
-                ref_file=inputs["referencefile"],
+                ref_file=cropped_reference_file,
                 out=path_mni_file,
                 init=affine_omat,
                 applyxfm=True,
@@ -542,7 +603,8 @@ if not os.path.isdir(logdir):
     os.mkdir(logdir)
 params = locals()
 outputs = dict([(name, params[name])
-               for name in ("cropped_file", "cropped_trf", "tpm", "tsm",
+               for name in ("cropped_moving_file", "cropped_reference_file",
+                            "crop_outputs_trf", "tpm", "tsm",
                             "segmentation_anatfile", "bias_anatfile",
                             "biascorrected_anatfile", "brain_file", "mask_file",
                             "affine_file", "affine_omat", "cout", "iout",

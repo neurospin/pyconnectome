@@ -23,11 +23,13 @@ try:
     bredala.USE_PROFILER = False
     bredala.register("pyconnectome.plotting.tractography",
                      names=["fiber_density_map", "fiber_length_histogram",
-                            "fsleyes_snapshot"])
+                            "nilearn_snapshot"])
     bredala.register("pyconnectome.utils.filetools",
                      names=["merge_fibers"])
     bredala.register("pyconnectomist.utils.pdftools",
                      names=["generate_pdf"])
+    bredala.register("pydcmio.plotting.slicer",
+                     names=["mosaic"])
 except:
     pass
 
@@ -36,12 +38,13 @@ import pyconnectome
 from pyconnectome import __version__ as version
 from pyconnectome.plotting.tractography import fiber_density_map
 from pyconnectome.plotting.tractography import fiber_length_histogram
-from pyconnectome.plotting.tractography import fsleyes_snapshot
+from pyconnectome.plotting.tractography import nilearn_snapshot
 from pyconnectome.utils.filetools import merge_fibers
 
 # Third party import
 import dipy
 import pydcmio
+from pydcmio.plotting.slicer import mosaic
 from pyconnectomist.utils.pdftools import generate_pdf
 
 
@@ -193,12 +196,12 @@ density_map, density_snap = fiber_density_map(
     overlay=False,
     ext=".png",
     axes=inputs["axes"])
-density_large_snap = fsleyes_snapshot(
+density_large_snap = nilearn_snapshot(
     inputfile=density_map,
     outdir=inputs["outdir"],
     basename="fiber_density_large",
-    mask_alpha=100,
-    cmap="hot")
+    cmap="cyan_orange",
+    black_bg=False)
 
 
 """
@@ -214,23 +217,21 @@ ends_density_map, ends_density_snap = fiber_density_map(
     overlay_alpha=1,
     ext=".png",
     axes=inputs["axes"])
-ends_density_large_snap = fsleyes_snapshot(
-    inputfile=inputs["input"],
-    overlayfile=ends_density_map,
+ends_density_large_snap = nilearn_snapshot(
+    inputfile=ends_density_map,
     outdir=inputs["outdir"],
     basename="fiber_ends_density_large",
-    mask_alpha=100,
-    mask_dr=(0, 1))
+    cmap="cyan_orange",
+    black_bg=False)
 
 
 """
 Create the tractography mask map
 """
 if inputs["mask"] is not None:
-    mask_snap = fsleyes_snapshot(
-        inputfile=inputs["mask"],
-        outdir=inputs["outdir"],
-        basename="tractography_mask")
+    mask_snap = mosaic(
+        impath=inputs["mask"], outdir=inputs["outdir"],
+        title="Tractography mask", basename="tractography_mask", ext=".png")
 else:
     mask_snap = None
 

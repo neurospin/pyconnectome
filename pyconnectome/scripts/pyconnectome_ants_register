@@ -344,7 +344,8 @@ for index in range(nb_modalities):
         "-o", outfile,
         "-r", inputs["references"][index],
         "-t", fieldfile,
-        "-t", affinefile]
+        "-t", affinefile,
+        "-n", "BSpline"]
 if verbose > 0:
     print("-" * 20)
     print(" ".join(cmd2))

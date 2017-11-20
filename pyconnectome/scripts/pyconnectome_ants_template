@@ -1,0 +1,246 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*
+##########################################################################
+# NSAp - Copyright (C) CEA, 2017
+# Distributed under the terms of the CeCILL-B license, as published by
+# the CEA-CNRS-INRIA. Refer to the LICENSE file or to
+# http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html for details.
+##########################################################################
+
+# System import
+import os
+import argparse
+import json
+from pprint import pprint
+from datetime import datetime
+import textwrap
+from argparse import RawTextHelpFormatter
+
+# Bredala module
+try:
+    import bredala
+    bredala.USE_PROFILER = False
+    #bredala.register("pyconnectome.tractography.filtering",
+    #                 names=["life"])
+except:
+    pass
+
+# Package import
+from pyconnectome import __version__ as version
+
+
+# Parameters to keep trace
+__hopla__ = ["runtime", "inputs", "outputs"]
+
+
+DOC = """
+Multimodal template creation with ANTS
+--------------------------------------
+
+Command example on the SENIOR data:
+
+python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_ants_template \
+    -b /usr/lib/ants \
+    -o /neurospin/nsap/processed/longitudinal_atlas/data/template \
+    -i /neurospin/nsap/processed/longitudinal_atlas/data/template_15.txt \
+    -w 1 1 \
+    -D 3 \
+    -G 0.2 \
+    -J 47 \
+    -v 2
+
+python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_ants_template \
+    -b /usr/lib/ants \
+    -o /neurospin/nsap/processed/longitudinal_atlas/data/template \
+    -i /neurospin/nsap/processed/longitudinal_atlas/data/template_5.txt \
+    -w 1 \
+    -D 3 \
+    -G 0.2 \
+    -J 47 \
+    -v 2
+"""
+
+
+def is_file(filepath):
+    """ Check file's existence - argparse 'type' argument.
+    """
+    if not os.path.isfile(filepath):
+        raise argparse.ArgumentError("File does not exist: %s" % filepath)
+    return filepath
+
+def is_directory(dirarg):
+    """ Type for argparse - checks that directory exists.
+    """
+    if not os.path.isdir(dirarg):
+        raise argparse.ArgumentError(
+            "The directory '{0}' does not exist!".format(dirarg))
+    return dirarg
+
+
+def get_cmd_line_args():
+    """
+    Create a command line argument parser and return a dict mapping
+    <argument name> -> <argument value>.
+    """
+    parser = argparse.ArgumentParser(
+        prog="python pyconnectome_ants_template",
+        description=textwrap.dedent(DOC),
+        formatter_class=RawTextHelpFormatter)
+
+    # Required arguments
+    required = parser.add_argument_group("required arguments")
+    required.add_argument(
+        "-o", "--outdir",
+        type=is_directory, required=True, metavar="<path>",
+        help="Directory where to output.")
+    required.add_argument(
+        "-b", "--binaries",
+        type=is_directory, required=True, metavar="<path>",
+        help="Path to the ANTS binaries.")
+    required.add_argument(
+        "-i", "--images",
+        type=is_file, required=True, metavar="<path>",
+        help="Path to a '.txt' file where each line is the location of "
+             "the input image.  One can also specify more than one file for "
+             "each image for multi-modal template construction (e.g. t1 and "
+             "t2)..")
+    required.add_argument(
+        "-w", "--weights",
+        type=str, required=True, nargs="+",
+        help="Modality weights used in the similarity metric.")
+
+    # Optional arguments
+    parser.add_argument(
+        "-B", "--nobfc",
+        action="store_true", default=False,
+        help="If set no bias field correction is performed.")
+    parser.add_argument(
+        "-D", "--dimensions",
+        type=int, choices=[2, 3, 4], default=3,
+        help="The images dimensions.")
+    parser.add_argument(
+        "-G", "--gradient-step",
+        type=float, default=0.25,
+        help="Smaller in magnitude results in more cautious steps. Use "
+             "smaller steps to refine template details. 0.25 is an upper "
+             "(aggressive) limit for this parameter.")
+    parser.add_argument(
+        "-J", "--nbthread",
+        type=int, default=2,
+        help="Number of cpu cores to use locally.")
+    parser.add_argument(
+        "-v", "--verbose",
+        type=int, choices=[0, 1, 2], default=2,
+        help="Increase the verbosity level: 0 silent, [1, 2] verbose.")
+
+    # Create a dict of arguments to pass to the 'main' function
+    args = parser.parse_args()
+    kwargs = vars(args)
+    verbose = kwargs.pop("verbose")
+
+    return kwargs, verbose
+
+
+"""
+Parse the command line.
+"""
+inputs, verbose = get_cmd_line_args()
+tool = "pyconnectome_ants_template"
+timestamp = datetime.now().isoformat()
+tool_version = version
+params = locals()
+runtime = dict([(name, params[name])
+               for name in ("tool", "tool_version", "timestamp")])
+outputs = None
+if verbose > 0:
+    pprint("[info] Starting ANTS template creation...")
+    pprint("[info] Runtime:")
+    pprint(runtime)
+    pprint("[info] Inputs:")
+    pprint(inputs)
+
+
+"""
+Start template creation.
+"""
+import numpy
+import subprocess
+
+im_array = numpy.loadtxt(inputs["images"], dtype=str, delimiter=",")
+if im_array.ndim == 1:
+    im_array.shape += (1, )
+if im_array.shape[1] != len(inputs["weights"]):
+    raise ValueError("Number of modalities mismatched in inputs: {0}.".format(
+        im_array.shape))
+cmd = [
+    "antsMultivariateTemplateConstruction2.sh",
+    "-d", str(inputs["dimensions"]),
+    "-o", os.path.join(inputs["outdir"], "T_"),
+    "-i", "4",  # iterations of the template construction i*NumImages registrations.
+    "-g", str(inputs["gradient_step"]),
+    "-j", str(inputs["nbthread"]),
+    "-c", "2",  # use localhost for execution
+    "-k", str(im_array.shape[1]),
+    "-w", "x".join(inputs["weights"]),
+    "-f", "8x4x2x1",  # shrink factors
+    "-s", "3x2x1x0",  # smoothing factors
+    "-q", "100x100x70x20",  # max iteration for each pairwise registration
+    "-n", "0" if inputs["nobfc"] else "1",
+    "-r", "0", #TODO 1 # do rigid-body registration of inputs before creating template
+    "-l", "1", # use linear image registration stages
+    "-m", "CC", # use cross corelation without specifying the metric radius
+    "-b", "1", # keep all results
+    "-t", "SyN", # type of transformation model
+    inputs["images"]]
+if verbose > 0:
+    print("[info] Execute command '{0}': may be long...".format(" ".join(cmd)))
+
+environment = os.environ
+environment["ANTSPATH"] = inputs["binaries"]
+environment["PATH"] += ":" + inputs["binaries"]
+process = subprocess.Popen(cmd,
+                           env=environment,
+                           stdout=subprocess.PIPE,
+                           stderr=subprocess.PIPE)
+stdout, stderr = process.communicate()
+exitcode = process.returncode
+if exitcode != 0:
+    raise ValueError("Command '{0}' failed:: {1}".format(
+        " ".join(cmd), stderr + stdout))
+
+"""
+in="mask_nii/SXX.native.brain.nii.gz"
+out="out/SXX.brainMaskWarpToTemplate.nii.gz"
+# generated by the previous script
+ref="template/T_template0.nii.gz"
+# generated by the previous script
+tr1="Warp/T_SXX.nativeWarp.nii.gz"
+# generated by the previous script
+tr2="mat/T_SXX.nativeGenericAffine.mat"
+
+${ANTSPATH}/antsApplyTransforms -d3 --float 1 \
+                                -i $in  \
+                                -o $out \ 
+                                -r $ref \
+                                -t $tr1 \
+                                -t $tr2
+"""
+
+"""
+Update the outputs and save them and the inputs in a 'logs' directory.
+"""
+logdir = os.path.join(inputs["outdir"], "logs")
+if not os.path.isdir(logdir):
+    os.mkdir(logdir)
+params = locals()
+outputs = dict([(name, params[name])
+               for name in ("cmd", )])
+for name, final_struct in [("inputs", inputs), ("outputs", outputs),
+                           ("runtime", runtime)]:
+    log_file = os.path.join(logdir, "{0}.json".format(name))
+    with open(log_file, "wt") as open_file:
+        json.dump(final_struct, open_file, sort_keys=True, check_circular=True,
+                  indent=4)
+if verbose > 1:
+    pprint("[info] Outputs:")
+    pprint(outputs)
