@@ -6,6 +6,12 @@
 # for details.
 ##########################################################################
 
+
+"""
+Modules that defines custom colors.
+"""
+
+
 # System import
 import numpy
 

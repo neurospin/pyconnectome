@@ -35,5 +35,6 @@ setup(
     platforms=release_info["PLATFORMS"],
     extras_require=release_info["EXTRA_REQUIRES"],
     install_requires=release_info["REQUIRES"],
-    package_data=pkgdata
+    package_data=pkgdata,
+    scripts=release_info["SCRIPTS"]
 )

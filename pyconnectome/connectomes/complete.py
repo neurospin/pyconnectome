@@ -28,7 +28,6 @@ from pyfreesurfer.conversions.volconvs import mri_convert
 from pyconnectome import DEFAULT_FSL_PATH
 from pyconnectome.wrapper import FSLWrapper
 from pyconnectome.tractography.probabilist import probtrackx2
-from pyconnectome.utils.filetools import surf2surf
 
 
 def probtrackx2_connectome_complete(outdir,

@@ -6,6 +6,12 @@
 # for details.
 ##########################################################################
 
+
+"""
+Modules that provides tools to display networks.
+"""
+
+
 # System import
 import os
 import numpy

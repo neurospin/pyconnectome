@@ -7,6 +7,11 @@
 # http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html for details.
 ##########################################################################
 
+"""
+Modules that provides tractography renderings.
+"""
+
+
 # Standard import
 import os
 import nibabel

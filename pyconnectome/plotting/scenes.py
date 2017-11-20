@@ -6,6 +6,12 @@
 # for details.
 ##########################################################################
 
+
+"""
+Modules that provides predefined 3D rendering scenes.
+"""
+
+
 # System import
 import numpy
 import logging

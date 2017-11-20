@@ -6,6 +6,11 @@
 # for details.
 ##########################################################################
 
+"""
+Modules that provides tools to wrap external softwares.
+"""
+
+
 # System import
 import os
 import pwd

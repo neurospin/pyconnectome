@@ -6,6 +6,10 @@
 # for details.
 ##########################################################################
 
+"""
+Module custom exceptions.
+"""
+
 
 class FSLError(Exception):
     """ Base exception type for the package.

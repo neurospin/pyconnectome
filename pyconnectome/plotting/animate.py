@@ -6,6 +6,12 @@
 # for details.
 ##########################################################################
 
+
+"""
+Modules that provides tools to generate movies.
+"""
+
+
 # System imports
 from __future__ import print_function
 import os

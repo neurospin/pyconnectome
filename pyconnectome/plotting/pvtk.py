@@ -6,6 +6,12 @@
 # for details.
 ##########################################################################
 
+
+"""
+Modules that provides tools to create 3D rendering using VTK.
+"""
+
+
 # System import
 from __future__ import print_function
 import numpy

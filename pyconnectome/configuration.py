@@ -6,6 +6,11 @@
 # for details.
 ##########################################################################
 
+"""
+Module that provides tools to configure external softwares.
+"""
+
+
 # System import
 import os
 import re

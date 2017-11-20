@@ -199,10 +199,10 @@ def flirt(in_file, ref_file, omat=None, out=None, init=None, cost="corratio",
     """ Wraps command flirt.
 
     The basic usage is:
-        flirt [options] -in <inputvol> -ref <refvol> -out <outputvol>
-        flirt [options] -in <inputvol> -ref <refvol> -omat <outputmatrix>
-        flirt [options] -in <inputvol> -ref <refvol> -applyxfm -init <matrix>
-              -out <outputvol>
+    flirt [options] -in <inputvol> -ref <refvol> -out <outputvol>
+    flirt [options] -in <inputvol> -ref <refvol> -omat <outputmatrix>
+    flirt [options] -in <inputvol> -ref <refvol> -applyxfm -init <matrix>
+    -out <outputvol>
 
     Parameters
     ----------

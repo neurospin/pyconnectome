@@ -96,6 +96,7 @@ class FslFlirt(unittest.TestCase):
                        "-in", self.kwargs["in_file"],
                        "-ref", self.kwargs["ref_file"],
                        "-cost", self.kwargs["cost"],
+                       "-searchcost", self.kwargs["cost"],
                        "-anglerep", self.kwargs["anglerep"],
                        "-bins", str(self.kwargs["bins"]),
                        "-interp", self.kwargs["interp"],

@@ -8,7 +8,7 @@
 ##########################################################################
 
 # Module current version
-version_major = 2
+version_major = 1
 version_minor = 0
 version_micro = 0
 
@@ -31,21 +31,27 @@ CLASSIFIERS = ["Development Status :: 5 - Production/Stable",
                "Topic :: Utilities"]
 
 # Project descriptions
-description = """[pyConnectome]
-This package provides common scripts:
+description = """
+Diffusion MRI connectome.
+"""
+SUMMARY = """
+.. container:: summary-carousel
 
-* pyconnectome_bedpostx:
-* pyconnectome_mrtrix_connectome:
-* pyconnectome_probtrackx2_connectome:
+    pyConnectome is a Python module that can be used to play with diffusion
+    MRI connectomes. This package offers:
+
+    * registration scrips using ANTS, FSL or SPM.
+    * complete or reduced connectome computation using MrTrix, MITK or FSL.
+    * connectome graph analysis and visulaization.
+    * tractogram compression and filtergin tools.
 """
 long_description = """
-======================
+============
 pyConnectome
-======================
+============
 
-Python wrappers for FSL: wrap the FSL software and simplify
-scripting calls. Such calls can be performed through the use of a
-dedicated function of the package.
+Python wrappers around different softwares to compute structural (complete or
+reduced) connectomes.
 """
 
 # Main setup parameters
@@ -71,3 +77,21 @@ REQUIRES = [
     "nibabel>=1.1.0"
 ]
 EXTRA_REQUIRES = {}
+SCRIPTS = [
+    "pyconnectome/scripts/pyconnectome_ants_register",
+    "pyconnectome/scripts/pyconnectome_ants_template",
+    "pyconnectome/scripts/pyconnectome_bedpostx",
+    "pyconnectome/scripts/pyconnectome_compress_tractogram",
+    "pyconnectome/scripts/pyconnectome_life",
+    "pyconnectome/scripts/pyconnectome_metrics",
+    "pyconnectome/scripts/pyconnectome_metrics_heatmap",
+    "pyconnectome/scripts/pyconnectome_mitk_tractogram",
+    "pyconnectome/scripts/pyconnectome_mrtrix_tractogram",
+    "pyconnectome/scripts/pyconnectome_probtrackx2_complete",
+    "pyconnectome/scripts/pyconnectome_probtrackx2_tractogram",
+    "pyconnectome/scripts/pyconnectome_reduced_connectome",
+    "pyconnectome/scripts/pyconnectome_reduced_probtrackx2",
+    "pyconnectome/scripts/pyconnectome_register",
+    "pyconnectome/scripts/pyconnectome_report_tractogram",
+    "pyconnectome/scripts/pyconnectome_tissue_segmentation"
+]
