@@ -1,0 +1,513 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+  
+    <title>PYCONNECTOME &mdash; pyConnectome</title>
+  <!-- htmltitle is before nature.css - we use this hack to load bootstrap first -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="../_static/css/bootstrap.min.css" media="screen" />
+
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="pyConnectome" href="../index.html" />
+  
+   
+       <script type="text/javascript" src="../_static/sidebar.js"></script>
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="../_static/js/bootstrap.min.js" type="text/javascript"></script>
+
+  <script src="../_static/js/angular.min.js" type="text/javascript"></script>
+  <script type="text/javascript">
+    var app = angular.module("navApp", []);
+    app.controller('navCtrl', ['$scope', '$window', function($scope, $window) {
+      $scope.isActive = function (viewLocation) {
+        var rel = $window.location.pathname.split("/")
+        rel = rel[rel.length - 1]
+        rel = rel.split(".")[0]
+        var active = (viewLocation === rel);
+        return active;};
+    }]);
+  </script>
+
+  </head>
+  <body role="document"><div class="banner">
+  <div class="container-fluid banner-container">
+    <div class="row banner-inner">
+      <div class="col-xs-4">
+        <img alt="Logo" src="../_static/pyconnectome.png">
+      </div>
+      <div class="col-xs-8">
+            <p>Diffusion MRI connectome.</p>
+      </div>
+    </div>  
+  </div>
+</div><nav class="navbar navbar-default navbar-static-top">
+  <div class="container-fluid">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+        </a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse" ng-controller="navCtrl" ng-app="navApp">
+      <ul class="nav navbar-nav">
+        <li ng-class="{ active: isActive('index') }"><a href="../index.html">Home</a></li>
+        <li ng-class="{ active: isActive('installation') }"><a href="../generated/installation.html">Installation</a></li>
+        <li ng-class="{ active: isActive('gallery') }"><a href="gallery.html">Gallery</a></li>
+        <li ng-class="{ active: isActive('documentation') }"><a href="../generated/documentation.html">API documentation</a></li>
+        <!--<li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"> <span class="caret"></span></a>
+          <ul class="dropdown-menu">
+	        <li><a href="../generated/pyconnectome.html">Pyconnectome</a></li>
+<li><a href="../generated/pyconnectome.tractography.html">Pyconnectome.tractography</a></li>
+<li><a href="../generated/pyconnectome.metrics.html">Pyconnectome.metrics</a></li>
+<li><a href="../generated/pyconnectome.utils.html">Pyconnectome.utils</a></li>
+<li><a href="../generated/pyconnectome.models.html">Pyconnectome.models</a></li>
+<li><a href="../generated/pyconnectome.plotting.html">Pyconnectome.plotting</a></li>
+<li><a href="../generated/pyconnectome.connectomes.html">Pyconnectome.connectomes</a></li>
+          </ul>
+        </li>-->
+        <li><a href="https://github.com/AGrigis/pysphinxdoc">PYSPHINXDOC</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+<div class="content-wrapper">
+    <div class="sphinxsidebar">
+      <div class="sphinxsidebarwrapper">
+
+        <!-- info setup -->
+          <p class="doc-version">
+           This documentation is for pyconnectome <strong>version 1.0.0</strong>
+          </p>
+        <p class="citing">
+          If you use the software, please do not esitate to 
+          <a &mdash; <a href="https://github.com/neurospin/pyconnectome">
+          Report a Bug</a>.
+        </p>
+
+      <!-- toc tree -->
+      <ul>
+<li><a class="reference internal" href="#">Pyconnectome Bedpostx</a><ul>
+<li><a class="reference internal" href="#diffusion-processing">Diffusion Processing</a><ul>
+<li><a class="reference internal" href="#non-diffusion-weighted-mask">Non-diffusion-weighted mask</a></li>
+<li><a class="reference internal" href="#generating-pdfs">Generating PDFs</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+
+      </div>
+    </div>
+  
+
+  <div class="content">
+      
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="pyconnectome-bedpostx">
+<span id="sphx-glr-auto-gallery-pyconnectome-bedpostx-py"></span><h1>Pyconnectome Bedpostx<a class="headerlink" href="#pyconnectome-bedpostx" title="Permalink to this headline">¶</a></h1>
+<p>Example automatically generated from package script.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># System modules</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">textwrap</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+
+
+<span class="c1"># Bredala module</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">bredala</span>
+    <span class="n">bredala</span><span class="o">.</span><span class="n">USE_PROFILER</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">bredala</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;pyconnectome.utils.segtools&quot;</span><span class="p">,</span>
+                     <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;bet2&quot;</span><span class="p">])</span>
+    <span class="n">bredala</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;pyconnectome.models.deconvolution&quot;</span><span class="p">,</span>
+                     <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;bedpostx&quot;</span><span class="p">,</span> <span class="s2">&quot;bedpostx_datacheck&quot;</span><span class="p">])</span>
+    <span class="n">bredala</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;pyconnectome.utils.filetools&quot;</span><span class="p">,</span>
+                     <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;extract_image&quot;</span><span class="p">])</span>
+    <span class="n">bredala</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;clindmri.plot.slicer&quot;</span><span class="p">,</span>
+                     <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;plot_image&quot;</span><span class="p">])</span>
+<span class="k">except</span><span class="p">:</span>
+    <span class="k">pass</span>
+
+<span class="c1"># Package import</span>
+<span class="kn">from</span> <span class="nn">pyconnectome</span> <span class="kn">import</span> <span class="n">__version__</span> <span class="k">as</span> <span class="n">version</span>
+<span class="kn">from</span> <span class="nn">pyconnectome</span> <span class="kn">import</span> <span class="n">DEFAULT_FSL_PATH</span>
+<span class="kn">from</span> <span class="nn">pyconnectome.wrapper</span> <span class="kn">import</span> <span class="n">FSLWrapper</span>
+<span class="kn">from</span> <span class="nn">pyconnectome.utils.segtools</span> <span class="kn">import</span> <span class="n">bet2</span>
+<span class="kn">from</span> <span class="nn">pyconnectome.utils.filetools</span> <span class="kn">import</span> <span class="n">extract_image</span>
+<span class="kn">from</span> <span class="nn">pyconnectome.models.deconvolution</span> <span class="kn">import</span> <span class="n">bedpostx</span>
+<span class="kn">from</span> <span class="nn">pyconnectome.models.deconvolution</span> <span class="kn">import</span> <span class="n">bedpostx_datacheck</span>
+
+
+<span class="c1"># Parameters to keep trace</span>
+<span class="n">__hopla__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;runtime&quot;</span><span class="p">,</span> <span class="s2">&quot;inputs&quot;</span><span class="p">,</span> <span class="s2">&quot;outputs&quot;</span><span class="p">]</span>
+
+
+<span class="c1"># Script documentation</span>
+<span class="n">doc</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">FSL Bedpostx</span>
+<span class="s2">~~~~~~~~~~~~</span>
+
+<span class="s2">Performs a parametric deconvolution of the diffusion signal to fiber</span>
+<span class="s2">orientations using a stick and ball model.</span>
+
+<span class="s2">**Steps**</span>
+
+<span class="s2">1 - Extract the brain using BET on the non weighted image.</span>
+<span class="s2">2 - Estimate fiber orientations using FSL Bedpostx.</span>
+
+<span class="s2">**Input files**</span>
+
+<span class="s2">- The *.bval files contain a scalar value for each applied gradient,</span>
+<span class="s2">  corresponding to the respective b-value.</span>
+<span class="s2">- The *.bvec files contain a 3x1 vector for each gradient, indicating the</span>
+<span class="s2">  gradient direction.</span>
+<span class="s2">- The diffuson data: the ith volume in the data corresponds to a measurement</span>
+<span class="s2">  obtained after applying a diffusion-sensitising gradient with a b-value given</span>
+<span class="s2">  by the ith entry in *.bval and a gradient direction given by the ith vector</span>
+<span class="s2">  in *.bvec.</span>
+
+<span class="s2">**Output files**</span>
+
+<span class="s2">For every model parameter a distribution of values is estimated.</span>
+<span class="s2">- mean_*samples.nii.gz files: the mean of this distribution is saved for the</span>
+<span class="s2">  angular parameters (theta and phi) and the f anisotropy (3D volume).</span>
+<span class="s2">- merged_*samples.nii.gz files: contain the parameters used in the tractography</span>
+<span class="s2">  algorithm (e.g. orientations), samples from the theta, phi and f (4D image)</span>
+<span class="s2">  are saved.</span>
+<span class="s2">For each fiber compartment an orientation and a volume fraction is estimated.</span>
+<span class="s2">The orientation is described in spherical coordinates by two angles, theta and</span>
+<span class="s2">phi.</span>
+
+<span class="s2">For example the files:</span>
+<span class="s2">- (mean_f2samples.nii.gz, mean_th2samples.nii.gz, mean_ph2samples.nii.gz)</span>
+<span class="s2">  describe the means values of the distributions estimated for the volume</span>
+<span class="s2">  fraction and orientation of fiber 2.</span>
+<span class="s2">- (merged_f2samples.nii.gz, merged_ph2samples.nii.gz,merged_th2samples.nii.gz)</span>
+<span class="s2">  describe samples from these distributions.</span>
+
+<span class="s2">**Command**</span>
+
+<span class="s2">python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_bedpostx </span><span class="se">\</span>
+<span class="s2">    -c /etc/fsl/5.0/fsl.sh </span><span class="se">\</span>
+<span class="s2">    -s 000043561374 </span><span class="se">\</span>
+<span class="s2">    -f /volatile/imagen/dmritest/001/raw/hardi-b1500-1-001.nii.gz </span><span class="se">\</span>
+<span class="s2">    -g /volatile/imagen/dmritest/001/raw/hardi-b1500-1-001.bvec </span><span class="se">\</span>
+<span class="s2">    -b /volatile/imagen/dmritest/001/raw/hardi-b1500-1-001.bval </span><span class="se">\</span>
+<span class="s2">    -d /volatile/imagen/dmritest/fsl </span><span class="se">\</span>
+<span class="s2">    -t 0.25 </span><span class="se">\</span>
+<span class="s2">     --burn 10 </span><span class="se">\</span>
+<span class="s2">    -e </span><span class="se">\</span>
+<span class="s2">    -v 2</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+
+<span class="k">def</span> <span class="nf">is_file</span><span class="p">(</span><span class="n">filearg</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Type for argparse - checks that file exists but does not open.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">filearg</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentError</span><span class="p">(</span>
+            <span class="s2">&quot;The file &#39;{0}&#39; does not exist!&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">filearg</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">filearg</span>
+
+
+<span class="k">def</span> <span class="nf">is_directory</span><span class="p">(</span><span class="n">dirarg</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Type for argparse - checks that directory exists.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">dirarg</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentError</span><span class="p">(</span>
+            <span class="s2">&quot;The directory &#39;{0}&#39; does not exist!&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dirarg</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">dirarg</span>
+
+
+<span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span>
+    <span class="n">formatter_class</span><span class="o">=</span><span class="n">argparse</span><span class="o">.</span><span class="n">RawDescriptionHelpFormatter</span><span class="p">,</span>
+    <span class="n">description</span><span class="o">=</span><span class="n">textwrap</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span><span class="n">doc</span><span class="p">))</span>
+<span class="n">required</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="s2">&quot;required arguments&quot;</span><span class="p">)</span>
+
+<span class="n">required</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+    <span class="s2">&quot;-c&quot;</span><span class="p">,</span> <span class="s2">&quot;--config&quot;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s2">&quot;fslconfig&quot;</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;FILE&quot;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;the FSL configuration file.&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">is_file</span><span class="p">)</span>
+<span class="n">required</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+    <span class="s2">&quot;-s&quot;</span><span class="p">,</span> <span class="s2">&quot;--subjectid&quot;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s2">&quot;subjectid&quot;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;the subject identifier.&quot;</span><span class="p">)</span>
+<span class="n">required</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+    <span class="s2">&quot;-f&quot;</span><span class="p">,</span> <span class="s2">&quot;--diffusionfile&quot;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s2">&quot;diffusion_file&quot;</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;FILE&quot;</span><span class="p">,</span>
+    <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;the diffusion data after correction for distorsions.&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">is_file</span><span class="p">)</span>
+<span class="n">required</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+    <span class="s2">&quot;-g&quot;</span><span class="p">,</span> <span class="s2">&quot;--bvecsfile&quot;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s2">&quot;bvecs_file&quot;</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;FILE&quot;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;the *.bvec files contain a 3x1 vector for each gradient, &quot;</span>
+         <span class="s2">&quot;indicating the gradient direction.&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">is_file</span><span class="p">)</span>
+<span class="n">required</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+    <span class="s2">&quot;-b&quot;</span><span class="p">,</span> <span class="s2">&quot;--bvalsfile&quot;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s2">&quot;bvals_file&quot;</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;FILE&quot;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;the *.bval files contain a scalar value for each applied gradient, &quot;</span>
+         <span class="s2">&quot;corresponding to the respective b-value.&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">is_file</span><span class="p">)</span>
+<span class="n">required</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+    <span class="s2">&quot;-d&quot;</span><span class="p">,</span> <span class="s2">&quot;--fsldir&quot;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s2">&quot;fsldir&quot;</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;PATH&quot;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;the FSL processing home directory.&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">is_directory</span><span class="p">)</span>
+
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+    <span class="s2">&quot;-t&quot;</span><span class="p">,</span> <span class="s2">&quot;--thres&quot;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s2">&quot;thres&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;fractional intensity threshold (0-&gt;1), smaller values give larger&quot;</span>
+    <span class="s2">&quot; brain outline estimates.&quot;</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+    <span class="s2">&quot;-n&quot;</span><span class="p">,</span> <span class="s2">&quot;--nfiber&quot;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s2">&quot;nfiber&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;number of fibers per voxel, integer &gt;= 1.&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+    <span class="s2">&quot;-m&quot;</span><span class="p">,</span> <span class="s2">&quot;--model&quot;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s2">&quot;model&quot;</span><span class="p">,</span> <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
+    <span class="n">default</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;deconvolution model. &quot;</span>
+         <span class="s2">&quot;1: single-shell, with sticks, &quot;</span>
+         <span class="s2">&quot;2: multi-shell, with sticks with a range of diffusivities, &quot;</span>
+         <span class="s2">&quot;3: multi-shell, with zeppelins.&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+    <span class="s2">&quot;--rician&quot;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s2">&quot;rician&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;a Rician noise modeling to replace the default Gaussian noise&quot;</span>
+         <span class="s2">&quot; assumption.&quot;</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+    <span class="s2">&quot;--burn&quot;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s2">&quot;burnin&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;burnin period: number of iterations before starting the sampling.&quot;</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+    <span class="s2">&quot;--graph&quot;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s2">&quot;graphics&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;if activated compute quality controls on the BedPostx outputs.&quot;</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+    <span class="s2">&quot;-e&quot;</span><span class="p">,</span> <span class="s2">&quot;--erase&quot;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s2">&quot;erase&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;if activated, clean the subject folder.&quot;</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+    <span class="s2">&quot;-v&quot;</span><span class="p">,</span> <span class="s2">&quot;--verbose&quot;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s2">&quot;verbose&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;increase the verbosity level: 0 silent, [1, 2] verbose.&quot;</span><span class="p">)</span>
+<span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+    <span class="s2">&quot;--parallel&quot;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s2">&quot;parallel&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+    <span class="n">help</span><span class="o">=</span><span class="s2">&quot;If set use Condor to parallelize FSL on your local workstation.&quot;</span><span class="p">)</span>
+
+<span class="c1"># parsing arguments</span>
+<span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+
+<span class="c1"># Import graphics modules if necessary</span>
+<span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">graphics</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">clindmri.plot.slicer</span> <span class="kn">import</span> <span class="n">plot_image</span>
+</pre></div>
+</div>
+<p>First check if the subject FSL directory exists on the file system, and
+clean it if requested.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">tool</span> <span class="o">=</span> <span class="s2">&quot;pyconnectome_bedpostx&quot;</span>
+<span class="n">timestamp</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+<span class="n">tool_version</span> <span class="o">=</span> <span class="n">version</span>
+<span class="n">fsl_config</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">fslconfig</span> <span class="ow">or</span> <span class="n">DEFAULT_FSL_PATH</span>
+<span class="n">fsl_version</span> <span class="o">=</span> <span class="n">FSLWrapper</span><span class="p">([],</span> <span class="n">shfile</span><span class="o">=</span><span class="n">fsl_config</span><span class="p">)</span><span class="o">.</span><span class="n">version</span>
+<span class="n">params</span> <span class="o">=</span> <span class="nb">locals</span><span class="p">()</span>
+<span class="n">runtime</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">([(</span><span class="n">name</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
+               <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;fsl_config&quot;</span><span class="p">,</span> <span class="s2">&quot;tool&quot;</span><span class="p">,</span> <span class="s2">&quot;tool_version&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;fsl_version&quot;</span><span class="p">,</span> <span class="s2">&quot;timestamp&quot;</span><span class="p">)])</span>
+<span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;[info] Starting FSL bedpostx ...&quot;</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;[info] Directory: {0}.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">fsldir</span><span class="p">))</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;[info] Subject: {0}.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">subjectid</span><span class="p">))</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;[info] Diffusion data: {0}.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">diffusion_file</span><span class="p">))</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;[info] Diffusion bvals: {0}.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">bvals_file</span><span class="p">))</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;[info] Diffusion bvecs: {0}.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">bvecs_file</span><span class="p">))</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;[info] FSL version: {0}.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fsl_version</span><span class="p">))</span>
+<span class="n">subjdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">fsldir</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">subjectid</span><span class="p">)</span>
+<span class="n">subject</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">subjectid</span>
+<span class="n">diffusion_file</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">diffusion_file</span>
+<span class="n">bvals_file</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">bvals_file</span>
+<span class="n">bvecs_file</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">bvecs_file</span>
+<span class="n">thres</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">thres</span>
+<span class="n">nfiber</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">nfiber</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">model</span>
+<span class="n">rician</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">rician</span>
+<span class="n">burnin</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">burnin</span>
+<span class="n">parallel</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">parallel</span>
+<span class="n">params</span> <span class="o">=</span> <span class="nb">locals</span><span class="p">()</span>
+<span class="n">inputs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">([(</span><span class="n">name</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
+               <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;subjdir&quot;</span><span class="p">,</span> <span class="s2">&quot;subject&quot;</span><span class="p">,</span> <span class="s2">&quot;diffusion_file&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;bvecs_file&quot;</span><span class="p">,</span> <span class="s2">&quot;bvals_file&quot;</span><span class="p">,</span> <span class="s2">&quot;nfiber&quot;</span><span class="p">,</span> <span class="s2">&quot;thres&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;model&quot;</span><span class="p">,</span> <span class="s2">&quot;rician&quot;</span><span class="p">,</span> <span class="s2">&quot;burnin&quot;</span><span class="p">,</span> <span class="s2">&quot;parallel&quot;</span><span class="p">)])</span>
+<span class="n">outputs</span> <span class="o">=</span> <span class="bp">None</span>
+<span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">erase</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">subjdir</span><span class="p">):</span>
+    <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">subjdir</span><span class="p">)</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">subjdir</span><span class="p">):</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">subjdir</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="section" id="diffusion-processing">
+<h2>Diffusion Processing<a class="headerlink" href="#diffusion-processing" title="Permalink to this headline">¶</a></h2>
+<p>At this point we have a motion- &amp; artifact-corrected image, and the corrected
+gradient table.</p>
+<p>From this diffusion dataset, we want to compute a mask of the
+non-diffusion-weighted image.</p>
+<div class="section" id="non-diffusion-weighted-mask">
+<h3>Non-diffusion-weighted mask<a class="headerlink" href="#non-diffusion-weighted-mask" title="Permalink to this headline">¶</a></h3>
+<p>We need to generate a mask on which the model is estimated. We first select the
+first non-diffusion weighted volume of the diffusion sequence and then use
+&#8216;bet2&#8217; on this image with a fractional intensity threshold of 0.25
+(that can be customized but is generally a robust threshold to remove
+unwanted tissue from a non-diffusion weighted image) and the &#8216;m&#8217; option that
+creates a binary &#8216;nodif_brain_mask&#8217; image.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># Get the b0 file</span>
+<span class="n">bvals</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">bvals_file</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+<span class="n">b0_index</span> <span class="o">=</span> <span class="n">bvals</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">b0_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">subjdir</span><span class="p">,</span> <span class="s2">&quot;nodif.nii.gz&quot;</span><span class="p">)</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">b0_file</span><span class="p">):</span>
+    <span class="n">extract_image</span><span class="p">(</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">diffusion_file</span><span class="p">,</span>
+        <span class="n">index</span><span class="o">=</span><span class="n">b0_index</span><span class="p">,</span>
+        <span class="n">out_file</span><span class="o">=</span><span class="n">b0_file</span><span class="p">)</span>
+
+<span class="c1"># Create a pdf snap of the b0 image</span>
+<span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">graphics</span><span class="p">:</span>
+    <span class="n">qcdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">subjdir</span><span class="p">,</span> <span class="s2">&quot;qc&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">qcdir</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">qcdir</span><span class="p">)</span>
+    <span class="n">snap_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">qcdir</span><span class="p">,</span> <span class="s2">&quot;nodif.pdf&quot;</span><span class="p">)</span>
+    <span class="n">plot_image</span><span class="p">(</span><span class="n">b0_file</span><span class="p">,</span> <span class="n">snap_file</span><span class="o">=</span><span class="n">snap_file</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;nodif&quot;</span><span class="p">)</span>
+
+<span class="c1"># Generate a brain mask on the corrected b0 data</span>
+<span class="n">b0_brain_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">subjdir</span><span class="p">,</span> <span class="s2">&quot;nodif_brain&quot;</span><span class="p">)</span>
+<span class="n">bet_files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">b0_brain_file</span> <span class="o">+</span> <span class="s2">&quot;*&quot;</span><span class="p">)</span>
+<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">bet_files</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">mask_file</span><span class="p">,</span> <span class="n">mesh_file</span><span class="p">,</span> <span class="n">outline_file</span><span class="p">,</span>
+     <span class="n">inskull_mask_file</span><span class="p">,</span> <span class="n">inskull_mesh_file</span><span class="p">,</span>
+     <span class="n">outskull_mask_file</span><span class="p">,</span> <span class="n">outskull_mesh_file</span><span class="p">,</span> <span class="n">outskin_mask_file</span><span class="p">,</span>
+     <span class="n">outskin_mesh_file</span><span class="p">,</span> <span class="n">skull_mask_file</span><span class="p">)</span> <span class="o">=</span> <span class="n">bet2</span><span class="p">(</span>
+        <span class="n">b0_file</span><span class="p">,</span>
+        <span class="n">b0_brain_file</span><span class="p">,</span>
+        <span class="n">mask</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        <span class="n">f</span><span class="o">=</span><span class="n">thres</span><span class="p">,</span>
+        <span class="n">shfile</span><span class="o">=</span><span class="n">fsl_config</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">mask_file</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">bet_files</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">mask_file</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;FileDoesNotExist: &#39;{0}&#39;.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mask_file</span><span class="p">))</span>
+
+<span class="c1"># Create a pdf snap of the brain mask</span>
+<span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">graphics</span><span class="p">:</span>
+    <span class="n">snap_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">qcdir</span><span class="p">,</span> <span class="s2">&quot;bet.pdf&quot;</span><span class="p">)</span>
+    <span class="n">plot_image</span><span class="p">(</span><span class="n">b0_file</span><span class="p">,</span> <span class="n">contour_file</span><span class="o">=</span><span class="n">mask_file</span><span class="p">,</span> <span class="n">snap_file</span><span class="o">=</span><span class="n">snap_file</span><span class="p">,</span>
+               <span class="n">name</span><span class="o">=</span><span class="s2">&quot;bet&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="generating-pdfs">
+<h3>Generating PDFs<a class="headerlink" href="#generating-pdfs" title="Permalink to this headline">¶</a></h3>
+<p>We use &#8216;bedpostx&#8217; to generate PDFs of the diffusion direction. &#8216;bedpostx&#8217; takes
+about 5 hours of compute time. This routine need specific files that are
+checked with the &#8216;bedpostx_datacheck&#8217; command.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># Copy all necessary files in the same repertory for the bedpostx execution</span>
+<span class="n">bedpostx_indir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">subjdir</span><span class="p">,</span> <span class="s2">&quot;diffusion&quot;</span><span class="p">)</span>
+<span class="n">bedpostx_outdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">subjdir</span><span class="p">,</span> <span class="s2">&quot;diffusion.bedpostX&quot;</span><span class="p">)</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">bedpostx_indir</span><span class="p">):</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">bedpostx_indir</span><span class="p">)</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">bedpostx_outdir</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">bedpostx_outdir</span><span class="p">))</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+
+
+    <span class="c1"># Create/check bedpostx input directory</span>
+    <span class="n">shutil</span><span class="o">.</span><span class="n">copy2</span><span class="p">(</span><span class="n">mask_file</span><span class="p">,</span> <span class="n">bedpostx_indir</span><span class="p">)</span>
+    <span class="n">data_ext</span> <span class="o">=</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">diffusion_file</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">:])</span>
+    <span class="n">shutil</span><span class="o">.</span><span class="n">copy2</span><span class="p">(</span><span class="n">diffusion_file</span><span class="p">,</span>
+                 <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">bedpostx_indir</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span> <span class="o">+</span> <span class="n">data_ext</span><span class="p">))</span>
+    <span class="n">shutil</span><span class="o">.</span><span class="n">copy2</span><span class="p">(</span><span class="n">bvecs_file</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">bedpostx_indir</span><span class="p">,</span> <span class="s2">&quot;bvecs&quot;</span><span class="p">))</span>
+    <span class="n">shutil</span><span class="o">.</span><span class="n">copy2</span><span class="p">(</span><span class="n">bvals_file</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">bedpostx_indir</span><span class="p">,</span> <span class="s2">&quot;bvals&quot;</span><span class="p">))</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">bedpostx_datacheck</span><span class="p">(</span><span class="n">bedpostx_indir</span><span class="p">,</span> <span class="n">fslconfig</span><span class="o">=</span><span class="n">fsl_config</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;{0}&#39; does not contain the data expected by &quot;</span>
+                         <span class="s2">&quot;&#39;bedpostx&#39;.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bedpostx_indir</span><span class="p">))</span>
+
+    <span class="c1"># Execute bedpostx</span>
+    <span class="p">(</span><span class="n">bedpostx_outdir</span><span class="p">,</span> <span class="n">merged_th</span><span class="p">,</span> <span class="n">merged_ph</span><span class="p">,</span> <span class="n">merged_f</span><span class="p">,</span> <span class="n">mean_th</span><span class="p">,</span> <span class="n">mean_ph</span><span class="p">,</span> <span class="n">mean_f</span><span class="p">,</span>
+     <span class="n">mean_d</span><span class="p">,</span> <span class="n">mean_S0</span><span class="p">,</span> <span class="n">dyads</span><span class="p">)</span> <span class="o">=</span> <span class="n">bedpostx</span><span class="p">(</span>
+        <span class="n">bedpostx_indir</span><span class="p">,</span>
+        <span class="n">n</span><span class="o">=</span><span class="n">nfiber</span><span class="p">,</span>
+        <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+        <span class="n">rician</span><span class="o">=</span><span class="n">rician</span><span class="p">,</span>
+        <span class="n">b</span><span class="o">=</span><span class="n">burnin</span><span class="p">,</span>
+        <span class="n">fslconfig</span><span class="o">=</span><span class="n">fsl_config</span><span class="p">,</span>
+        <span class="n">fsl_parallel</span><span class="o">=</span><span class="n">parallel</span><span class="p">)</span>
+<span class="n">merged_files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">bedpostx_outdir</span><span class="p">,</span> <span class="s2">&quot;merged*&quot;</span><span class="p">))</span>
+<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">merged_files</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;FilesDoNotExist: in &#39;{0}&#39;.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bedpostx_outdir</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Update the outputs and save them and the inputs in a &#8216;logs&#8217; directory.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">logdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">subjdir</span><span class="p">,</span> <span class="s2">&quot;logs&quot;</span><span class="p">)</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">logdir</span><span class="p">):</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">logdir</span><span class="p">)</span>
+<span class="n">params</span> <span class="o">=</span> <span class="nb">locals</span><span class="p">()</span>
+<span class="n">outputs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">([(</span><span class="n">name</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
+                <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;b0_file&quot;</span><span class="p">,</span> <span class="s2">&quot;b0_brain_file&quot;</span><span class="p">,</span> <span class="s2">&quot;mask_file&quot;</span><span class="p">,</span>
+                             <span class="s2">&quot;merged_files&quot;</span><span class="p">,</span> <span class="s2">&quot;bedpostx_outdir&quot;</span><span class="p">)])</span>
+<span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">final_struct</span> <span class="ow">in</span> <span class="p">[(</span><span class="s2">&quot;inputs&quot;</span><span class="p">,</span> <span class="n">inputs</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;outputs&quot;</span><span class="p">,</span> <span class="n">outputs</span><span class="p">),</span>
+                           <span class="p">(</span><span class="s2">&quot;runtime&quot;</span><span class="p">,</span> <span class="n">runtime</span><span class="p">)]:</span>
+    <span class="n">log_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">logdir</span><span class="p">,</span> <span class="s2">&quot;{0}.json&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">log_file</span><span class="p">,</span> <span class="s2">&quot;wt&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">open_file</span><span class="p">:</span>
+        <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">final_struct</span><span class="p">,</span> <span class="n">open_file</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">check_circular</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                  <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;[final]&quot;</span><span class="p">)</span>
+    <span class="n">pprint</span><span class="p">(</span><span class="n">outputs</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Total running time of the script:</strong> ( 0 minutes  0.000 seconds)</p>
+<div class="sphx-glr-footer container">
+<div class="sphx-glr-download container">
+<a class="reference download internal" href="../_downloads/pyconnectome_bedpostx.py" download=""><code class="xref download docutils literal"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">pyconnectome_bedpostx.py</span></code></a></div>
+<div class="sphx-glr-download container">
+<a class="reference download internal" href="../_downloads/pyconnectome_bedpostx.ipynb" download=""><code class="xref download docutils literal"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">pyconnectome_bedpostx.ipynb</span></code></a></div>
+</div>
+<p class="sphx-glr-signature">Gallery generated by Sphinx-Gallery</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+
+    <div class="clearer">
+    </div>
+  </div>
+  
+</div>
+
+<div class="footer">
+    &copy; 2017, pyConnectome developers &lt;antoine.grigis@cea.fr&gt;.
+</div>
+  </body>
+</html>

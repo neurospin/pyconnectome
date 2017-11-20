@@ -1,0 +1,877 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+  
+    <title>PYCONNECTOME &mdash; pyConnectome</title>
+  <!-- htmltitle is before nature.css - we use this hack to load bootstrap first -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="../../../_static/css/bootstrap.min.css" media="screen" />
+
+    
+    <link rel="stylesheet" href="../../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/gallery.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="pyConnectome" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" />
+  
+   
+       <script type="text/javascript" src="../../../_static/sidebar.js"></script>
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="../../../_static/js/bootstrap.min.js" type="text/javascript"></script>
+
+  <script src="../../../_static/js/angular.min.js" type="text/javascript"></script>
+  <script type="text/javascript">
+    var app = angular.module("navApp", []);
+    app.controller('navCtrl', ['$scope', '$window', function($scope, $window) {
+      $scope.isActive = function (viewLocation) {
+        var rel = $window.location.pathname.split("/")
+        rel = rel[rel.length - 1]
+        rel = rel.split(".")[0]
+        var active = (viewLocation === rel);
+        return active;};
+    }]);
+  </script>
+
+  </head>
+  <body role="document"><div class="banner">
+  <div class="container-fluid banner-container">
+    <div class="row banner-inner">
+      <div class="col-xs-4">
+        <img alt="Logo" src="../../../_static/pyconnectome.png">
+      </div>
+      <div class="col-xs-8">
+            <p>Diffusion MRI connectome.</p>
+      </div>
+    </div>  
+  </div>
+</div><nav class="navbar navbar-default navbar-static-top">
+  <div class="container-fluid">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../../../index.html">
+        </a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse" ng-controller="navCtrl" ng-app="navApp">
+      <ul class="nav navbar-nav">
+        <li ng-class="{ active: isActive('index') }"><a href="../../../index.html">Home</a></li>
+        <li ng-class="{ active: isActive('installation') }"><a href="../../../generated/installation.html">Installation</a></li>
+        <li ng-class="{ active: isActive('gallery') }"><a href="../../../auto_gallery/gallery.html">Gallery</a></li>
+        <li ng-class="{ active: isActive('documentation') }"><a href="../../../generated/documentation.html">API documentation</a></li>
+        <!--<li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"> <span class="caret"></span></a>
+          <ul class="dropdown-menu">
+	        <li><a href="../../../generated/pyconnectome.html">Pyconnectome</a></li>
+<li><a href="../../../generated/pyconnectome.tractography.html">Pyconnectome.tractography</a></li>
+<li><a href="../../../generated/pyconnectome.metrics.html">Pyconnectome.metrics</a></li>
+<li><a href="../../../generated/pyconnectome.utils.html">Pyconnectome.utils</a></li>
+<li><a href="../../../generated/pyconnectome.models.html">Pyconnectome.models</a></li>
+<li><a href="../../../generated/pyconnectome.plotting.html">Pyconnectome.plotting</a></li>
+<li><a href="../../../generated/pyconnectome.connectomes.html">Pyconnectome.connectomes</a></li>
+          </ul>
+        </li>-->
+        <li><a href="https://github.com/AGrigis/pysphinxdoc">PYSPHINXDOC</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+<div class="content-wrapper">
+    <div class="sphinxsidebar">
+      <div class="sphinxsidebarwrapper">
+
+        <!-- info setup -->
+          <p class="doc-version">
+           This documentation is for pyconnectome <strong>version 1.0.0</strong>
+          </p>
+        <p class="citing">
+          If you use the software, please do not esitate to 
+          <a &mdash; <a href="https://github.com/neurospin/pyconnectome">
+          Report a Bug</a>.
+        </p>
+
+      <!-- toc tree -->
+      
+
+      </div>
+    </div>
+  
+
+  <div class="content">
+      
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pyconnectome.connectomes.reduced</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="c1">##########################################################################</span>
+<span class="c1"># NSAp - Copyright (C) CEA, 2016</span>
+<span class="c1"># Distributed under the terms of the CeCILL-B license, as published by</span>
+<span class="c1"># the CEA-CNRS-INRIA. Refer to the LICENSE file or to</span>
+<span class="c1"># http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html</span>
+<span class="c1"># for details.</span>
+<span class="c1">##########################################################################</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Compute the connectome of a given parcellation, like the FreeSurfer aparc+aseg</span>
+<span class="sd">segmentation, using MRtrix, FSL Probtrackx2 or MITK Gibbs Tracking.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># Standard</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+
+<span class="c1"># Package</span>
+<span class="kn">from</span> <span class="nn">pyconnectome</span> <span class="kn">import</span> <span class="n">DEFAULT_FSL_PATH</span>
+<span class="kn">from</span> <span class="nn">pyconnectome.tractography.probabilist</span> <span class="kn">import</span> <span class="n">probtrackx2</span>
+<span class="kn">from</span> <span class="nn">pyconnectome.utils.segtools</span> <span class="kn">import</span> <span class="n">fix_freesurfer_subcortical_parcellation</span>
+<span class="kn">from</span> <span class="nn">pyconnectome.utils.filetools</span> <span class="kn">import</span> <span class="n">convert_mitk_vtk_fibers_to_tck</span>
+<span class="kn">from</span> <span class="nn">pyconnectome.utils.filetools</span> <span class="kn">import</span> <span class="n">convert_trk_fibers_to_tck</span>
+<span class="kn">from</span> <span class="nn">pyconnectome.utils.filetools</span> <span class="kn">import</span> <span class="n">convert_probtrackx2_saved_paths_to_tck</span>
+<span class="kn">from</span> <span class="nn">pyconnectome.utils.regtools</span> <span class="kn">import</span> <span class="n">freesurfer_bbregister_t1todif</span>
+
+<span class="c1"># Third-party</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">import</span> <span class="nn">nibabel</span>
+<span class="kn">from</span> <span class="nn">pyfreesurfer</span> <span class="kn">import</span> <span class="n">DEFAULT_FREESURFER_PATH</span>
+<span class="kn">from</span> <span class="nn">pyfreesurfer.wrapper</span> <span class="kn">import</span> <span class="n">FSWrapper</span>
+<span class="kn">from</span> <span class="nn">pyfreesurfer.utils.filetools</span> <span class="kn">import</span> <span class="p">(</span><span class="n">get_or_check_freesurfer_subjects_dir</span><span class="p">,</span>
+                                          <span class="n">load_look_up_table</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="connectome_snapshot"><a class="viewcode-back" href="../../../generated/pyconnectome.connectomes.reduced.html#pyconnectome.connectomes.reduced.connectome_snapshot">[docs]</a><span class="k">def</span> <span class="nf">connectome_snapshot</span><span class="p">(</span><span class="n">connectome</span><span class="p">,</span> <span class="n">snapshot</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                        <span class="n">colorbar_title</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">labels_size</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+                        <span class="n">vmin</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a PNG snapshot of the connectome (i.e. connectivity matrix).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    connectome: str</span>
+<span class="sd">        Path to txt file storing the connectivity matrix.</span>
+<span class="sd">    snapshot: str</span>
+<span class="sd">        Path to the output snapshot.</span>
+<span class="sd">    labels: str, default None</span>
+<span class="sd">        Path to txt file listing the label names. By default no labels.</span>
+<span class="sd">        Should be ordered like the rows/cols of the connectivity matrix.</span>
+<span class="sd">    transform: callable, default None</span>
+<span class="sd">        A Callable function to apply on the matrix (e.g. numpy.log1p).</span>
+<span class="sd">        By default no transformation is applied.</span>
+<span class="sd">    colorbar_title: str, default &quot;&quot;</span>
+<span class="sd">        How to interpret the values of the connectivity,</span>
+<span class="sd">        e.g. &quot;Log(# of tracks)&quot; or &quot;% of tracks&quot;</span>
+<span class="sd">    dpi: int, default 200</span>
+<span class="sd">        &quot;Dot Per Inch&quot;, set higher for better resolution.</span>
+<span class="sd">    labels_size: int, default 4</span>
+<span class="sd">        The label font size.</span>
+<span class="sd">    vmin, vmax: float, default None</span>
+<span class="sd">        The display range.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    snapshot: str</span>
+<span class="sd">        Path to the output connectome snapshot.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Import in function, so that the rest of the module can be used even</span>
+    <span class="c1"># if matplotlib is not available</span>
+    <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+    <span class="c1"># Load the connectivity matrix</span>
+    <span class="n">matrix</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">connectome</span><span class="p">)</span>
+
+    <span class="c1"># Check connectivity matrix dimensions</span>
+    <span class="k">if</span> <span class="n">matrix</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">2</span> <span class="ow">or</span> <span class="n">matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Connectivity matrix should be a square matrix.&quot;</span>
+                         <span class="s2">&quot;Shape of matrix: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+
+    <span class="c1"># Apply transformation if requested</span>
+    <span class="k">if</span> <span class="n">transform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">matrix</span> <span class="o">=</span> <span class="n">transform</span><span class="p">(</span><span class="n">matrix</span><span class="p">)</span>
+
+    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="c1"># Create the figure with matplotlib</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">invert_yaxis</span><span class="p">()</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">tick_top</span><span class="p">()</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">which</span><span class="o">=</span><span class="s2">&quot;both&quot;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="s2">&quot;both&quot;</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">length</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># Add the labels if passed</span>
+    <span class="k">if</span> <span class="n">labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">labels_array</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">labels_array</span><span class="p">)</span> <span class="o">!=</span> <span class="n">matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Wrong number of labels: {}. Should be {}.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="nb">len</span><span class="p">(</span><span class="n">labels_array</span><span class="p">),</span> <span class="n">matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xticklabels</span><span class="p">(</span><span class="n">labels_array</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">labels_size</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">90</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_yticklabels</span><span class="p">(</span><span class="n">labels_array</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">labels_size</span><span class="p">)</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="s2">&quot;equal&quot;</span><span class="p">)</span>
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="n">vmin</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;vmin&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vmin</span>
+    <span class="k">if</span> <span class="n">vmax</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;vmax&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vmax</span>
+    <span class="n">heatmap</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">pcolor</span><span class="p">(</span><span class="n">matrix</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">Reds</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">colorbar</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">heatmap</span><span class="p">)</span>
+    <span class="n">colorbar</span><span class="o">.</span><span class="n">set_label</span><span class="p">(</span><span class="n">colorbar_title</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">270</span><span class="p">,</span> <span class="n">labelpad</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+
+    <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+
+    <span class="c1"># Save to PNG file</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">snapshot</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.png&quot;</span><span class="p">):</span>
+        <span class="n">snapshot</span> <span class="o">+=</span> <span class="s2">&quot;.png&quot;</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">snapshot</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="n">dpi</span><span class="p">)</span>
+
+    <span class="c1"># Release memory</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">snapshot</span></div>
+
+
+<div class="viewcode-block" id="voxel_to_node_connectivity"><a class="viewcode-back" href="../../../generated/pyconnectome.connectomes.reduced.html#pyconnectome.connectomes.reduced.voxel_to_node_connectivity">[docs]</a><span class="k">def</span> <span class="nf">voxel_to_node_connectivity</span><span class="p">(</span><span class="n">probtrackx2_dir</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">connectome_lut</span><span class="p">,</span> <span class="n">outdir</span><span class="p">,</span>
+                               <span class="n">basename</span><span class="o">=</span><span class="s2">&quot;connectome&quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    When using the --omatrix3 option in Probtrackx2, the result is a</span>
+<span class="sd">    VOXELxVOXEL connectivity matrix. This function creates the NODExNODE</span>
+<span class="sd">    (i.e. ROIxROI) connectivity matrix for the given parcellation.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    probtrackx2_dir: str</span>
+<span class="sd">        Path to dir where to find the files created by probtrackx2 when using</span>
+<span class="sd">        --omatrix3 option, i.e &quot;fdt_matrix3.dot&quot; and &quot;coords_for_fdt_matrix3&quot;</span>
+<span class="sd">    nodes: str</span>
+<span class="sd">        Path to parcellation defining the nodes of the connectome,</span>
+<span class="sd">        e.g. FreeSurfer aparc+aseg parcellation with only the regions</span>
+<span class="sd">        (i.e. labels) to keep in the connectome.</span>
+<span class="sd">    connectome_lut: str</span>
+<span class="sd">        Path to the Look Up Table of the given parcellation in the</span>
+<span class="sd">        FreeSurfer LUT format.</span>
+<span class="sd">    outdir: str</span>
+<span class="sd">        Path to directory where output.</span>
+<span class="sd">    basename: str, default &quot;connectome&quot;</span>
+<span class="sd">        Basename of output files (&lt;outdir&gt;/&lt;basename&gt;.[mat|labels]).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    out_connectome: str</span>
+<span class="sd">        The generated connectome.</span>
+<span class="sd">    out_labels: str</span>
+<span class="sd">        The coonectome associated labels.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check input and output dirs</span>
+    <span class="k">for</span> <span class="n">directory</span> <span class="ow">in</span> <span class="p">(</span><span class="n">probtrackx2_dir</span><span class="p">,</span> <span class="n">outdir</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">directory</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Directory does not exist: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">directory</span><span class="p">)</span>
+
+    <span class="c1"># Coords: map x,y,z coordinates to voxel index</span>
+    <span class="c1"># &lt;x&gt; &lt;y&gt; &lt;z&gt; &lt;voxel index&gt;</span>
+    <span class="n">path_coords</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">probtrackx2_dir</span><span class="p">,</span> <span class="s2">&quot;coords_for_fdt_matrix3&quot;</span><span class="p">)</span>
+    <span class="n">coords</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">path_coords</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
+
+    <span class="c1"># Load parcellation volume with node labels</span>
+    <span class="n">nodes_vol</span> <span class="o">=</span> <span class="n">nibabel</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+
+    <span class="c1"># Load LUT to get the node names and set of int labels</span>
+    <span class="n">node_labels</span><span class="p">,</span> <span class="n">node_names</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">load_look_up_table</span><span class="p">(</span><span class="n">connectome_lut</span><span class="p">)</span>
+    <span class="n">set_labels</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">node_labels</span><span class="p">)</span>
+
+    <span class="c1"># Connectivity matrix</span>
+    <span class="n">nb_nodes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">node_names</span><span class="p">)</span>
+    <span class="n">connectome</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nb_nodes</span><span class="p">,</span> <span class="n">nb_nodes</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+
+    <span class="c1"># fdt_matrix3.dot: voxel to voxel connectivity</span>
+    <span class="c1"># &lt;index voxel 1&gt; &lt;index voxel 2&gt; &lt;nb connections&gt;</span>
+    <span class="n">path_fdt_matrix3</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">probtrackx2_dir</span><span class="p">,</span> <span class="s2">&quot;fdt_matrix3.dot&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Since the fdt_matrix3.dot file can be very large, we parse it line by</span>
+    <span class="c1"># line without loading it completely in memory</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_fdt_matrix3</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+
+            <span class="c1"># Get indexes of connected voxels and nb of connections</span>
+            <span class="n">v1_idx</span><span class="p">,</span> <span class="n">v2_idx</span><span class="p">,</span> <span class="n">nb_connections</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+            <span class="k">if</span> <span class="n">nb_connections</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># Volume coordinates of connected voxels</span>
+            <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">z1</span><span class="p">,</span> <span class="n">_v1_idx</span> <span class="o">=</span> <span class="n">coords</span><span class="p">[</span><span class="n">v1_idx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:]</span>
+            <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span><span class="p">,</span> <span class="n">z2</span><span class="p">,</span> <span class="n">_v2_idx</span> <span class="o">=</span> <span class="n">coords</span><span class="p">[</span><span class="n">v2_idx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:]</span>
+
+            <span class="c1"># Checking assumption that a voxel&#39;s info is stored at row=index-1</span>
+            <span class="k">assert</span> <span class="n">v1_idx</span> <span class="o">==</span> <span class="n">_v1_idx</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%i</span><span class="s2"> </span><span class="si">%i</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">v1_idx</span><span class="p">,</span> <span class="n">_v1_idx</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="n">v2_idx</span> <span class="o">==</span> <span class="n">_v2_idx</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%i</span><span class="s2"> </span><span class="si">%i</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">v2_idx</span><span class="p">,</span> <span class="n">_v2_idx</span><span class="p">)</span>
+
+            <span class="c1"># Labels of the 2 connected voxels</span>
+            <span class="n">label1</span><span class="p">,</span> <span class="n">label2</span> <span class="o">=</span> <span class="n">nodes_vol</span><span class="p">[</span><span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">z1</span><span class="p">],</span> <span class="n">nodes_vol</span><span class="p">[</span><span class="n">x2</span><span class="p">,</span> <span class="n">y2</span><span class="p">,</span> <span class="n">z2</span><span class="p">]</span>
+
+            <span class="c1"># Ignore pairs of voxels which labels are not in the connectome</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">{</span><span class="n">label1</span><span class="p">,</span> <span class="n">label2</span><span class="p">}</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">set_labels</span><span class="p">):</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># Update counts</span>
+            <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="o">=</span> <span class="n">label1</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">label2</span> <span class="o">-</span> <span class="mi">1</span>  <span class="c1"># 0-indexed in python</span>
+            <span class="n">connectome</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">+=</span> <span class="n">nb_connections</span>
+            <span class="n">connectome</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">nb_connections</span>
+
+    <span class="c1"># Write output connectome</span>
+    <span class="n">out_connectome</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="n">basename</span> <span class="o">+</span> <span class="s2">&quot;.mat&quot;</span><span class="p">)</span>
+    <span class="n">numpy</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="n">out_connectome</span><span class="p">,</span> <span class="n">connectome</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%i</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Write nodes names</span>
+    <span class="n">out_labels</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="n">basename</span> <span class="o">+</span> <span class="s2">&quot;.labels&quot;</span><span class="p">)</span>
+    <span class="n">numpy</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="n">out_labels</span><span class="p">,</span> <span class="n">node_names</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">out_connectome</span><span class="p">,</span> <span class="n">out_labels</span></div>
+
+
+<div class="viewcode-block" id="probtrackx2_connectome"><a class="viewcode-back" href="../../../generated/pyconnectome.connectomes.reduced.html#pyconnectome.connectomes.reduced.probtrackx2_connectome">[docs]</a><span class="k">def</span> <span class="nf">probtrackx2_connectome</span><span class="p">(</span>
+        <span class="n">outdir</span><span class="p">,</span>
+        <span class="n">tempdir</span><span class="p">,</span>
+        <span class="n">subject_id</span><span class="p">,</span>
+        <span class="n">t1_parc</span><span class="p">,</span>
+        <span class="n">t1_parc_lut</span><span class="p">,</span>
+        <span class="n">connectome_lut</span><span class="p">,</span>
+        <span class="n">nodif_brain</span><span class="p">,</span>
+        <span class="n">nodif_brain_mask</span><span class="p">,</span>
+        <span class="n">bedpostx_dir</span><span class="p">,</span>
+        <span class="n">nsamples</span><span class="p">,</span>
+        <span class="n">nsteps</span><span class="p">,</span>
+        <span class="n">steplength</span><span class="p">,</span>
+        <span class="n">fix_freesurfer_subcortical</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">subjects_dir</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">loopcheck</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        <span class="n">cthr</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
+        <span class="n">fibthresh</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
+        <span class="n">distthresh</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">sampvox</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">snapshots</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        <span class="n">fs_sh</span><span class="o">=</span><span class="n">DEFAULT_FREESURFER_PATH</span><span class="p">,</span>
+        <span class="n">fsl_sh</span><span class="o">=</span><span class="n">DEFAULT_FSL_PATH</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the connectome of a given parcellation, like the FreeSurfer</span>
+<span class="sd">    aparc+aseg segmentation, using ProbTrackx2.</span>
+
+<span class="sd">    Requirements:</span>
+<span class="sd">        - brain masks for the preprocessed DWI: nodif_brain and</span>
+<span class="sd">          nodif_brain_mask.</span>
+<span class="sd">        - FreeSurfer: result of recon-all on the T1.</span>
+<span class="sd">        - FSL Bedpostx: computed for the preprocessed DWI.</span>
+<span class="sd">        - a T1 parcellation that defines the nodes of the connectome, it has</span>
+<span class="sd">          to be in the FreeSurfer space (i.e. aligned with</span>
+<span class="sd">          &lt;subjects dir&gt;/&lt;subject&gt;/mri/brain.mgz), e.g. aparc+aseg from</span>
+<span class="sd">          FreeSurfer.</span>
+
+<span class="sd">    Connectome construction strategy:</span>
+<span class="sd">        - Pathways are constructed from &#39;constitutive points&#39; and not from</span>
+<span class="sd">          endpoints. A pathway is the result of 2 samples propagating in</span>
+<span class="sd">          opposite directions from a seed point. It is done using the</span>
+<span class="sd">          --omatrix3 option of Probtrackx2.</span>
+<span class="sd">        - The seed mask is the mask of WM voxels that are neighbors</span>
+<span class="sd">          (12-connexity) of nodes.</span>
+<span class="sd">        - The stop mask is the inverse of white matter, i.e. a sample stops</span>
+<span class="sd">          propagating as soon as it leaves the white matter.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    outdir: str</span>
+<span class="sd">        Directory where to output.</span>
+<span class="sd">    tempdir: str</span>
+<span class="sd">        Path to the directory where temporary directories should be written.</span>
+<span class="sd">        It should be a partition with 5+ GB available.</span>
+<span class="sd">    subject_id: str</span>
+<span class="sd">        Subject id used with FreeSurfer &#39;recon-all&#39; command.</span>
+<span class="sd">    t1_parc: str</span>
+<span class="sd">        Path to the parcellation that defines the nodes of the connectome, e.g.</span>
+<span class="sd">        aparc+aseg.mgz from FreeSurfer.</span>
+<span class="sd">    t1_parc_lut: str</span>
+<span class="sd">        Path to the Look Up Table for the passed parcellation in the</span>
+<span class="sd">        FreeSurfer LUT format. If you T1 parcellation is from FreeSurfer, this</span>
+<span class="sd">        will most likely be &lt;$FREESURFER_HOME&gt;/FreeSurferColorLUT.txt.</span>
+<span class="sd">    connectome_lut: str</span>
+<span class="sd">        Path to a Look Up Table in the FreeSurfer LUT format, listing the</span>
+<span class="sd">        regions from the parcellation to use as nodes in the connectome. The</span>
+<span class="sd">        region names should match the ones used in the &lt;t1_parc_lut&gt; LUT and</span>
+<span class="sd">        the integer labels should be the row/col positions in the connectome.</span>
+<span class="sd">        Alternatively it can be set to &#39;Lausanne2008&#39; to use the predefined</span>
+<span class="sd">        LUT for the Lausanne 2008 atlas, which is based on the FreeSurfer</span>
+<span class="sd">        aparc+aseg parcellation.</span>
+<span class="sd">    nodif_brain: str</span>
+<span class="sd">        Path to the preprocessed brain-only DWI volume.</span>
+<span class="sd">    nodif_brain_mask: str</span>
+<span class="sd">        Path to the brain binary mask.</span>
+<span class="sd">    bedpostx_dir: str</span>
+<span class="sd">        Bedpostx output directory.</span>
+<span class="sd">    nsamples: int</span>
+<span class="sd">        Number of samples per voxel to initiate in the seed mask.</span>
+<span class="sd">    nsteps: int</span>
+<span class="sd">        Maximum number of steps for a given sample.</span>
+<span class="sd">    steplength: int</span>
+<span class="sd">        Step size in mm.</span>
+<span class="sd">    fix_freesurfer_subcortical: bool, default False</span>
+<span class="sd">        If the &lt;t1_parc&gt; is aparc+aseg or aparc.a2009s+aseg from FreeSurfer,</span>
+<span class="sd">        set this option to True, to recompute the subcortical segmentations</span>
+<span class="sd">        of the 5 structures that are uncorrectly segmented by FreeSurfer,</span>
+<span class="sd">        using FSL FIRST.</span>
+<span class="sd">    subjects_dir: str or None, default None</span>
+<span class="sd">        Path to the FreeSurfer subjects directory. Required if the FreeSurfer</span>
+<span class="sd">        environment variable (i.e. $SUBJECTS_DIR) is not set.</span>
+<span class="sd">    cthr: float, optional</span>
+<span class="sd">        Probtrackx2 option.</span>
+<span class="sd">    fibthresh, distthresh, sampvox: float, optional</span>
+<span class="sd">        Probtrackx2 options.</span>
+<span class="sd">    loopcheck: bool, optional</span>
+<span class="sd">        Probtrackx2 option.</span>
+<span class="sd">    snapshots: bool, default True</span>
+<span class="sd">        If True, create PNG snapshots for QC.</span>
+<span class="sd">    fs_sh: str, default NeuroSpin path</span>
+<span class="sd">        Path to the Bash script setting the FreeSurfer environment</span>
+<span class="sd">    fsl_sh: str, default NeuroSpin path</span>
+<span class="sd">        Path to the Bash script setting the FSL environment.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    connectome_file: str</span>
+<span class="sd">        The generated connectome.</span>
+<span class="sd">    labels_file: str</span>
+<span class="sd">        The coonectome associated labels.</span>
+<span class="sd">    connectome_snap_file: str</span>
+<span class="sd">        A grphical representation of the connectome.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="c1"># STEP 0 - Check arguments</span>
+
+    <span class="c1"># FreeSurfer subjects_dir</span>
+    <span class="n">subjects_dir</span> <span class="o">=</span> <span class="n">get_or_check_freesurfer_subjects_dir</span><span class="p">(</span><span class="n">subjects_dir</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">connectome_lut</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;lausanne2008&quot;</span><span class="p">:</span>
+        <span class="n">module_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span>
+        <span class="n">connectome_lut</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">module_dir</span><span class="p">,</span> <span class="s2">&quot;Lausanne2008LUT.txt&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Check input paths</span>
+    <span class="n">paths_to_check</span> <span class="o">=</span> <span class="p">[</span><span class="n">t1_parc</span><span class="p">,</span> <span class="n">t1_parc_lut</span><span class="p">,</span> <span class="n">connectome_lut</span><span class="p">,</span> <span class="n">nodif_brain</span><span class="p">,</span>
+                      <span class="n">nodif_brain_mask</span><span class="p">,</span> <span class="n">bedpostx_dir</span><span class="p">,</span> <span class="n">fs_sh</span><span class="p">,</span> <span class="n">fsl_sh</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">paths_to_check</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;File or directory does not exist: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">p</span><span class="p">)</span>
+
+    <span class="c1"># Create &lt;outdir&gt; and/or &lt;tempdir&gt; if not existing</span>
+    <span class="k">for</span> <span class="n">directory</span> <span class="ow">in</span> <span class="p">[</span><span class="n">outdir</span><span class="p">,</span> <span class="n">tempdir</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">directory</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span>
+
+    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="c1"># STEP 1 - Compute T1 &lt;-&gt; DWI rigid transformation</span>
+
+    <span class="c1"># FreeSurfer T1 to Nifti</span>
+    <span class="n">fs_t1_brain</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">subjects_dir</span><span class="p">,</span> <span class="n">subject_id</span><span class="p">,</span> <span class="s2">&quot;mri&quot;</span><span class="p">,</span> <span class="s2">&quot;brain.mgz&quot;</span><span class="p">)</span>
+    <span class="n">t1_brain</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;t1_brain.nii.gz&quot;</span><span class="p">)</span>
+    <span class="n">cmd_1a</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;mri_convert&quot;</span><span class="p">,</span> <span class="n">fs_t1_brain</span><span class="p">,</span> <span class="n">t1_brain</span><span class="p">]</span>
+    <span class="n">FSWrapper</span><span class="p">(</span><span class="n">cmd_1a</span><span class="p">,</span> <span class="n">shfile</span><span class="o">=</span><span class="n">fs_sh</span><span class="p">)()</span>
+
+    <span class="c1"># Register diffusion to T1</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">dif2anat_dat</span><span class="p">,</span> <span class="n">dif2anat_mat</span> <span class="o">=</span> <span class="n">freesurfer_bbregister_t1todif</span><span class="p">(</span>
+            <span class="n">outdir</span><span class="o">=</span><span class="n">outdir</span><span class="p">,</span>
+            <span class="n">subject_id</span><span class="o">=</span><span class="n">subject_id</span><span class="p">,</span>
+            <span class="n">nodif_brain</span><span class="o">=</span><span class="n">nodif_brain</span><span class="p">,</span>
+            <span class="n">subjects_dir</span><span class="o">=</span><span class="n">subjects_dir</span><span class="p">,</span>
+            <span class="n">fs_sh</span><span class="o">=</span><span class="n">fs_sh</span><span class="p">,</span>
+            <span class="n">fsl_sh</span><span class="o">=</span><span class="n">fsl_sh</span><span class="p">)</span>
+
+    <span class="c1"># Invert dif2anat transform</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">dif2anat_mat</span><span class="p">)</span>
+    <span class="n">m_inv</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+    <span class="n">anat2dif_mat</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;anat2dif.mat&quot;</span><span class="p">)</span>
+    <span class="n">numpy</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="n">anat2dif_mat</span><span class="p">,</span> <span class="n">m_inv</span><span class="p">)</span>
+
+    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="c1"># STEP 2 - Convert LUT</span>
+    <span class="c1"># Change integer labels in the LUT so that the each label corresponds</span>
+    <span class="c1"># to the row/col position in the connectome</span>
+    <span class="n">nodes</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;nodes.nii.gz&quot;</span><span class="p">)</span>
+    <span class="n">cmd_2</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;labelconvert&quot;</span><span class="p">,</span> <span class="n">t1_parc</span><span class="p">,</span> <span class="n">t1_parc_lut</span><span class="p">,</span> <span class="n">connectome_lut</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span>
+             <span class="s2">&quot;-nthreads&quot;</span><span class="p">,</span> <span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="s2">&quot;-failonwarn&quot;</span><span class="p">]</span>
+    <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">cmd_2</span><span class="p">)</span>
+
+    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="c1"># STEP 3 - If the T1 parcellation is aparc+aseg or aparc.a2009s+aseg</span>
+    <span class="c1"># from FreeSurfer, this option allows the recompute the subcortical</span>
+    <span class="c1"># segmentations of 5 structures that are uncorrectly segmented by</span>
+    <span class="c1"># FreeSurfer, using FSL FIRST</span>
+    <span class="k">if</span> <span class="n">fix_freesurfer_subcortical</span><span class="p">:</span>
+        <span class="n">fixed_nodes</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;nodes_fixSGM.nii.gz&quot;</span><span class="p">)</span>
+        <span class="n">nodes</span> <span class="o">=</span> <span class="n">fix_freesurfer_subcortical_parcellation</span><span class="p">(</span><span class="n">parc</span><span class="o">=</span><span class="n">nodes</span><span class="p">,</span>
+                                                        <span class="n">t1_brain</span><span class="o">=</span><span class="n">t1_brain</span><span class="p">,</span>
+                                                        <span class="n">lut</span><span class="o">=</span><span class="n">connectome_lut</span><span class="p">,</span>
+                                                        <span class="n">output</span><span class="o">=</span><span class="n">fixed_nodes</span><span class="p">,</span>
+                                                        <span class="n">tempdir</span><span class="o">=</span><span class="n">tempdir</span><span class="p">,</span>
+                                                        <span class="n">nb_threads</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                                                        <span class="n">fsl_sh</span><span class="o">=</span><span class="n">fsl_sh</span><span class="p">)</span>
+
+    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="c1"># STEP 4 - Create the masks for Probtrackx2</span>
+
+    <span class="c1"># White matter mask</span>
+    <span class="n">aparc_aseg</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">subjects_dir</span><span class="p">,</span> <span class="n">subject_id</span><span class="p">,</span> <span class="s2">&quot;mri&quot;</span><span class="p">,</span>
+                              <span class="s2">&quot;aparc+aseg.mgz&quot;</span><span class="p">)</span>
+    <span class="n">wm_mask</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;wm_mask.nii.gz&quot;</span><span class="p">)</span>
+    <span class="n">cmd_4a</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;mri_binarize&quot;</span><span class="p">,</span>
+              <span class="s2">&quot;--i&quot;</span><span class="p">,</span> <span class="n">aparc_aseg</span><span class="p">,</span>
+              <span class="s2">&quot;--o&quot;</span><span class="p">,</span> <span class="n">wm_mask</span><span class="p">,</span>
+              <span class="s2">&quot;--wm&quot;</span><span class="p">]</span>
+    <span class="n">FSWrapper</span><span class="p">(</span><span class="n">cmd_4a</span><span class="p">,</span> <span class="n">shfile</span><span class="o">=</span><span class="n">fs_sh</span><span class="p">)()</span>
+
+    <span class="c1"># Stop mask is inverse of white matter mask</span>
+    <span class="n">stop_mask</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;inv_wm_mask.nii.gz&quot;</span><span class="p">)</span>
+    <span class="n">cmd_4b</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;mri_binarize&quot;</span><span class="p">,</span>
+              <span class="s2">&quot;--i&quot;</span><span class="p">,</span> <span class="n">aparc_aseg</span><span class="p">,</span>
+              <span class="s2">&quot;--o&quot;</span><span class="p">,</span> <span class="n">stop_mask</span><span class="p">,</span>
+              <span class="s2">&quot;--wm&quot;</span><span class="p">,</span> <span class="s2">&quot;--inv&quot;</span><span class="p">]</span>
+    <span class="n">FSWrapper</span><span class="p">(</span><span class="n">cmd_4b</span><span class="p">,</span> <span class="n">shfile</span><span class="o">=</span><span class="n">fs_sh</span><span class="p">)()</span>
+
+    <span class="c1"># Create target mask: a mask of all nodes</span>
+    <span class="n">target_mask</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;target_mask.nii.gz&quot;</span><span class="p">)</span>
+    <span class="n">cmd_4c</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;mri_binarize&quot;</span><span class="p">,</span>
+              <span class="s2">&quot;--i&quot;</span><span class="p">,</span>   <span class="n">nodes</span><span class="p">,</span>
+              <span class="s2">&quot;--o&quot;</span><span class="p">,</span>   <span class="n">target_mask</span><span class="p">,</span>
+              <span class="s2">&quot;--min&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">]</span>
+    <span class="n">FSWrapper</span><span class="p">(</span><span class="n">cmd_4c</span><span class="p">,</span> <span class="n">shfile</span><span class="o">=</span><span class="n">fs_sh</span><span class="p">)()</span>
+
+    <span class="c1"># Dilate target mask by one voxel (12-connexity)</span>
+    <span class="n">target_mask_dil</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;target_mask_dilated.nii.gz&quot;</span><span class="p">)</span>
+    <span class="n">cmd_4d</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;mri_morphology&quot;</span><span class="p">,</span> <span class="n">target_mask</span><span class="p">,</span> <span class="s2">&quot;dilate&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="n">target_mask_dil</span><span class="p">]</span>
+    <span class="n">FSWrapper</span><span class="p">(</span><span class="n">cmd_4d</span><span class="p">,</span> <span class="n">shfile</span><span class="o">=</span><span class="n">fs_sh</span><span class="p">)()</span>
+
+    <span class="c1"># Create seed mask: white matter voxels near nodes (target regions)</span>
+    <span class="c1"># Intersect dilated target mask and white matter mask</span>
+    <span class="c1"># -&gt; white matter voxels neighbor (12-connectivity) to node voxels</span>
+    <span class="n">seed_mask</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;wm_nodes_interface_mask.nii.gz&quot;</span><span class="p">)</span>
+    <span class="n">cmd_4e</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;mri_and&quot;</span><span class="p">,</span> <span class="n">wm_mask</span><span class="p">,</span> <span class="n">target_mask_dil</span><span class="p">,</span> <span class="n">seed_mask</span><span class="p">]</span>
+    <span class="n">FSWrapper</span><span class="p">(</span><span class="n">cmd_4e</span><span class="p">,</span> <span class="n">shfile</span><span class="o">=</span><span class="n">fs_sh</span><span class="p">)()</span>
+
+    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="c1"># STEP 7 - Run Probtrackx2</span>
+    <span class="n">probtrackx2_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;probtrackx2&quot;</span><span class="p">)</span>
+    <span class="n">probtrackx2</span><span class="p">(</span><span class="nb">dir</span><span class="o">=</span><span class="n">probtrackx2_dir</span><span class="p">,</span>
+                <span class="n">forcedir</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                <span class="n">seedref</span><span class="o">=</span><span class="n">t1_brain</span><span class="p">,</span>
+                <span class="n">xfm</span><span class="o">=</span><span class="n">anat2dif_mat</span><span class="p">,</span>
+                <span class="n">invxfm</span><span class="o">=</span><span class="n">dif2anat_mat</span><span class="p">,</span>
+                <span class="n">samples</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">bedpostx_dir</span><span class="p">,</span> <span class="s2">&quot;merged&quot;</span><span class="p">),</span>
+                <span class="n">mask</span><span class="o">=</span><span class="n">nodif_brain_mask</span><span class="p">,</span>
+                <span class="n">seed</span><span class="o">=</span><span class="n">seed_mask</span><span class="p">,</span>
+                <span class="n">omatrix3</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                <span class="n">target3</span><span class="o">=</span><span class="n">nodes</span><span class="p">,</span>
+                <span class="n">stop</span><span class="o">=</span><span class="n">stop_mask</span><span class="p">,</span>
+                <span class="n">nsamples</span><span class="o">=</span><span class="n">nsamples</span><span class="p">,</span>
+                <span class="n">nsteps</span><span class="o">=</span><span class="n">nsteps</span><span class="p">,</span>
+                <span class="n">steplength</span><span class="o">=</span><span class="n">steplength</span><span class="p">,</span>
+                <span class="n">loopcheck</span><span class="o">=</span><span class="n">loopcheck</span><span class="p">,</span>
+                <span class="n">cthr</span><span class="o">=</span><span class="n">cthr</span><span class="p">,</span>
+                <span class="n">fibthresh</span><span class="o">=</span><span class="n">fibthresh</span><span class="p">,</span>
+                <span class="n">distthresh</span><span class="o">=</span><span class="n">distthresh</span><span class="p">,</span>
+                <span class="n">sampvox</span><span class="o">=</span><span class="n">sampvox</span><span class="p">,</span>
+                <span class="n">shfile</span><span class="o">=</span><span class="n">fsl_sh</span><span class="p">)</span>
+
+    <span class="c1"># ------------------------------------------------------------------------</span>
+    <span class="c1"># STEP 8 - Create NODExNODE connectivity matrix for nodes from &lt;t1_parc&gt;</span>
+    <span class="n">connectome_file</span><span class="p">,</span> <span class="n">labels_file</span> <span class="o">=</span> <span class="n">voxel_to_node_connectivity</span><span class="p">(</span>
+        <span class="n">probtrackx2_dir</span><span class="o">=</span><span class="n">probtrackx2_dir</span><span class="p">,</span>
+        <span class="n">nodes</span><span class="o">=</span><span class="n">nodes</span><span class="p">,</span>
+        <span class="n">connectome_lut</span><span class="o">=</span><span class="n">connectome_lut</span><span class="p">,</span>
+        <span class="n">outdir</span><span class="o">=</span><span class="n">outdir</span><span class="p">)</span>
+
+    <span class="c1"># ------------------------------------------------------------------------</span>
+    <span class="c1"># STEP 9 - Create a connectome snapshot if requested</span>
+    <span class="k">if</span> <span class="n">snapshots</span><span class="p">:</span>
+        <span class="n">connectome_snap_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;connectome.png&quot;</span><span class="p">)</span>
+        <span class="n">connectome_snapshot</span><span class="p">(</span><span class="n">connectome_file</span><span class="p">,</span> <span class="n">connectome_snap_file</span><span class="p">,</span>
+                            <span class="n">labels</span><span class="o">=</span><span class="n">labels_file</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">log1p</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span>
+                            <span class="n">labels_size</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">colorbar_title</span><span class="o">=</span><span class="s2">&quot;log(# of tracks)&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">connectome_file</span><span class="p">,</span> <span class="n">labels_file</span><span class="p">,</span> <span class="n">connectome_snap_file</span></div>
+
+
+<div class="viewcode-block" id="mrtrix_connectomes"><a class="viewcode-back" href="../../../generated/pyconnectome.connectomes.reduced.html#pyconnectome.connectomes.reduced.mrtrix_connectomes">[docs]</a><span class="k">def</span> <span class="nf">mrtrix_connectomes</span><span class="p">(</span>
+        <span class="n">outdir</span><span class="p">,</span>
+        <span class="n">tempdir</span><span class="p">,</span>
+        <span class="n">tractogram</span><span class="p">,</span>
+        <span class="n">t1_brain</span><span class="p">,</span>
+        <span class="n">nodif_brain</span><span class="p">,</span>
+        <span class="n">t1_parc</span><span class="p">,</span>
+        <span class="n">t1_parc_lut</span><span class="p">,</span>
+        <span class="n">connectome_lut</span><span class="p">,</span>
+        <span class="n">tractogram_weights</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">tractogram_type</span><span class="o">=</span><span class="s2">&quot;mrtrix&quot;</span><span class="p">,</span>
+        <span class="n">dif2anat_dat</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">dif2anat_mat</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">fix_freesurfer_subcortical</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">radial_search_dist</span><span class="o">=</span><span class="mf">2.</span><span class="p">,</span>
+        <span class="n">forward_search_dist</span><span class="o">=</span><span class="mf">5.</span><span class="p">,</span>
+        <span class="n">snapshots</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        <span class="n">fs_sh</span><span class="o">=</span><span class="n">DEFAULT_FREESURFER_PATH</span><span class="p">,</span>
+        <span class="n">fsl_sh</span><span class="o">=</span><span class="n">DEFAULT_FSL_PATH</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Compute the reduced connectome from a parcellation using MRtrix.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    outdir: str</span>
+<span class="sd">        Directory where to output.</span>
+<span class="sd">    tempdir: str</span>
+<span class="sd">        Path to the directory where temporary directories should be written.</span>
+<span class="sd">        It should be a partition with 5+ GB available.</span>
+<span class="sd">    tractogram: str or list of str</span>
+<span class="sd">        The tractogram to be used in VTK, TRK, TXT or TRK format. It is</span>
+<span class="sd">        possible to provide a list of tractograms only for Connectomist and</span>
+<span class="sd">        Tracula.</span>
+<span class="sd">    t1_brain: str</span>
+<span class="sd">        The anatomical image.</span>
+<span class="sd">    nodif_brain: str, default None</span>
+<span class="sd">        Diffusion brain-only Nifti volume with bvalue ~ 0. If not passed, it is</span>
+<span class="sd">        generated automatically by averaging all the b0 volumes of the DWI.</span>
+<span class="sd">    t1_parc: str</span>
+<span class="sd">        Path to the parcellation that defines the nodes of the connectome, e.g.</span>
+<span class="sd">        aparc+aseg.mgz from FreeSurfer in the &#39;t1_brain&#39; space.</span>
+<span class="sd">    t1_parc_lut: str</span>
+<span class="sd">        Path to the Look Up Table for the passed parcellation in the</span>
+<span class="sd">        FreeSurfer LUT format. If you T1 parcellation is from FreeSurfer, this</span>
+<span class="sd">        will most likely be &lt;$FREESURFER_HOME&gt;/FreeSurferColorLUT.txt.</span>
+<span class="sd">    connectome_lut: str</span>
+<span class="sd">        Path to a Look Up Table in the FreeSurfer LUT format, listing the</span>
+<span class="sd">        regions from the parcellation to use as nodes in the connectome. The</span>
+<span class="sd">        region names should match the ones used in the &lt;t1_parc_lut&gt; LUT and</span>
+<span class="sd">        the integer labels should be the row/col positions in the connectome.</span>
+<span class="sd">        Alternatively it can be set to &#39;Lausanne2008&#39; to use the predefined</span>
+<span class="sd">        LUT for the Lausanne 2008 atlas, which is based on the FreeSurfer</span>
+<span class="sd">        aparc+aseg parcellation.</span>
+<span class="sd">    tractogram_weights: str, default None</span>
+<span class="sd">        The weight associated to each fiber: one weight per line.</span>
+<span class="sd">    tractogram_type: str, default &#39;mrtrix&#39;</span>
+<span class="sd">        The software used to generate the tractogram. This parameter is used</span>
+<span class="sd">        for format conversion purposes.</span>
+<span class="sd">    dif2anat_dat: str, default None</span>
+<span class="sd">        The diffusion to T1 FreeSurfer registration &#39;.dat&#39; file.</span>
+<span class="sd">    dif2anat_mat: str</span>
+<span class="sd">        The diffusion to T1 FSL registration &#39;.mat&#39; file.</span>
+<span class="sd">    fix_freesurfer_subcortical: bool, default False</span>
+<span class="sd">        If the &lt;t1_parc&gt; is aparc+aseg or aparc.a2009s+aseg from FreeSurfer,</span>
+<span class="sd">        set this option to True, to recompute the subcortical segmentations</span>
+<span class="sd">        of the 5 structures that are uncorrectly segmented by FreeSurfer,</span>
+<span class="sd">        using FSL FIRST.</span>
+<span class="sd">    radial_search_dist: float, default 2.0</span>
+<span class="sd">        Multiple connectomes are generated depending on the streamline-node</span>
+<span class="sd">        association strategy. The radial search assigns the nearest</span>
+<span class="sd">        node from the streamline endpoint within this radius (in mm).</span>
+<span class="sd">    forward_search_dist: float, default 5.0</span>
+<span class="sd">        Multiple connectomes are generated depending on the streamline-node</span>
+<span class="sd">        association strategy. The forward assignment projects the</span>
+<span class="sd">        streamline forward from the endpoint to find a node, within this</span>
+<span class="sd">        distance (in mm).</span>
+<span class="sd">    snapshots: bool, default True</span>
+<span class="sd">        If True, create PNG snapshots for QC.</span>
+<span class="sd">    fs_sh: str, default NeuroSpin path</span>
+<span class="sd">        Path to the Bash script setting the FreeSurfer environment</span>
+<span class="sd">    fsl_sh: str, default NeuroSpin path</span>
+<span class="sd">        Path to the Bash script setting the FSL environment.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    connectome_endvox, connectome_radial, connectome_forward: str</span>
+<span class="sd">        The generated reduced connectomes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="c1"># STEP 0 - Check arguments</span>
+
+    <span class="c1"># Get the default module LUT if parameter not provided</span>
+    <span class="k">if</span> <span class="n">connectome_lut</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;lausanne2008&quot;</span><span class="p">:</span>
+        <span class="n">module_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span>
+        <span class="n">connectome_lut</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">module_dir</span><span class="p">,</span> <span class="s2">&quot;Lausanne2008LUT.txt&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Check input paths</span>
+    <span class="n">paths_to_check</span> <span class="o">=</span> <span class="p">[</span><span class="n">t1_parc</span><span class="p">,</span> <span class="n">t1_parc_lut</span><span class="p">,</span> <span class="n">connectome_lut</span><span class="p">,</span> <span class="n">t1_brain</span><span class="p">,</span>
+                      <span class="n">nodif_brain</span><span class="p">]</span>
+    <span class="n">paths_to_check</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">tractogram</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">paths_to_check</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;File or directory does not exist: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">p</span><span class="p">)</span>
+
+    <span class="c1"># Check supported tractogram</span>
+    <span class="k">if</span> <span class="n">tractogram_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;mrtrix&quot;</span><span class="p">,</span> <span class="s2">&quot;mitk&quot;</span><span class="p">,</span> <span class="s2">&quot;connectomist&quot;</span><span class="p">,</span> <span class="s2">&quot;fsl&quot;</span><span class="p">,</span>
+                               <span class="s2">&quot;tracula&quot;</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unsupported tractogram: {0}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tractogram_type</span><span class="p">))</span>
+
+    <span class="c1"># Create &lt;outdir&gt; and/or &lt;tempdir&gt; if not existing</span>
+    <span class="k">for</span> <span class="n">directory</span> <span class="ow">in</span> <span class="p">[</span><span class="n">outdir</span><span class="p">,</span> <span class="n">tempdir</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">directory</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span>
+
+    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="c1"># STEP 1 - Align T1 parcellation to diffusion without downsampling</span>
+    <span class="n">parc_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">t1_parc</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.nii&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.mgz&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">t1_parc_to_dif</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="n">parc_name</span> <span class="o">+</span> <span class="s2">&quot;_to_dif.nii.gz&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">dif2anat_dat</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">cmd_1c</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;mri_vol2vol&quot;</span><span class="p">,</span>
+                  <span class="s2">&quot;--mov&quot;</span><span class="p">,</span>  <span class="n">nodif_brain</span><span class="p">,</span>
+                  <span class="s2">&quot;--targ&quot;</span><span class="p">,</span> <span class="n">t1_parc</span><span class="p">,</span>
+                  <span class="s2">&quot;--inv&quot;</span><span class="p">,</span>
+                  <span class="s2">&quot;--no-resample&quot;</span><span class="p">,</span>
+                  <span class="s2">&quot;--interp&quot;</span><span class="p">,</span> <span class="s2">&quot;nearest&quot;</span><span class="p">,</span>
+                  <span class="s2">&quot;--o&quot;</span><span class="p">,</span>   <span class="n">t1_parc_to_dif</span><span class="p">,</span>
+                  <span class="s2">&quot;--reg&quot;</span><span class="p">,</span> <span class="n">dif2anat_dat</span><span class="p">,</span>
+                  <span class="s2">&quot;--no-save-reg&quot;</span><span class="p">]</span>
+        <span class="n">FSWrapper</span><span class="p">(</span><span class="n">cmd_1c</span><span class="p">,</span> <span class="n">shfile</span><span class="o">=</span><span class="n">fs_sh</span><span class="p">)()</span>
+    <span class="k">elif</span> <span class="n">dif2anat_mat</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s2">&quot;This code only supports &#39;dif2anat_dat&#39; parameter.&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;One transformation matrix is mandatory.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="c1"># STEP 2 - Convert LUT</span>
+    <span class="c1"># Change integer labels in the LUT so that the each label corresponds</span>
+    <span class="c1"># to the row/col position in the connectome</span>
+    <span class="n">nodes</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;nodes.nii.gz&quot;</span><span class="p">)</span>
+    <span class="n">cmd_2</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;labelconvert&quot;</span><span class="p">,</span> <span class="n">t1_parc_to_dif</span><span class="p">,</span> <span class="n">t1_parc_lut</span><span class="p">,</span> <span class="n">connectome_lut</span><span class="p">,</span>
+             <span class="n">nodes</span><span class="p">,</span> <span class="s2">&quot;-nthreads&quot;</span><span class="p">,</span> <span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="s2">&quot;-failonwarn&quot;</span><span class="p">]</span>
+    <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">cmd_2</span><span class="p">)</span>
+
+    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="c1"># STEP 3 - If the T1 parcellation is aparc+aseg or aparc.a2009s+aseg</span>
+    <span class="c1"># from FreeSurfer, this option allows the recompute the subcortical</span>
+    <span class="c1"># segmentations of 5 structures that are uncorrectly segmented by</span>
+    <span class="c1"># FreeSurfer, using FSL FIRST</span>
+    <span class="k">if</span> <span class="n">fix_freesurfer_subcortical</span><span class="p">:</span>
+        <span class="n">fixed_nodes</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;nodes_fixSGM.nii.gz&quot;</span><span class="p">)</span>
+        <span class="n">nodes</span> <span class="o">=</span> <span class="n">fix_freesurfer_subcortical_parcellation</span><span class="p">(</span>
+            <span class="n">parc</span><span class="o">=</span><span class="n">nodes</span><span class="p">,</span>
+            <span class="n">t1_brain</span><span class="o">=</span><span class="n">t1_brain</span><span class="p">,</span>
+            <span class="n">lut</span><span class="o">=</span><span class="n">connectome_lut</span><span class="p">,</span>
+            <span class="n">output</span><span class="o">=</span><span class="n">fixed_nodes</span><span class="p">,</span>
+            <span class="n">tempdir</span><span class="o">=</span><span class="n">tempdir</span><span class="p">,</span>
+            <span class="n">nb_threads</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">fsl_sh</span><span class="o">=</span><span class="n">fsl_sh</span><span class="p">)</span>
+
+    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="c1"># STEP 4 - Create connectomes with labels by combining fibers and nodes</span>
+
+    <span class="c1"># Convert streamlines so that they can be used in MRtrix</span>
+    <span class="n">tck_tractogram</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;fibers.tck&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">tractogram_type</span> <span class="o">==</span> <span class="s2">&quot;mitk&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tractogram</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;A one-file tractogram is expected.&quot;</span><span class="p">)</span>
+        <span class="n">convert_mitk_vtk_fibers_to_tck</span><span class="p">(</span><span class="n">tractogram</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">tck_tractogram</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">tractogram_type</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;connectomist&quot;</span><span class="p">,</span> <span class="s2">&quot;tracula&quot;</span><span class="p">):</span>
+        <span class="n">convert_trk_fibers_to_tck</span><span class="p">(</span>
+            <span class="n">nodif_brain</span><span class="p">,</span> <span class="n">tractogram</span><span class="p">,</span> <span class="n">tck_tractogram</span><span class="p">,</span> <span class="n">tempdir</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">tractogram_type</span> <span class="o">==</span> <span class="s2">&quot;fsl&quot;</span><span class="p">:</span>
+        <span class="n">convert_probtrackx2_saved_paths_to_tck</span><span class="p">(</span>
+            <span class="n">nodif_brain</span><span class="p">,</span> <span class="n">tractogram</span><span class="p">,</span> <span class="n">tck_tractogram</span><span class="p">,</span> <span class="n">tempdir</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tractogram</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;A one-file tractogram is expected.&quot;</span><span class="p">)</span>
+        <span class="n">tck_tractogram</span> <span class="o">=</span> <span class="n">tractogram</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># Read labels from LUT and create a list of labels: labels.txt</span>
+    <span class="n">labels_array</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">connectome_lut</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">usecols</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">path_labels</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;labels.txt&quot;</span><span class="p">)</span>
+    <span class="n">numpy</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="n">path_labels</span><span class="p">,</span> <span class="n">labels_array</span><span class="p">,</span> <span class="n">fmt</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Create connectome with end-voxel assignment</span>
+    <span class="n">connectome_endvox</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;connectome_endvox.txt&quot;</span><span class="p">)</span>
+    <span class="n">cmd_8a</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;tck2connectome&quot;</span><span class="p">,</span> <span class="n">tck_tractogram</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">connectome_endvox</span><span class="p">,</span>
+              <span class="s2">&quot;-keep_unassigned&quot;</span><span class="p">,</span>  <span class="c1"># Keep &#39;Unknown&#39; label</span>
+              <span class="s2">&quot;-assignment_end_voxels&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">tractogram_weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">cmd_8a</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;-tck_weights_in&quot;</span><span class="p">,</span> <span class="n">tractogram_weights</span><span class="p">]</span>
+    <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">cmd_8a</span><span class="p">)</span>
+
+    <span class="c1"># Create connectome with radial search assignment</span>
+    <span class="n">connectome_radial</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+        <span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;connectome_radial_{:.2f}mm.txt&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">radial_search_dist</span><span class="p">))</span>
+    <span class="n">cmd_8b</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;tck2connectome&quot;</span><span class="p">,</span> <span class="n">tck_tractogram</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">connectome_radial</span><span class="p">,</span>
+              <span class="s2">&quot;-keep_unassigned&quot;</span><span class="p">,</span>  <span class="c1"># Keep &#39;Unknown&#39; label</span>
+              <span class="s2">&quot;-assignment_radial_search&quot;</span><span class="p">,</span> <span class="s2">&quot;{0}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">radial_search_dist</span><span class="p">)]</span>
+    <span class="k">if</span> <span class="n">tractogram_weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">cmd_8b</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;-tck_weights_in&quot;</span><span class="p">,</span> <span class="n">tractogram_weights</span><span class="p">]</span>
+    <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">cmd_8b</span><span class="p">)</span>
+
+    <span class="c1"># Create connectome assigning the streamline to all nodes it intersects</span>
+    <span class="n">connectome_forward</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+        <span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;connectome_forward_{:.2f}mm.txt&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">forward_search_dist</span><span class="p">))</span>
+    <span class="n">cmd_8c</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;tck2connectome&quot;</span><span class="p">,</span> <span class="n">tck_tractogram</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">connectome_forward</span><span class="p">,</span>
+              <span class="s2">&quot;-keep_unassigned&quot;</span><span class="p">,</span>  <span class="c1"># Keep &#39;Unknown&#39; label</span>
+              <span class="s2">&quot;-assignment_forward_search&quot;</span><span class="p">,</span> <span class="s2">&quot;{0}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">forward_search_dist</span><span class="p">)]</span>
+    <span class="k">if</span> <span class="n">tractogram_weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">cmd_8c</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;-tck_weights_in&quot;</span><span class="p">,</span> <span class="n">tractogram_weights</span><span class="p">]</span>
+    <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">cmd_8c</span><span class="p">)</span>
+
+    <span class="c1"># If snapshots are requested</span>
+    <span class="k">if</span> <span class="n">snapshots</span><span class="p">:</span>
+        <span class="n">snapshot_endvox</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;connectome_endvox.png&quot;</span><span class="p">)</span>
+        <span class="n">connectome_snapshot</span><span class="p">(</span><span class="n">connectome_endvox</span><span class="p">,</span> <span class="n">snapshot_endvox</span><span class="p">,</span>
+                            <span class="n">labels</span><span class="o">=</span><span class="n">path_labels</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">log1p</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span>
+                            <span class="n">labels_size</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">colorbar_title</span><span class="o">=</span><span class="s2">&quot;log(# of tracks)&quot;</span><span class="p">)</span>
+
+        <span class="n">snapshot_radial</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;connectome_radial_{:.2f}mm.png&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">radial_search_dist</span><span class="p">))</span>
+        <span class="n">connectome_snapshot</span><span class="p">(</span><span class="n">connectome_radial</span><span class="p">,</span> <span class="n">snapshot_radial</span><span class="p">,</span>
+                            <span class="n">labels</span><span class="o">=</span><span class="n">path_labels</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">log1p</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span>
+                            <span class="n">labels_size</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">colorbar_title</span><span class="o">=</span><span class="s2">&quot;log(# of tracks)&quot;</span><span class="p">)</span>
+
+        <span class="n">snapshot_forward</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;connectome_forward_{:.2f}mm.png&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">forward_search_dist</span><span class="p">))</span>
+        <span class="n">connectome_snapshot</span><span class="p">(</span><span class="n">connectome_forward</span><span class="p">,</span> <span class="n">snapshot_forward</span><span class="p">,</span>
+                            <span class="n">labels</span><span class="o">=</span><span class="n">path_labels</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">log1p</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span>
+                            <span class="n">labels_size</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">colorbar_title</span><span class="o">=</span><span class="s2">&quot;log(# of tracks)&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">connectome_endvox</span><span class="p">,</span> <span class="n">connectome_radial</span><span class="p">,</span> <span class="n">connectome_forward</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+
+    <div class="clearer">
+    </div>
+  </div>
+  
+</div>
+
+<div class="footer">
+    &copy; 2017, pyConnectome developers &lt;antoine.grigis@cea.fr&gt;.
+</div>
+  </body>
+</html>

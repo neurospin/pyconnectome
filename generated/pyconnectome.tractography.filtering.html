@@ -1,0 +1,274 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+  
+    <title>PYCONNECTOME &mdash; pyConnectome</title>
+  <!-- htmltitle is before nature.css - we use this hack to load bootstrap first -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="../_static/css/bootstrap.min.css" media="screen" />
+
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="pyConnectome" href="../index.html" />
+  
+   
+       <script type="text/javascript" src="../_static/sidebar.js"></script>
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="../_static/js/bootstrap.min.js" type="text/javascript"></script>
+
+  <script src="../_static/js/angular.min.js" type="text/javascript"></script>
+  <script type="text/javascript">
+    var app = angular.module("navApp", []);
+    app.controller('navCtrl', ['$scope', '$window', function($scope, $window) {
+      $scope.isActive = function (viewLocation) {
+        var rel = $window.location.pathname.split("/")
+        rel = rel[rel.length - 1]
+        rel = rel.split(".")[0]
+        var active = (viewLocation === rel);
+        return active;};
+    }]);
+  </script>
+
+  </head>
+  <body role="document"><div class="banner">
+  <div class="container-fluid banner-container">
+    <div class="row banner-inner">
+      <div class="col-xs-4">
+        <img alt="Logo" src="../_static/pyconnectome.png">
+      </div>
+      <div class="col-xs-8">
+            <p>Diffusion MRI connectome.</p>
+      </div>
+    </div>  
+  </div>
+</div><nav class="navbar navbar-default navbar-static-top">
+  <div class="container-fluid">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+        </a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse" ng-controller="navCtrl" ng-app="navApp">
+      <ul class="nav navbar-nav">
+        <li ng-class="{ active: isActive('index') }"><a href="../index.html">Home</a></li>
+        <li ng-class="{ active: isActive('installation') }"><a href="installation.html">Installation</a></li>
+        <li ng-class="{ active: isActive('gallery') }"><a href="../auto_gallery/gallery.html">Gallery</a></li>
+        <li ng-class="{ active: isActive('documentation') }"><a href="documentation.html">API documentation</a></li>
+        <!--<li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"> <span class="caret"></span></a>
+          <ul class="dropdown-menu">
+	        <li><a href="pyconnectome.html">Pyconnectome</a></li>
+<li><a href="pyconnectome.tractography.html">Pyconnectome.tractography</a></li>
+<li><a href="pyconnectome.metrics.html">Pyconnectome.metrics</a></li>
+<li><a href="pyconnectome.utils.html">Pyconnectome.utils</a></li>
+<li><a href="pyconnectome.models.html">Pyconnectome.models</a></li>
+<li><a href="pyconnectome.plotting.html">Pyconnectome.plotting</a></li>
+<li><a href="pyconnectome.connectomes.html">Pyconnectome.connectomes</a></li>
+          </ul>
+        </li>-->
+        <li><a href="https://github.com/AGrigis/pysphinxdoc">PYSPHINXDOC</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+<div class="content-wrapper">
+    <div class="sphinxsidebar">
+      <div class="sphinxsidebarwrapper">
+
+        <!-- info setup -->
+          <p class="doc-version">
+           This documentation is for pyconnectome <strong>version 1.0.0</strong>
+          </p>
+        <p class="citing">
+          If you use the software, please do not esitate to 
+          <a &mdash; <a href="https://github.com/neurospin/pyconnectome">
+          Report a Bug</a>.
+        </p>
+
+      <!-- toc tree -->
+      <ul class="simple">
+</ul>
+
+
+      </div>
+    </div>
+  
+
+  <div class="content">
+      
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <span class="target" id="module-pyconnectome.tractography.filtering"></span><p>Common tools to filter tractograms.</p>
+<dl class="function">
+<dt id="pyconnectome.tractography.filtering.life">
+<code class="descclassname">pyconnectome.tractography.filtering.</code><code class="descname">life</code><span class="sig-paren">(</span><em>dwifile</em>, <em>bvecsfile</em>, <em>bvalsfile</em>, <em>tractogramfile</em>, <em>outdir</em>, <em>display_tracks=False</em>, <em>verbose=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pyconnectome/tractography/filtering.html#life"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyconnectome.tractography.filtering.life" title="Permalink to this definition">¶</a></dt>
+<dd><p>Linear fascicle evaluation (LiFE)
+Evaluating the results of tractography algorithms is one of the biggest
+challenges for diffusion MRI. One proposal for evaluation of tractography
+results is to use a forward model that predicts the signal from each of a
+set of streamlines, and then fit a linear model to these simultaneous
+prediction.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>dwifile: str</strong></p>
+<blockquote>
+<div><p>the path to the diffusion dataset.</p>
+</div></blockquote>
+<p><strong>bvecsfile: str</strong></p>
+<blockquote>
+<div><p>the path to the diffusion b-vectors.</p>
+</div></blockquote>
+<p><strong>bvalsfile: str</strong></p>
+<blockquote>
+<div><p>the path to the diffusion b-values.</p>
+</div></blockquote>
+<p><strong>tractogramfile: str</strong></p>
+<blockquote>
+<div><p>the path to the tractogram.</p>
+</div></blockquote>
+<p><strong>outdir: str</strong></p>
+<blockquote>
+<div><p>the destination folder.</p>
+</div></blockquote>
+<p><strong>display_tracks: bool, default False</strong></p>
+<blockquote>
+<div><p>if True render the tracks.</p>
+</div></blockquote>
+<p><strong>verbose: int, default 0</strong></p>
+<blockquote>
+<div><p>the verbosity level.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">life_weights_file: str</p>
+<blockquote>
+<div><p>a file containing the fiber track weights.</p>
+</div></blockquote>
+<p>life_weights_snap: str</p>
+<blockquote>
+<div><p>a snap with the distrubution of weights.</p>
+</div></blockquote>
+<p>spatial_error_file: str</p>
+<blockquote>
+<div><p>the model root mean square error.</p>
+</div></blockquote>
+<p>tracks_snap: str</p>
+<blockquote class="last">
+<div><p>a snap with the tracks.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyconnectome.tractography.filtering.lossy_compression_of_tractogram">
+<code class="descclassname">pyconnectome.tractography.filtering.</code><code class="descname">lossy_compression_of_tractogram</code><span class="sig-paren">(</span><em>tractogramfile</em>, <em>outdir</em>, <em>rate=0.392</em>, <em>search_optimal_rate=False</em>, <em>weightsfile=None</em>, <em>weights_thr=0.0</em>, <em>max_search_dist=2.2</em>, <em>verbose=0</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pyconnectome/tractography/filtering.html#lossy_compression_of_tractogram"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyconnectome.tractography.filtering.lossy_compression_of_tractogram" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reduce the number of points of the track by keeping
+intact the start and endpoints of the track and trying to remove
+as many points as possible without distorting much the shape of
+the track, ie. more points in curvy regions and less points in less curvy
+regions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>tractogramfile: str</strong></p>
+<blockquote>
+<div><p>the path to the tractogram.</p>
+</div></blockquote>
+<p><strong>outdir: str</strong></p>
+<blockquote>
+<div><p>the destination folder.</p>
+</div></blockquote>
+<p><strong>rate: float, default 0.392</strong></p>
+<blockquote>
+<div><p>the compression rate, ie. smoothing parameter (&lt;0.392 smoother,
+&gt;0.392 rougher).</p>
+</div></blockquote>
+<p><strong>search_optimal_rate: bool, default False</strong></p>
+<blockquote>
+<div><p>determine the optimal compression rate.</p>
+</div></blockquote>
+<p><strong>weightsfile: str, default None</strong></p>
+<blockquote>
+<div><p>use these weights to remove unsignificant streamlines.</p>
+</div></blockquote>
+<p><strong>weights_thr: float, default 0.</strong></p>
+<blockquote>
+<div><p>the threshold used to identify unsignificant streamlines.</p>
+</div></blockquote>
+<p><strong>max_search_dist: float, default 2.2</strong></p>
+<blockquote>
+<div><p>the maximum distance between the initial and downsampled streamlines
+allowed during the best rate search.</p>
+</div></blockquote>
+<p><strong>verbose: int, default 0</strong></p>
+<blockquote>
+<div><p>the verbosity level.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">compressed_tractogramfile: str</p>
+<blockquote>
+<div><p>the compressed tractogram.</p>
+</div></blockquote>
+<p>nb_points_file: str</p>
+<blockquote class="last">
+<div><p>the compression result compared to the original sampling.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+
+
+          </div>
+        </div>
+      </div>
+
+    <div class="clearer">
+    </div>
+  </div>
+  
+</div>
+
+<div class="footer">
+    &copy; 2017, pyConnectome developers &lt;antoine.grigis@cea.fr&gt;.
+</div>
+  </body>
+</html>

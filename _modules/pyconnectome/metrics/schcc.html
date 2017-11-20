@@ -1,0 +1,593 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+  
+    <title>PYCONNECTOME &mdash; pyConnectome</title>
+  <!-- htmltitle is before nature.css - we use this hack to load bootstrap first -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="../../../_static/css/bootstrap.min.css" media="screen" />
+
+    
+    <link rel="stylesheet" href="../../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/gallery.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="pyConnectome" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" />
+  
+   
+       <script type="text/javascript" src="../../../_static/sidebar.js"></script>
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="../../../_static/js/bootstrap.min.js" type="text/javascript"></script>
+
+  <script src="../../../_static/js/angular.min.js" type="text/javascript"></script>
+  <script type="text/javascript">
+    var app = angular.module("navApp", []);
+    app.controller('navCtrl', ['$scope', '$window', function($scope, $window) {
+      $scope.isActive = function (viewLocation) {
+        var rel = $window.location.pathname.split("/")
+        rel = rel[rel.length - 1]
+        rel = rel.split(".")[0]
+        var active = (viewLocation === rel);
+        return active;};
+    }]);
+  </script>
+
+  </head>
+  <body role="document"><div class="banner">
+  <div class="container-fluid banner-container">
+    <div class="row banner-inner">
+      <div class="col-xs-4">
+        <img alt="Logo" src="../../../_static/pyconnectome.png">
+      </div>
+      <div class="col-xs-8">
+            <p>Diffusion MRI connectome.</p>
+      </div>
+    </div>  
+  </div>
+</div><nav class="navbar navbar-default navbar-static-top">
+  <div class="container-fluid">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../../../index.html">
+        </a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse" ng-controller="navCtrl" ng-app="navApp">
+      <ul class="nav navbar-nav">
+        <li ng-class="{ active: isActive('index') }"><a href="../../../index.html">Home</a></li>
+        <li ng-class="{ active: isActive('installation') }"><a href="../../../generated/installation.html">Installation</a></li>
+        <li ng-class="{ active: isActive('gallery') }"><a href="../../../auto_gallery/gallery.html">Gallery</a></li>
+        <li ng-class="{ active: isActive('documentation') }"><a href="../../../generated/documentation.html">API documentation</a></li>
+        <!--<li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"> <span class="caret"></span></a>
+          <ul class="dropdown-menu">
+	        <li><a href="../../../generated/pyconnectome.html">Pyconnectome</a></li>
+<li><a href="../../../generated/pyconnectome.tractography.html">Pyconnectome.tractography</a></li>
+<li><a href="../../../generated/pyconnectome.metrics.html">Pyconnectome.metrics</a></li>
+<li><a href="../../../generated/pyconnectome.utils.html">Pyconnectome.utils</a></li>
+<li><a href="../../../generated/pyconnectome.models.html">Pyconnectome.models</a></li>
+<li><a href="../../../generated/pyconnectome.plotting.html">Pyconnectome.plotting</a></li>
+<li><a href="../../../generated/pyconnectome.connectomes.html">Pyconnectome.connectomes</a></li>
+          </ul>
+        </li>-->
+        <li><a href="https://github.com/AGrigis/pysphinxdoc">PYSPHINXDOC</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+<div class="content-wrapper">
+    <div class="sphinxsidebar">
+      <div class="sphinxsidebarwrapper">
+
+        <!-- info setup -->
+          <p class="doc-version">
+           This documentation is for pyconnectome <strong>version 1.0.0</strong>
+          </p>
+        <p class="citing">
+          If you use the software, please do not esitate to 
+          <a &mdash; <a href="https://github.com/neurospin/pyconnectome">
+          Report a Bug</a>.
+        </p>
+
+      <!-- toc tree -->
+      
+
+      </div>
+    </div>
+  
+
+  <div class="content">
+      
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pyconnectome.metrics.schcc</h1><div class="highlight"><pre>
+<span></span><span class="c1">##########################################################################</span>
+<span class="c1"># NSAp - Copyright (C) CEA, 2013 - 2016</span>
+<span class="c1"># Distributed under the terms of the CeCILL-B license, as published by</span>
+<span class="c1"># the CEA-CNRS-INRIA. Refer to the LICENSE file or to</span>
+<span class="c1"># http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html</span>
+<span class="c1"># for details.</span>
+<span class="c1">##########################################################################</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Mapping of the Structural Core of the Human Cerebral Cortex.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># System import</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">import</span> <span class="nn">networkx</span> <span class="kn">as</span> <span class="nn">nx</span>
+<span class="kn">import</span> <span class="nn">scipy.stats</span> <span class="kn">as</span> <span class="nn">stt</span>
+
+<span class="c1"># Bct import</span>
+<span class="kn">import</span> <span class="nn">bct</span>
+
+
+<div class="viewcode-block" id="metric_profile"><a class="viewcode-back" href="../../../generated/pyconnectome.metrics.schcc.html#pyconnectome.metrics.schcc.metric_profile">[docs]</a><span class="k">def</span> <span class="nf">metric_profile</span><span class="p">(</span><span class="n">features</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Compute the metric profile.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    features: dict</span>
+<span class="sd">        the network features.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    profile: list (N, )</span>
+<span class="sd">        the metric profile.</span>
+<span class="sd">    header: list (N, )</span>
+<span class="sd">        the associated labels.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">profile_metrics</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;centrality_mean_degree&quot;</span><span class="p">:</span>
+            <span class="n">numpy</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">features</span><span class="p">[</span><span class="s2">&quot;degrees&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span>
+        <span class="s2">&quot;centrality_variance_degree&quot;</span><span class="p">:</span>
+            <span class="n">numpy</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">features</span><span class="p">[</span><span class="s2">&quot;degrees&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span>
+        <span class="s2">&quot;centrality_skewness_degree&quot;</span><span class="p">:</span>
+            <span class="n">stt</span><span class="o">.</span><span class="n">skew</span><span class="p">(</span><span class="n">features</span><span class="p">[</span><span class="s2">&quot;degrees&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span>
+        <span class="s2">&quot;centrality_kurtosis_degree&quot;</span><span class="p">:</span>
+            <span class="n">stt</span><span class="o">.</span><span class="n">kurtosis</span><span class="p">(</span><span class="n">features</span><span class="p">[</span><span class="s2">&quot;degrees&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span>
+        <span class="s2">&quot;centrality_high_closeness&quot;</span><span class="p">:</span>
+            <span class="nb">max</span><span class="p">(</span><span class="n">features</span><span class="p">[</span><span class="s2">&quot;clo_cen&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span>
+        <span class="s2">&quot;centrality_mean_closeness&quot;</span><span class="p">:</span>
+            <span class="n">numpy</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">features</span><span class="p">[</span><span class="s2">&quot;clo_cen&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span>
+        <span class="s2">&quot;centrality_variance_closeness&quot;</span><span class="p">:</span>
+            <span class="n">numpy</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">features</span><span class="p">[</span><span class="s2">&quot;clo_cen&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span>
+        <span class="s2">&quot;centrality_skewness_closeness&quot;</span><span class="p">:</span>
+            <span class="n">stt</span><span class="o">.</span><span class="n">skew</span><span class="p">(</span><span class="n">features</span><span class="p">[</span><span class="s2">&quot;clo_cen&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span>
+        <span class="s2">&quot;centrality_kurtosis_closeness&quot;</span><span class="p">:</span>
+            <span class="n">stt</span><span class="o">.</span><span class="n">kurtosis</span><span class="p">(</span><span class="n">features</span><span class="p">[</span><span class="s2">&quot;clo_cen&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span>
+        <span class="s2">&quot;centrality_high_eigen&quot;</span><span class="p">:</span>
+            <span class="nb">max</span><span class="p">(</span><span class="n">features</span><span class="p">[</span><span class="s2">&quot;eig_cen&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span>
+        <span class="s2">&quot;centrality_mean_eigen&quot;</span><span class="p">:</span>
+            <span class="n">numpy</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">features</span><span class="p">[</span><span class="s2">&quot;eig_cen&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span>
+        <span class="s2">&quot;centrality_variance_eigen&quot;</span><span class="p">:</span>
+            <span class="n">numpy</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">features</span><span class="p">[</span><span class="s2">&quot;eig_cen&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span>
+        <span class="s2">&quot;centrality_skewness_eigen&quot;</span><span class="p">:</span>
+            <span class="n">stt</span><span class="o">.</span><span class="n">skew</span><span class="p">(</span><span class="n">features</span><span class="p">[</span><span class="s2">&quot;eig_cen&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span>
+        <span class="s2">&quot;centrality_kurtosis_eigen&quot;</span><span class="p">:</span>
+            <span class="n">stt</span><span class="o">.</span><span class="n">kurtosis</span><span class="p">(</span><span class="n">features</span><span class="p">[</span><span class="s2">&quot;eig_cen&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span>
+        <span class="s2">&quot;centrality_high_betweeness&quot;</span><span class="p">:</span>
+            <span class="nb">max</span><span class="p">(</span><span class="n">features</span><span class="p">[</span><span class="s2">&quot;bet_cen&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span>
+        <span class="s2">&quot;strenghts_high&quot;</span><span class="p">:</span>
+            <span class="nb">max</span><span class="p">(</span><span class="n">features</span><span class="p">[</span><span class="s2">&quot;strengths&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span>
+        <span class="s2">&quot;strenghts_mean&quot;</span><span class="p">:</span>
+            <span class="n">numpy</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">features</span><span class="p">[</span><span class="s2">&quot;strengths&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span>
+        <span class="s2">&quot;strengths_variance&quot;</span><span class="p">:</span>
+            <span class="n">numpy</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">features</span><span class="p">[</span><span class="s2">&quot;strengths&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span>
+        <span class="s2">&quot;strengths_skewness&quot;</span><span class="p">:</span>
+            <span class="n">stt</span><span class="o">.</span><span class="n">skew</span><span class="p">(</span><span class="n">features</span><span class="p">[</span><span class="s2">&quot;strengths&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span>
+        <span class="s2">&quot;strengths_kurtosis&quot;</span><span class="p">:</span>
+            <span class="n">stt</span><span class="o">.</span><span class="n">kurtosis</span><span class="p">(</span><span class="n">features</span><span class="p">[</span><span class="s2">&quot;strengths&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span>
+        <span class="s2">&quot;connectivity_average_node&quot;</span><span class="p">:</span>
+            <span class="n">features</span><span class="p">[</span><span class="s2">&quot;avg_node_con&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;connectivity_node&quot;</span><span class="p">:</span>
+            <span class="n">features</span><span class="p">[</span><span class="s2">&quot;node_con&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;connectivity_edge&quot;</span><span class="p">:</span>
+            <span class="n">features</span><span class="p">[</span><span class="s2">&quot;edge_con&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;assortativity_degree&quot;</span><span class="p">:</span>
+            <span class="n">features</span><span class="p">[</span><span class="s2">&quot;deg_assortativity&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;assortativity_skewness_rich_club&quot;</span><span class="p">:</span>
+            <span class="n">stt</span><span class="o">.</span><span class="n">skew</span><span class="p">(</span><span class="n">features</span><span class="p">[</span><span class="s2">&quot;rich_clubs&quot;</span><span class="p">],</span> <span class="n">nan_policy</span><span class="o">=</span><span class="s2">&quot;omit&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;assortativity_kurtosis_rich_club&quot;</span><span class="p">:</span>
+            <span class="n">stt</span><span class="o">.</span><span class="n">kurtosis</span><span class="p">(</span><span class="n">features</span><span class="p">[</span><span class="s2">&quot;rich_clubs&quot;</span><span class="p">],</span> <span class="n">nan_policy</span><span class="o">=</span><span class="s2">&quot;omit&quot;</span><span class="p">),</span>
+        <span class="s2">&quot;density&quot;</span><span class="p">:</span>
+            <span class="n">features</span><span class="p">[</span><span class="s2">&quot;density&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;transitivity&quot;</span><span class="p">:</span>
+            <span class="n">features</span><span class="p">[</span><span class="s2">&quot;transitivity&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;clustering_average&quot;</span><span class="p">:</span>
+            <span class="n">features</span><span class="p">[</span><span class="s2">&quot;avg_ccs&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;kcores_high_knumber&quot;</span><span class="p">:</span>
+            <span class="nb">max</span><span class="p">(</span><span class="n">features</span><span class="p">[</span><span class="s2">&quot;kcores&quot;</span><span class="p">]),</span>
+        <span class="s2">&quot;kcores_mean_knumber&quot;</span><span class="p">:</span>
+            <span class="n">numpy</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">features</span><span class="p">[</span><span class="s2">&quot;kcores&quot;</span><span class="p">]),</span>
+        <span class="s2">&quot;kcores_variance_knumber&quot;</span><span class="p">:</span>
+            <span class="n">numpy</span><span class="o">.</span><span class="n">var</span><span class="p">(</span><span class="n">features</span><span class="p">[</span><span class="s2">&quot;kcores&quot;</span><span class="p">]),</span>
+        <span class="s2">&quot;kcores_skewness_knumber&quot;</span><span class="p">:</span>
+            <span class="n">stt</span><span class="o">.</span><span class="n">skew</span><span class="p">(</span><span class="n">features</span><span class="p">[</span><span class="s2">&quot;kcores&quot;</span><span class="p">]),</span>
+        <span class="s2">&quot;kcores_kurtosis_knumber&quot;</span><span class="p">:</span>
+            <span class="n">stt</span><span class="o">.</span><span class="n">kurtosis</span><span class="p">(</span><span class="n">features</span><span class="p">[</span><span class="s2">&quot;kcores&quot;</span><span class="p">]),</span>
+        <span class="s2">&quot;community_qstat_louvain&quot;</span><span class="p">:</span>
+            <span class="n">features</span><span class="p">[</span><span class="s2">&quot;qstat&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;efficiency_global&quot;</span><span class="p">:</span>
+            <span class="n">features</span><span class="p">[</span><span class="s2">&quot;global_efficiency&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;efficiency_mean_local&quot;</span><span class="p">:</span>
+            <span class="n">numpy</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">features</span><span class="p">[</span><span class="s2">&quot;local_efficiency&quot;</span><span class="p">]),</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">profile_metrics</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="n">profile_metrics</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="create_graph"><a class="viewcode-back" href="../../../generated/pyconnectome.metrics.schcc.html#pyconnectome.metrics.schcc.create_graph">[docs]</a><span class="k">def</span> <span class="nf">create_graph</span><span class="p">(</span><span class="n">connectome</span><span class="p">,</span> <span class="n">labels</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Create a graph structure from the connectome matrix.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    connectome: array (N, N)</span>
+<span class="sd">        a matrix representing the structural connections.</span>
+<span class="sd">    labels: list of str (N,)</span>
+<span class="sd">        the labels used to create the connectome matrix.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    graph: Graph</span>
+<span class="sd">        a graph structure.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">graph</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">from_numpy_matrix</span><span class="p">(</span><span class="n">connectome</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">labels</span><span class="p">):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">graph</span><span class="o">.</span><span class="n">node</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">}</span>
+    <span class="k">return</span> <span class="n">graph</span></div>
+
+
+<div class="viewcode-block" id="basic_network_analysis"><a class="viewcode-back" href="../../../generated/pyconnectome.metrics.schcc.html#pyconnectome.metrics.schcc.basic_network_analysis">[docs]</a><span class="k">def</span> <span class="nf">basic_network_analysis</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">outdir</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Compute basic network features.</span>
+
+<span class="sd">    Network features:</span>
+
+<span class="sd">    degrees:</span>
+<span class="sd">        node degree is the number of links connected to the node.</span>
+<span class="sd">    strengths:</span>
+<span class="sd">        node strength is the sum of weights of links connected to the node.</span>
+<span class="sd">    ccs:</span>
+<span class="sd">        clustering coefficient is a measure of the degree to which nodes in</span>
+<span class="sd">        a graph tend to cluster together.</span>
+<span class="sd">    avg_ccs:</span>
+<span class="sd">        the average clustering coefficient.</span>
+<span class="sd">    components:</span>
+<span class="sd">        the sorted by size connected components in the graph.</span>
+<span class="sd">    bet_cen:</span>
+<span class="sd">        betweenness centrality is an indicator of a node&#39;s centrality in a</span>
+<span class="sd">        network. It is equal to the number of shortest paths from all vertices</span>
+<span class="sd">        to all others that pass through that node.  A node with high</span>
+<span class="sd">        betweenness centrality has a large influence on the transfer of items</span>
+<span class="sd">        through the network, under the assumption that item transfer follows</span>
+<span class="sd">        the shortest paths.</span>
+<span class="sd">    clo_cen:</span>
+<span class="sd">        closeness centrality (or closeness) of a node is a measure of</span>
+<span class="sd">        centrality in a network, calculated as the sum of the length of the</span>
+<span class="sd">        shortest paths between the node and all other nodes in the graph. Thus</span>
+<span class="sd">        the more central a node is, the closer it is to all other nodes.</span>
+<span class="sd">    eig_cen:</span>
+<span class="sd">        eigenvector centrality (also called eigencentrality) is a measure of</span>
+<span class="sd">        the influence of a node in a network. It assigns relative scores to all</span>
+<span class="sd">        nodes in the network based on the concept that connections to</span>
+<span class="sd">        high-scoring nodes contribute more to the score of the node in</span>
+<span class="sd">        question than equal connections to low-scoring nodes.</span>
+<span class="sd">    avg_node_con:</span>
+<span class="sd">         nx.average_node_connectivity(graph)</span>
+<span class="sd">    edge_con:</span>
+<span class="sd">        nx.edge_connectivity(graph)</span>
+<span class="sd">    node_con:</span>
+<span class="sd">        nx.node_connectivity(graph)</span>
+<span class="sd">    deg_assortativity</span>
+<span class="sd">        nx.degree_assortativity_coefficient(graph)</span>
+<span class="sd">    density:</span>
+<span class="sd">        nx.density(graph)</span>
+<span class="sd">    transitivity:</span>
+<span class="sd">        nx.transitivity(graph)</span>
+
+<span class="sd">    Note:</span>
+
+<span class="sd">    Vertices that primarily either sit at the center of a hub or acts a</span>
+<span class="sd">    bridge between two hubs have higher betweenness centrality. The bridge</span>
+<span class="sd">    vertices have high betweenness because all paths connecting the hubs pass</span>
+<span class="sd">    through them, and the hub center vertices have high betweenness because</span>
+<span class="sd">    all intra-hub paths pass through them.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    graph: Graph</span>
+<span class="sd">        the graph reprensenting the connectome network.</span>
+<span class="sd">    outdir: str (optional, default None)</span>
+<span class="sd">        if specified save some snapshots.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    outputs: dict</span>
+<span class="sd">        the network features.</span>
+<span class="sd">    snaps: list of file</span>
+<span class="sd">        the generates snaps.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Connectivity</span>
+    <span class="n">avg_node_con</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">average_node_connectivity</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
+    <span class="n">edge_con</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">edge_connectivity</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
+    <span class="n">node_con</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">node_connectivity</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
+
+    <span class="c1"># Assortativity</span>
+    <span class="n">deg_assortativity</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">degree_assortativity_coefficient</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
+
+    <span class="c1"># Density</span>
+    <span class="n">density</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">density</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
+
+    <span class="c1"># Transitivity</span>
+    <span class="n">transitivity</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">transitivity</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
+
+    <span class="c1"># Degree distribution</span>
+    <span class="n">degrees</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">degree</span><span class="p">()</span>
+
+    <span class="c1"># Stengths distribution</span>
+    <span class="n">strengths</span> <span class="o">=</span> <span class="n">graph</span><span class="o">.</span><span class="n">degree</span><span class="p">(</span><span class="n">weight</span><span class="o">=</span><span class="s2">&quot;weight&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Clustering coefficients</span>
+    <span class="n">ccs</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">clustering</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
+    <span class="n">avg_ccs</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">ccs</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">ccs</span><span class="p">)</span>
+
+    <span class="c1"># Extract the main connected component</span>
+    <span class="n">components</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">connected_components</span><span class="p">(</span><span class="n">graph</span><span class="p">),</span> <span class="n">key</span><span class="o">=</span><span class="nb">len</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+    <span class="c1"># Node centrality measures</span>
+    <span class="n">bet_cen</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">betweenness_centrality</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="s2">&quot;weight&quot;</span><span class="p">)</span>
+    <span class="n">clo_cen</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">closeness_centrality</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
+    <span class="n">eig_cen</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">eigenvector_centrality</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="s2">&quot;weight&quot;</span><span class="p">)</span>
+    <span class="n">high_bet_cen</span> <span class="o">=</span> <span class="n">highest_centrality</span><span class="p">(</span><span class="n">bet_cen</span><span class="p">)</span>
+    <span class="n">high_clo_cen</span> <span class="o">=</span> <span class="n">highest_centrality</span><span class="p">(</span><span class="n">clo_cen</span><span class="p">)</span>
+    <span class="n">high_eig_cen</span> <span class="o">=</span> <span class="n">highest_centrality</span><span class="p">(</span><span class="n">eig_cen</span><span class="p">)</span>
+
+    <span class="c1"># Summarize results in a dictionnary</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="nb">locals</span><span class="p">()</span>
+    <span class="n">outputs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">([(</span><span class="n">name</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
+                    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;degrees&quot;</span><span class="p">,</span> <span class="s2">&quot;strengths&quot;</span><span class="p">,</span> <span class="s2">&quot;ccs&quot;</span><span class="p">,</span> <span class="s2">&quot;avg_ccs&quot;</span><span class="p">,</span>
+                                 <span class="s2">&quot;components&quot;</span><span class="p">,</span> <span class="s2">&quot;bet_cen&quot;</span><span class="p">,</span> <span class="s2">&quot;clo_cen&quot;</span><span class="p">,</span>
+                                 <span class="s2">&quot;eig_cen&quot;</span><span class="p">,</span> <span class="s2">&quot;high_bet_cen&quot;</span><span class="p">,</span> <span class="s2">&quot;high_clo_cen&quot;</span><span class="p">,</span>
+                                 <span class="s2">&quot;high_eig_cen&quot;</span><span class="p">,</span> <span class="s2">&quot;avg_node_con&quot;</span><span class="p">,</span> <span class="s2">&quot;edge_con&quot;</span><span class="p">,</span>
+                                 <span class="s2">&quot;node_con&quot;</span><span class="p">,</span> <span class="s2">&quot;deg_assortativity&quot;</span><span class="p">,</span> <span class="s2">&quot;density&quot;</span><span class="p">,</span>
+                                 <span class="s2">&quot;transitivity&quot;</span><span class="p">)])</span>
+
+    <span class="c1"># Snaps</span>
+    <span class="n">snaps</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">outdir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">pylab</span> <span class="kn">as</span> <span class="nn">plt</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">outdir</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;{0}&#39; is not a valid directory.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">outdir</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">measures</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="p">[(</span><span class="n">degrees</span><span class="p">,</span> <span class="s2">&quot;degree&quot;</span><span class="p">),</span>
+                                <span class="p">(</span><span class="n">strengths</span><span class="p">,</span> <span class="s2">&quot;strength&quot;</span><span class="p">),</span>
+                                <span class="p">(</span><span class="n">bet_cen</span><span class="p">,</span> <span class="s2">&quot;betweenness&quot;</span><span class="p">),</span>
+                                <span class="p">(</span><span class="n">clo_cen</span><span class="p">,</span> <span class="s2">&quot;closeness&quot;</span><span class="p">),</span>
+                                <span class="p">(</span><span class="n">eig_cen</span><span class="p">,</span> <span class="s2">&quot;eigencentrality&quot;</span><span class="p">)]:</span>
+            <span class="n">outfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="n">label</span> <span class="o">+</span> <span class="s2">&quot;.png&quot;</span><span class="p">)</span>
+            <span class="n">snaps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">outfile</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+            <span class="n">n</span><span class="p">,</span> <span class="n">bins</span><span class="p">,</span> <span class="n">patches</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">measures</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="mi">20</span><span class="p">,</span> <span class="n">normed</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                                        <span class="n">facecolor</span><span class="o">=</span><span class="s2">&quot;green&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.75</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Number of nodes&quot;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">outfile</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">outputs</span><span class="p">,</span> <span class="n">snaps</span></div>
+
+
+<div class="viewcode-block" id="highest_centrality"><a class="viewcode-back" href="../../../generated/pyconnectome.metrics.schcc.html#pyconnectome.metrics.schcc.highest_centrality">[docs]</a><span class="k">def</span> <span class="nf">highest_centrality</span><span class="p">(</span><span class="n">cent_dict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Extract the highest central node.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cent_dict: dict</span>
+<span class="sd">        the centrality measures for each node.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    high_cent: 2-uplet</span>
+<span class="sd">        a tuple (node, value) with the node with largest value.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cent_items</span> <span class="o">=</span> <span class="p">[(</span><span class="n">b</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span> <span class="ow">in</span> <span class="n">cent_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span>
+    <span class="n">cent_items</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+    <span class="n">cent_items</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">reversed</span><span class="p">(</span><span class="n">cent_items</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span></div>
+
+
+<div class="viewcode-block" id="advanced_network_analysis"><a class="viewcode-back" href="../../../generated/pyconnectome.metrics.schcc.html#pyconnectome.metrics.schcc.advanced_network_analysis">[docs]</a><span class="k">def</span> <span class="nf">advanced_network_analysis</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">kstep</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">sstep</span><span class="o">=</span><span class="mf">600.</span><span class="p">,</span> <span class="n">outdir</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Map structural cores to delineate network modules, and to identify</span>
+<span class="sd">    hub regions that link distinct clusters.</span>
+
+<span class="sd">    Definition:</span>
+
+<span class="sd">    The k-core is the largest subnetwork comprising nodes of degree at</span>
+<span class="sd">    least k.</span>
+
+<span class="sd">    The s-core is the largest subnetwork comprising nodes of strength at</span>
+<span class="sd">    least s.</span>
+
+<span class="sd">    The optimal community structure is a subdivision of the</span>
+<span class="sd">    network into nonoverlapping groups of nodes which maximizes the number</span>
+<span class="sd">    of within-group edges and minimizes the number of between-group edges.</span>
+
+<span class="sd">    The rich club coefficient, R, at level k is the fraction of edges that</span>
+<span class="sd">    connect nodes of degree k or higher out of the maximum number of edges</span>
+<span class="sd">    that such nodes might share.</span>
+
+<span class="sd">    Network features:</span>
+
+<span class="sd">    kcores:</span>
+<span class="sd">        each node associated k-core number.</span>
+<span class="sd">    klevels:</span>
+<span class="sd">        size of s-cores when the s-level increase.</span>
+<span class="sd">    scores:</span>
+<span class="sd">        each node associated s-core number.</span>
+<span class="sd">    slevels:</span>
+<span class="sd">        size of s-cores when the s-level increase.</span>
+<span class="sd">    community:</span>
+<span class="sd">        the computed community structure.</span>
+<span class="sd">    qstat:</span>
+<span class="sd">        the objective modularity function optimized q-statistic.</span>
+<span class="sd">    rich_clubs:</span>
+<span class="sd">        vector of rich-club coefficients for levels 1 to klevel=the maximum</span>
+<span class="sd">        degree of the adjacency matrix.</span>
+<span class="sd">    global_efficiency:</span>
+<span class="sd">        the global efficiency is the average of inverse shortest path</span>
+<span class="sd">        length, and is inversely related to the characteristic path length.</span>
+<span class="sd">    local_efficiency:</span>
+<span class="sd">        the local efficiency is the global efficiency computed on the</span>
+<span class="sd">        neighborhood of the node, and is related to the clustering coefficient.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    graph: Graph</span>
+<span class="sd">        the graph reprensenting the connectome network.</span>
+<span class="sd">    kstep: int (optional, default 1)</span>
+<span class="sd">        the k-core size increment.</span>
+<span class="sd">    sstep: float (optional, default 600.)</span>
+<span class="sd">        the s-core size increment.</span>
+<span class="sd">    outdir: str (optional, default None)</span>
+<span class="sd">        if specified save some snapshots.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    outputs: dict</span>
+<span class="sd">        the network features.</span>
+<span class="sd">    snaps: list of file</span>
+<span class="sd">        the generates snaps.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">adjacency_matrix</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ascontiguousarray</span><span class="p">(</span><span class="n">nx</span><span class="o">.</span><span class="n">to_numpy_matrix</span><span class="p">(</span><span class="n">graph</span><span class="p">))</span>
+
+    <span class="c1"># Efficiency</span>
+    <span class="n">global_efficiency</span> <span class="o">=</span> <span class="n">bct</span><span class="o">.</span><span class="n">efficiency_wei</span><span class="p">(</span><span class="n">adjacency_matrix</span><span class="p">)</span>
+    <span class="n">local_efficiency</span> <span class="o">=</span> <span class="n">bct</span><span class="o">.</span><span class="n">efficiency_wei</span><span class="p">(</span><span class="n">adjacency_matrix</span><span class="p">,</span> <span class="n">local</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+    <span class="c1"># K-core decomposition</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">kcores</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">adjacency_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">klevels</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">kxs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">processed_indices</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">graph</span><span class="o">.</span><span class="n">is_directed</span><span class="p">():</span>
+            <span class="n">kcore</span><span class="p">,</span> <span class="n">kn</span><span class="p">,</span> <span class="n">peelorder</span><span class="p">,</span> <span class="n">peellevel</span> <span class="o">=</span> <span class="n">bct</span><span class="o">.</span><span class="n">kcore_bu</span><span class="p">(</span><span class="n">adjacency_matrix</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span>
+                                                           <span class="n">peel</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+            <span class="n">klevels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">kn</span><span class="p">)</span>
+            <span class="n">kxs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">kcore</span><span class="p">,</span> <span class="n">kn</span><span class="p">,</span> <span class="n">peelorder</span><span class="p">,</span> <span class="n">peellevel</span> <span class="o">=</span> <span class="n">bct</span><span class="o">.</span><span class="n">kcore_bd</span><span class="p">(</span><span class="n">adjacency_matrix</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span>
+                                                           <span class="n">peel</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">indices</span> <span class="ow">in</span> <span class="n">peelorder</span><span class="p">:</span>
+            <span class="n">new_indices</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span> <span class="o">-</span> <span class="n">processed_indices</span>
+            <span class="n">processed_indices</span> <span class="o">=</span> <span class="n">processed_indices</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">new_indices</span><span class="p">)</span>
+            <span class="n">kcores</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">new_indices</span><span class="p">)]</span> <span class="o">=</span> <span class="n">k</span>
+        <span class="k">if</span> <span class="n">kn</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="n">k</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="c1"># S-core decompositon</span>
+    <span class="n">scores</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">adjacency_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">slevels</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">sxs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">processed_indices</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">graph</span><span class="o">.</span><span class="n">is_directed</span><span class="p">():</span>
+            <span class="n">score</span><span class="p">,</span> <span class="n">sn</span> <span class="o">=</span> <span class="n">bct</span><span class="o">.</span><span class="n">score_wu</span><span class="p">(</span><span class="n">adjacency_matrix</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span>
+            <span class="n">slevels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sn</span><span class="p">)</span>
+            <span class="n">sxs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+        <span class="n">ff</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">score</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">node_index</span> <span class="ow">in</span> <span class="n">ff</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">node_index</span> <span class="ow">in</span> <span class="n">processed_indices</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">score</span><span class="p">[</span><span class="n">node_index</span><span class="p">,</span> <span class="p">:]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+                <span class="k">continue</span>
+            <span class="n">scores</span><span class="p">[</span><span class="n">node_index</span><span class="p">]</span> <span class="o">=</span> <span class="n">s</span>
+            <span class="n">processed_indices</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">node_index</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">sn</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="n">s</span> <span class="o">+=</span> <span class="n">sstep</span>
+
+    <span class="c1"># Community detection</span>
+    <span class="n">community</span><span class="p">,</span> <span class="n">qstat</span> <span class="o">=</span> <span class="n">bct</span><span class="o">.</span><span class="n">community_louvain</span><span class="p">(</span>
+        <span class="n">adjacency_matrix</span><span class="p">,</span> <span class="n">gamma</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">ci</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">B</span><span class="o">=</span><span class="s2">&quot;modularity&quot;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
+
+    <span class="c1"># Hub detection</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">graph</span><span class="o">.</span><span class="n">is_directed</span><span class="p">():</span>
+        <span class="n">rich_clubs</span> <span class="o">=</span> <span class="n">bct</span><span class="o">.</span><span class="n">rich_club_wu</span><span class="p">(</span><span class="n">adjacency_matrix</span><span class="p">,</span> <span class="n">klevel</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">rich_clubs</span> <span class="o">=</span> <span class="n">bct</span><span class="o">.</span><span class="n">rich_club_wd</span><span class="p">(</span><span class="n">adjacency_matrix</span><span class="p">,</span> <span class="n">klevel</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
+
+    <span class="c1"># Summarize results in a dictionnary</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="nb">locals</span><span class="p">()</span>
+    <span class="n">outputs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">([(</span><span class="n">name</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
+                    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;kcores&quot;</span><span class="p">,</span> <span class="s2">&quot;klevels&quot;</span><span class="p">,</span> <span class="s2">&quot;kxs&quot;</span><span class="p">,</span> <span class="s2">&quot;scores&quot;</span><span class="p">,</span>
+                                 <span class="s2">&quot;slevels&quot;</span><span class="p">,</span> <span class="s2">&quot;sxs&quot;</span><span class="p">,</span> <span class="s2">&quot;community&quot;</span><span class="p">,</span> <span class="s2">&quot;qstat&quot;</span><span class="p">,</span>
+                                 <span class="s2">&quot;rich_clubs&quot;</span><span class="p">,</span> <span class="s2">&quot;global_efficiency&quot;</span><span class="p">,</span>
+                                 <span class="s2">&quot;local_efficiency&quot;</span><span class="p">)])</span>
+
+    <span class="c1"># Snaps</span>
+    <span class="n">snaps</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">outdir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">pylab</span> <span class="kn">as</span> <span class="nn">plt</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">outdir</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;{0}&#39; is not a valid directory.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">outdir</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">measures</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="p">[(</span><span class="n">kxs</span><span class="p">,</span> <span class="n">klevels</span><span class="p">,</span> <span class="s2">&quot;klevels&quot;</span><span class="p">),</span>
+                                   <span class="p">(</span><span class="n">sxs</span><span class="p">,</span> <span class="n">slevels</span><span class="p">,</span> <span class="s2">&quot;slevels&quot;</span><span class="p">)]:</span>
+            <span class="n">outfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="n">label</span> <span class="o">+</span> <span class="s2">&quot;.png&quot;</span><span class="p">)</span>
+            <span class="n">snaps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">outfile</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">measures</span><span class="p">,</span> <span class="s2">&quot;-bo&quot;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Number of nodes&quot;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">outfile</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">outputs</span><span class="p">,</span> <span class="n">snaps</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+
+    <div class="clearer">
+    </div>
+  </div>
+  
+</div>
+
+<div class="footer">
+    &copy; 2017, pyConnectome developers &lt;antoine.grigis@cea.fr&gt;.
+</div>
+  </body>
+</html>

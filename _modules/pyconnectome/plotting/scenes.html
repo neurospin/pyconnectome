@@ -1,0 +1,422 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+  
+    <title>PYCONNECTOME &mdash; pyConnectome</title>
+  <!-- htmltitle is before nature.css - we use this hack to load bootstrap first -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="../../../_static/css/bootstrap.min.css" media="screen" />
+
+    
+    <link rel="stylesheet" href="../../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/gallery.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="pyConnectome" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" />
+  
+   
+       <script type="text/javascript" src="../../../_static/sidebar.js"></script>
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="../../../_static/js/bootstrap.min.js" type="text/javascript"></script>
+
+  <script src="../../../_static/js/angular.min.js" type="text/javascript"></script>
+  <script type="text/javascript">
+    var app = angular.module("navApp", []);
+    app.controller('navCtrl', ['$scope', '$window', function($scope, $window) {
+      $scope.isActive = function (viewLocation) {
+        var rel = $window.location.pathname.split("/")
+        rel = rel[rel.length - 1]
+        rel = rel.split(".")[0]
+        var active = (viewLocation === rel);
+        return active;};
+    }]);
+  </script>
+
+  </head>
+  <body role="document"><div class="banner">
+  <div class="container-fluid banner-container">
+    <div class="row banner-inner">
+      <div class="col-xs-4">
+        <img alt="Logo" src="../../../_static/pyconnectome.png">
+      </div>
+      <div class="col-xs-8">
+            <p>Diffusion MRI connectome.</p>
+      </div>
+    </div>  
+  </div>
+</div><nav class="navbar navbar-default navbar-static-top">
+  <div class="container-fluid">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../../../index.html">
+        </a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse" ng-controller="navCtrl" ng-app="navApp">
+      <ul class="nav navbar-nav">
+        <li ng-class="{ active: isActive('index') }"><a href="../../../index.html">Home</a></li>
+        <li ng-class="{ active: isActive('installation') }"><a href="../../../generated/installation.html">Installation</a></li>
+        <li ng-class="{ active: isActive('gallery') }"><a href="../../../auto_gallery/gallery.html">Gallery</a></li>
+        <li ng-class="{ active: isActive('documentation') }"><a href="../../../generated/documentation.html">API documentation</a></li>
+        <!--<li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"> <span class="caret"></span></a>
+          <ul class="dropdown-menu">
+	        <li><a href="../../../generated/pyconnectome.html">Pyconnectome</a></li>
+<li><a href="../../../generated/pyconnectome.tractography.html">Pyconnectome.tractography</a></li>
+<li><a href="../../../generated/pyconnectome.metrics.html">Pyconnectome.metrics</a></li>
+<li><a href="../../../generated/pyconnectome.utils.html">Pyconnectome.utils</a></li>
+<li><a href="../../../generated/pyconnectome.models.html">Pyconnectome.models</a></li>
+<li><a href="../../../generated/pyconnectome.plotting.html">Pyconnectome.plotting</a></li>
+<li><a href="../../../generated/pyconnectome.connectomes.html">Pyconnectome.connectomes</a></li>
+          </ul>
+        </li>-->
+        <li><a href="https://github.com/AGrigis/pysphinxdoc">PYSPHINXDOC</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+<div class="content-wrapper">
+    <div class="sphinxsidebar">
+      <div class="sphinxsidebarwrapper">
+
+        <!-- info setup -->
+          <p class="doc-version">
+           This documentation is for pyconnectome <strong>version 1.0.0</strong>
+          </p>
+        <p class="citing">
+          If you use the software, please do not esitate to 
+          <a &mdash; <a href="https://github.com/neurospin/pyconnectome">
+          Report a Bug</a>.
+        </p>
+
+      <!-- toc tree -->
+      
+
+      </div>
+    </div>
+  
+
+  <div class="content">
+      
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pyconnectome.plotting.scenes</h1><div class="highlight"><pre>
+<span></span><span class="c1">##########################################################################</span>
+<span class="c1"># NSAp - Copyright (C) CEA, 2013</span>
+<span class="c1"># Distributed under the terms of the CeCILL-B license, as published by</span>
+<span class="c1"># the CEA-CNRS-INRIA. Refer to the LICENSE file or to</span>
+<span class="c1"># http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html</span>
+<span class="c1"># for details.</span>
+<span class="c1">##########################################################################</span>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Modules that provides predefined 3D rendering scenes.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="c1"># System import</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">vtk</span>
+
+<span class="c1"># Define the logger</span>
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="c1"># Caps import</span>
+<span class="kn">import</span> <span class="nn">pvtk</span>
+<span class="kn">import</span> <span class="nn">colors</span>
+
+
+<div class="viewcode-block" id="LabelsOnPick"><a class="viewcode-back" href="../../../generated/pyconnectome.plotting.scenes.html#pyconnectome.plotting.scenes.LabelsOnPick">[docs]</a><span class="k">class</span> <span class="nc">LabelsOnPick</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Create a picker callback to display some labels.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">default_message</span> <span class="o">=</span> <span class="s2">&quot;Press &lt;p&gt; to pick an object&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">textactor</span><span class="p">,</span> <span class="n">picker</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">actors</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">static_position</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">to_keep_actors</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">highlight_selection</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Initialize the LabelsOnPick class.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        textactor: vtkActor (mandatory)</span>
+<span class="sd">            an actor with a text mapper.</span>
+<span class="sd">        picker: vtkPropPicker (optional, default None)</span>
+<span class="sd">            a picker.</span>
+<span class="sd">        actors: vtkActor (optional, default None)</span>
+<span class="sd">            all the actors to interact with.</span>
+<span class="sd">        static_position: bool (optional, default True)</span>
+<span class="sd">            if True the text labels will be displayed on the lower left corner,</span>
+<span class="sd">            otherwise at the picked object position.</span>
+<span class="sd">        to_keep_actors: list (optional, default None)</span>
+<span class="sd">            a list of actor labels to keep visibile when an object is picked.</span>
+<span class="sd">        highlight_selection: bool (optional, default False)</span>
+<span class="sd">            if True highlight the picked actor and set the other &#39;actors&#39;</span>
+<span class="sd">            visibility to false.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">textactor</span> <span class="o">=</span> <span class="n">textactor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">textmapper</span> <span class="o">=</span> <span class="n">textactor</span><span class="o">.</span><span class="n">GetMapper</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">picker</span> <span class="o">=</span> <span class="n">picker</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">actors</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">static_position</span> <span class="o">=</span> <span class="n">static_position</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">to_keep_actors</span> <span class="o">=</span> <span class="n">to_keep_actors</span> <span class="ow">or</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">highlight_selection</span> <span class="o">=</span> <span class="n">highlight_selection</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; When an actor is picked, display its label and focus on this</span>
+<span class="sd">        actor only.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Pick an actor</span>
+        <span class="n">actor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">picker</span><span class="o">.</span><span class="n">GetProp3D</span><span class="p">()</span>
+
+        <span class="c1"># Restore all actors visibilities</span>
+        <span class="k">if</span> <span class="n">actor</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">highlight_selection</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">act</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">actors</span><span class="p">:</span>
+                    <span class="n">act</span><span class="o">.</span><span class="n">SetVisibility</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">textmapper</span><span class="o">.</span><span class="n">SetInput</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">default_message</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">textactor</span><span class="o">.</span><span class="n">VisibilityOn</span><span class="p">()</span>
+        <span class="c1"># Focus on the picked actor and display the fold label</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">highlight_selection</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">act</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">actors</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">act</span><span class="o">.</span><span class="n">label</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_keep_actors</span><span class="p">:</span>
+                        <span class="n">act</span><span class="o">.</span><span class="n">SetVisibility</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+                <span class="n">actor</span><span class="o">.</span><span class="n">SetVisibility</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">textmapper</span><span class="o">.</span><span class="n">SetInput</span><span class="p">(</span><span class="n">actor</span><span class="o">.</span><span class="n">label</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">textactor</span><span class="o">.</span><span class="n">VisibilityOn</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">static_position</span><span class="p">:</span>
+                <span class="n">point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">picker</span><span class="o">.</span><span class="n">GetSelectionPoint</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">textactor</span><span class="o">.</span><span class="n">SetPosition</span><span class="p">(</span><span class="n">point</span><span class="p">[:</span><span class="mi">2</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="network"><a class="viewcode-back" href="../../../generated/pyconnectome.plotting.scenes.html#pyconnectome.plotting.scenes.network">[docs]</a><span class="k">def</span> <span class="nf">network</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">edges</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">lh_surf</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+            <span class="n">rh_surf</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">weight_node_by_color</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">weight_node_by_size</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+            <span class="n">edge_weights</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">weight_edge_by_color</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+            <span class="n">weight_edge_by_size</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Scene that shows a network.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    nodes: list of array (3, )</span>
+<span class="sd">        the network nodes.</span>
+<span class="sd">    labels: list of str</span>
+<span class="sd">        the nodes associated labels.</span>
+<span class="sd">    weights: list or array (N,) (optional, default None)</span>
+<span class="sd">        the nodes associated weights.</span>
+<span class="sd">    edges: list of 2-uplet (optional, default None)</span>
+<span class="sd">        the network edges.</span>
+<span class="sd">    *_surf: TriSurface (optional, default None)</span>
+<span class="sd">        the right and left hemispheres surfaces.</span>
+<span class="sd">    weight_node_by_color: bool (optional, default False)</span>
+<span class="sd">        if True and &#39;weights&#39; parameter specified, color the nodes depending</span>
+<span class="sd">        on the associated weigths.</span>
+<span class="sd">    weight_node_by_size: bool (optional, default True)</span>
+<span class="sd">        if True and &#39;weights&#39; parameter specified, define the nodes sizes</span>
+<span class="sd">        depending on the associated weigths.</span>
+<span class="sd">    edge_weights: list of float (optional, default None)</span>
+<span class="sd">        the edges associated connection weights.</span>
+<span class="sd">    weight_edge_by_color: bool (optional, default False)</span>
+<span class="sd">        if True and &#39;edge_weights&#39; parameter specified, color the edges</span>
+<span class="sd">        depending on the associated weigths.</span>
+<span class="sd">    weight_edge_by_size: bool (optional, default True)</span>
+<span class="sd">        if True and &#39;edge_weights&#39; parameter specified, define the edge sizes</span>
+<span class="sd">        depending on the associated weigths.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    ----------</span>
+<span class="sd">    actors: list of vtkActor</span>
+<span class="sd">        the scene actors.</span>
+<span class="sd">    observer: LabelsOnPick</span>
+<span class="sd">        pickle event callback.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Parameters</span>
+    <span class="n">actors</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">label_actors</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="c1"># Check inputs</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">labels</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Nodes and labels must have the same size.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Nodes and associated weights must have the same &quot;</span>
+                         <span class="s2">&quot;size.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">edges</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">edge_weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span>
+            <span class="nb">len</span><span class="p">(</span><span class="n">edges</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">edge_weights</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Edges and associated weights must have the same &quot;</span>
+                         <span class="s2">&quot;size.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Create actor for label and associated callback</span>
+    <span class="n">txtactor</span> <span class="o">=</span> <span class="n">pvtk</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="n">LabelsOnPick</span><span class="o">.</span><span class="n">default_message</span><span class="p">,</span> <span class="n">font_size</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span>
+                         <span class="n">position</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="n">is_visible</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">observer</span> <span class="o">=</span> <span class="n">LabelsOnPick</span><span class="p">(</span><span class="n">txtactor</span><span class="p">,</span> <span class="n">static_position</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                            <span class="n">to_keep_actors</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;right hemisphere surface&quot;</span><span class="p">,</span>
+                                            <span class="s2">&quot;left hemisphere surface&quot;</span><span class="p">],</span>
+                            <span class="n">highlight_selection</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="n">actors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">txtactor</span><span class="p">)</span>
+
+    <span class="c1"># Create actors for the surfaces</span>
+    <span class="k">for</span> <span class="n">surf</span><span class="p">,</span> <span class="n">hemi</span> <span class="ow">in</span> <span class="p">((</span><span class="n">lh_surf</span><span class="p">,</span> <span class="s2">&quot;left&quot;</span><span class="p">),</span> <span class="p">(</span><span class="n">rh_surf</span><span class="p">,</span> <span class="s2">&quot;rigth&quot;</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="n">surf</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">ctab</span> <span class="o">=</span> <span class="p">[[</span><span class="mf">120.</span><span class="p">,</span> <span class="mf">120.</span><span class="p">,</span> <span class="mf">120.</span><span class="p">,</span> <span class="mf">255.</span><span class="p">],</span> <span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">surf</span><span class="o">.</span><span class="n">metadata</span><span class="p">)</span>
+            <span class="n">actor</span> <span class="o">=</span> <span class="n">pvtk</span><span class="o">.</span><span class="n">surface</span><span class="p">(</span>
+                <span class="n">surf</span><span class="o">.</span><span class="n">vertices</span><span class="p">,</span> <span class="n">surf</span><span class="o">.</span><span class="n">triangles</span><span class="p">,</span> <span class="n">surf</span><span class="o">.</span><span class="n">labels</span><span class="p">,</span>
+                <span class="n">ctab</span><span class="p">,</span> <span class="n">opacity</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">decimation_ratio</span><span class="o">=</span><span class="mf">0.98</span><span class="p">)</span>
+            <span class="n">actor</span><span class="o">.</span><span class="n">GetProperty</span><span class="p">()</span><span class="o">.</span><span class="n">SetRepresentationToWireframe</span><span class="p">()</span>
+            <span class="n">actor</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="s2">&quot;{0} hemisphere surface&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">hemi</span><span class="p">)</span>
+            <span class="n">actors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">actor</span><span class="p">)</span>
+
+    <span class="c1"># Create actors for the nodes</span>
+    <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="n">labels</span><span class="p">):</span>
+            <span class="n">actor</span> <span class="o">=</span> <span class="n">pvtk</span><span class="o">.</span><span class="n">dots</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="o">.</span><span class="n">blue</span><span class="p">,</span> <span class="n">psize</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">opacity</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">actor</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">l</span>
+            <span class="n">actors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">actor</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">weight_node_by_color</span><span class="p">:</span>
+            <span class="n">lut</span> <span class="o">=</span> <span class="n">vtk</span><span class="o">.</span><span class="n">vtkColorTransferFunction</span><span class="p">()</span>
+            <span class="n">lut</span><span class="o">.</span><span class="n">AddRGBPoint</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+            <span class="n">lut</span><span class="o">.</span><span class="n">AddRGBPoint</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="n">w</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">nodes</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">weights</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">weight_node_by_color</span><span class="p">:</span>
+                <span class="n">color</span> <span class="o">=</span> <span class="n">lut</span><span class="o">.</span><span class="n">GetColor</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">color</span> <span class="o">=</span> <span class="n">colors</span><span class="o">.</span><span class="n">blue</span>
+            <span class="k">if</span> <span class="n">weight_node_by_size</span><span class="p">:</span>
+                <span class="n">size</span> <span class="o">=</span> <span class="n">w</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">size</span> <span class="o">=</span> <span class="mi">20</span>
+            <span class="n">actor</span> <span class="o">=</span> <span class="n">pvtk</span><span class="o">.</span><span class="n">dots</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">psize</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">opacity</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">actor</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="n">l</span>
+            <span class="n">actors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">actor</span><span class="p">)</span>
+
+    <span class="c1"># Create actors for the edges</span>
+    <span class="k">if</span> <span class="n">edges</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">lut</span> <span class="o">=</span> <span class="n">vtk</span><span class="o">.</span><span class="n">vtkColorTransferFunction</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">edge_weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">weight_edge_by_color</span><span class="p">:</span>
+            <span class="n">lut</span><span class="o">.</span><span class="n">AddRGBPoint</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+            <span class="n">lut</span><span class="o">.</span><span class="n">AddRGBPoint</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="mf">2.</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+            <span class="n">lut</span><span class="o">.</span><span class="n">AddRGBPoint</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">lut</span><span class="o">.</span><span class="n">AddRGBPoint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.47</span><span class="p">,</span> <span class="mf">0.47</span><span class="p">,</span> <span class="mf">0.47</span><span class="p">)</span>
+            <span class="n">lut</span><span class="o">.</span><span class="n">AddRGBPoint</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.47</span><span class="p">,</span> <span class="mf">0.47</span><span class="p">,</span> <span class="mf">0.47</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">edge_weights</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">link</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">:</span>
+                <span class="n">line</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="n">nodes</span><span class="p">[</span><span class="n">link</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">nodes</span><span class="p">[</span><span class="n">link</span><span class="p">[</span><span class="mi">1</span><span class="p">]]])</span>
+                <span class="n">actor</span> <span class="o">=</span> <span class="n">pvtk</span><span class="o">.</span><span class="n">line</span><span class="p">([</span><span class="n">line</span><span class="p">],</span> <span class="n">colors</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">lut</span><span class="o">=</span><span class="n">lut</span><span class="p">,</span> <span class="n">opacity</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span>
+                                  <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">actor</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="s2">&quot;edge: {0} - {1}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">labels</span><span class="p">[</span><span class="n">link</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">labels</span><span class="p">[</span><span class="n">link</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+                <span class="n">actors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">actor</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mean_w</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">edge_weights</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">link</span><span class="p">,</span> <span class="n">w</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">edges</span><span class="p">,</span> <span class="n">edge_weights</span><span class="p">):</span>
+                <span class="n">line</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">([</span><span class="n">nodes</span><span class="p">[</span><span class="n">link</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">nodes</span><span class="p">[</span><span class="n">link</span><span class="p">[</span><span class="mi">1</span><span class="p">]]])</span>
+                <span class="k">if</span> <span class="n">weight_edge_by_color</span> <span class="ow">and</span> <span class="n">weight_edge_by_size</span><span class="p">:</span>
+                    <span class="n">color</span> <span class="o">=</span> <span class="n">lut</span><span class="o">.</span><span class="n">GetColor</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">w</span> <span class="o">/</span> <span class="n">mean_w</span> <span class="o">+</span> <span class="mf">1.</span><span class="p">))</span>
+                <span class="k">elif</span> <span class="n">weight_edge_by_color</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">weight_edge_by_size</span><span class="p">:</span>
+                    <span class="n">color</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">w</span> <span class="o">/</span> <span class="n">mean_w</span> <span class="o">+</span> <span class="mf">1.</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">color</span> <span class="o">=</span> <span class="p">[[</span><span class="mf">120.</span><span class="p">,</span> <span class="mf">120.</span><span class="p">,</span> <span class="mf">120.</span><span class="p">]]</span>
+                <span class="k">if</span> <span class="n">weight_edge_by_size</span><span class="p">:</span>
+                    <span class="n">linewidth</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">w</span> <span class="o">/</span> <span class="n">mean_w</span> <span class="o">/</span> <span class="mf">5.</span> <span class="o">+</span> <span class="mf">1.</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.1</span>
+                    <span class="n">actor</span> <span class="o">=</span> <span class="n">pvtk</span><span class="o">.</span><span class="n">tubes</span><span class="p">(</span>
+                        <span class="p">[</span><span class="n">line</span><span class="p">],</span> <span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">color</span><span class="p">),</span> <span class="n">opacity</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                        <span class="n">linewidth</span><span class="o">=</span><span class="n">linewidth</span><span class="p">,</span> <span class="n">tube_sides</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">lod</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                        <span class="n">lod_points</span><span class="o">=</span><span class="mi">10</span> <span class="o">**</span> <span class="mi">4</span><span class="p">,</span> <span class="n">lod_points_size</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">actor</span> <span class="o">=</span> <span class="n">pvtk</span><span class="o">.</span><span class="n">line</span><span class="p">([</span><span class="n">line</span><span class="p">],</span> <span class="n">colors</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">lut</span><span class="o">=</span><span class="n">lut</span><span class="p">,</span>
+                                      <span class="n">opacity</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">actor</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="s2">&quot;edge: {0} - {1}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">labels</span><span class="p">[</span><span class="n">link</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">labels</span><span class="p">[</span><span class="n">link</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+                <span class="n">actors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">actor</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">actors</span><span class="p">,</span> <span class="n">observer</span></div>
+
+
+<div class="viewcode-block" id="bundle_representative_track_scene"><a class="viewcode-back" href="../../../generated/pyconnectome.plotting.scenes.html#pyconnectome.plotting.scenes.bundle_representative_track_scene">[docs]</a><span class="k">def</span> <span class="nf">bundle_representative_track_scene</span><span class="p">(</span><span class="n">tracks</span><span class="p">,</span> <span class="n">representative_track_indx</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Scene that shows the bundle and its most representative element.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tracks : sequence (N, )</span>
+<span class="sd">       of tracks as arrays, shape (N1,3) .. (Nm,3).</span>
+<span class="sd">    representative_track_indx: int</span>
+<span class="sd">       index of the representative track of the bundle.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    ----------</span>
+<span class="sd">    actors: list of vtkActor</span>
+<span class="sd">        the scene actors.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">bundle_actor</span> <span class="o">=</span> <span class="n">pvtk</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">tracks</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">representative_track_actor</span> <span class="o">=</span> <span class="n">pvtk</span><span class="o">.</span><span class="n">line</span><span class="p">(</span>
+        <span class="n">tracks</span><span class="p">[</span><span class="n">representative_track_indx</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">bundle_actor</span><span class="p">,</span> <span class="n">representative_track_actor</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="field_directions"><a class="viewcode-back" href="../../../generated/pyconnectome.plotting.scenes.html#pyconnectome.plotting.scenes.field_directions">[docs]</a><span class="k">def</span> <span class="nf">field_directions</span><span class="p">(</span><span class="n">field</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Scene the shows the directions of a vector field.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    field: array (X, Y, N, 3)</span>
+<span class="sd">        the vector field to plot where N is the number of peaks.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    ----------</span>
+<span class="sd">    actors: list of vtkActor</span>
+<span class="sd">        the scene actors.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">actors</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">field</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">field</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">numpy</span><span class="o">.</span><span class="n">single</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">vector</span> <span class="ow">in</span> <span class="n">field</span><span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">]:</span>
+                <span class="n">line</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">vector</span>
+                <span class="n">actors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pvtk</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+                <span class="n">actors</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">SetPosition</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">actors</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+
+    <div class="clearer">
+    </div>
+  </div>
+  
+</div>
+
+<div class="footer">
+    &copy; 2017, pyConnectome developers &lt;antoine.grigis@cea.fr&gt;.
+</div>
+  </body>
+</html>

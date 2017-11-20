@@ -1,0 +1,754 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+  
+    <title>PYCONNECTOME &mdash; pyConnectome</title>
+  <!-- htmltitle is before nature.css - we use this hack to load bootstrap first -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="../_static/css/bootstrap.min.css" media="screen" />
+
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="pyConnectome" href="../index.html" />
+  
+   
+       <script type="text/javascript" src="../_static/sidebar.js"></script>
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="../_static/js/bootstrap.min.js" type="text/javascript"></script>
+
+  <script src="../_static/js/angular.min.js" type="text/javascript"></script>
+  <script type="text/javascript">
+    var app = angular.module("navApp", []);
+    app.controller('navCtrl', ['$scope', '$window', function($scope, $window) {
+      $scope.isActive = function (viewLocation) {
+        var rel = $window.location.pathname.split("/")
+        rel = rel[rel.length - 1]
+        rel = rel.split(".")[0]
+        var active = (viewLocation === rel);
+        return active;};
+    }]);
+  </script>
+
+  </head>
+  <body role="document"><div class="banner">
+  <div class="container-fluid banner-container">
+    <div class="row banner-inner">
+      <div class="col-xs-4">
+        <img alt="Logo" src="../_static/pyconnectome.png">
+      </div>
+      <div class="col-xs-8">
+            <p>Diffusion MRI connectome.</p>
+      </div>
+    </div>  
+  </div>
+</div><nav class="navbar navbar-default navbar-static-top">
+  <div class="container-fluid">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+        </a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse" ng-controller="navCtrl" ng-app="navApp">
+      <ul class="nav navbar-nav">
+        <li ng-class="{ active: isActive('index') }"><a href="../index.html">Home</a></li>
+        <li ng-class="{ active: isActive('installation') }"><a href="../generated/installation.html">Installation</a></li>
+        <li ng-class="{ active: isActive('gallery') }"><a href="gallery.html">Gallery</a></li>
+        <li ng-class="{ active: isActive('documentation') }"><a href="../generated/documentation.html">API documentation</a></li>
+        <!--<li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"> <span class="caret"></span></a>
+          <ul class="dropdown-menu">
+	        <li><a href="../generated/pyconnectome.html">Pyconnectome</a></li>
+<li><a href="../generated/pyconnectome.tractography.html">Pyconnectome.tractography</a></li>
+<li><a href="../generated/pyconnectome.metrics.html">Pyconnectome.metrics</a></li>
+<li><a href="../generated/pyconnectome.utils.html">Pyconnectome.utils</a></li>
+<li><a href="../generated/pyconnectome.models.html">Pyconnectome.models</a></li>
+<li><a href="../generated/pyconnectome.plotting.html">Pyconnectome.plotting</a></li>
+<li><a href="../generated/pyconnectome.connectomes.html">Pyconnectome.connectomes</a></li>
+          </ul>
+        </li>-->
+        <li><a href="https://github.com/AGrigis/pysphinxdoc">PYSPHINXDOC</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+<div class="content-wrapper">
+    <div class="sphinxsidebar">
+      <div class="sphinxsidebarwrapper">
+
+        <!-- info setup -->
+          <p class="doc-version">
+           This documentation is for pyconnectome <strong>version 1.0.0</strong>
+          </p>
+        <p class="citing">
+          If you use the software, please do not esitate to 
+          <a &mdash; <a href="https://github.com/neurospin/pyconnectome">
+          Report a Bug</a>.
+        </p>
+
+      <!-- toc tree -->
+      <ul>
+<li><a class="reference internal" href="#">Pyconnectome Register</a></li>
+</ul>
+
+
+      </div>
+    </div>
+  
+
+  <div class="content">
+      
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="pyconnectome-register">
+<span id="sphx-glr-auto-gallery-pyconnectome-register-py"></span><h1>Pyconnectome Register<a class="headerlink" href="#pyconnectome-register" title="Permalink to this headline">¶</a></h1>
+<p>Example automatically generated from package script.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># System import</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pprint</span>
+<span class="kn">import</span> <span class="nn">textwrap</span>
+<span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">RawTextHelpFormatter</span>
+
+<span class="c1"># Bredala import</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">bredala</span>
+    <span class="n">bredala</span><span class="o">.</span><span class="n">USE_PROFILER</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">bredala</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;pyconnectome.utils.segtools&quot;</span><span class="p">,</span>
+                     <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;bet2&quot;</span><span class="p">,</span> <span class="s2">&quot;fast&quot;</span><span class="p">,</span> <span class="s2">&quot;robustfov&quot;</span><span class="p">,</span> <span class="s2">&quot;roi_from_bbox&quot;</span><span class="p">])</span>
+    <span class="n">bredala</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;pyconnectome.utils.filetools&quot;</span><span class="p">,</span>
+                     <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;fslreorient2std&quot;</span><span class="p">])</span>
+    <span class="n">bredala</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;pyconnectome.utils.regtools&quot;</span><span class="p">,</span>
+                     <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;flirt&quot;</span><span class="p">,</span> <span class="s2">&quot;fnirt&quot;</span><span class="p">])</span>
+    <span class="n">bredala</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;pydcmio.plotting.slicer&quot;</span><span class="p">,</span>
+                     <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;mosaic&quot;</span><span class="p">])</span>
+<span class="k">except</span><span class="p">:</span>
+    <span class="k">pass</span>
+
+<span class="c1"># Package import</span>
+<span class="kn">from</span> <span class="nn">pyconnectome</span> <span class="kn">import</span> <span class="n">__version__</span> <span class="k">as</span> <span class="n">version</span>
+<span class="kn">from</span> <span class="nn">pyconnectome</span> <span class="kn">import</span> <span class="n">DEFAULT_FSL_PATH</span>
+<span class="kn">from</span> <span class="nn">pyconnectome.wrapper</span> <span class="kn">import</span> <span class="n">FSLWrapper</span>
+<span class="kn">from</span> <span class="nn">pyconnectome.utils.segtools</span> <span class="kn">import</span> <span class="n">bet2</span>
+<span class="kn">from</span> <span class="nn">pyconnectome.utils.segtools</span> <span class="kn">import</span> <span class="n">fast</span>
+<span class="kn">from</span> <span class="nn">pyconnectome.utils.segtools</span> <span class="kn">import</span> <span class="n">robustfov</span>
+<span class="kn">from</span> <span class="nn">pyconnectome.utils.segtools</span> <span class="kn">import</span> <span class="n">roi_from_bbox</span>
+<span class="kn">from</span> <span class="nn">pyconnectome.utils.regtools</span> <span class="kn">import</span> <span class="n">flirt</span>
+<span class="kn">from</span> <span class="nn">pyconnectome.utils.regtools</span> <span class="kn">import</span> <span class="n">fnirt</span>
+<span class="kn">from</span> <span class="nn">pyconnectome.utils.filetools</span> <span class="kn">import</span> <span class="n">fslreorient2std</span>
+
+<span class="c1"># Third party import</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">from</span> <span class="nn">pydcmio.plotting.slicer</span> <span class="kn">import</span> <span class="n">mosaic</span>
+
+
+<span class="c1"># Parameters to keep trace</span>
+<span class="n">__hopla__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;runtime&quot;</span><span class="p">,</span> <span class="s2">&quot;inputs&quot;</span><span class="p">,</span> <span class="s2">&quot;outputs&quot;</span><span class="p">]</span>
+
+
+<span class="c1"># Script documentation</span>
+<span class="n">DOC</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">FSL registration</span>
+
+<span class="s2">Rigid/affine or non linear registration with FSL using flirt and fnirt.</span>
+
+<span class="s2">Command:</span>
+
+<span class="s2">python $HOME/git/pyfsl/pyconnectome/scripts/pyconnectome_register </span><span class="se">\</span>
+<span class="s2">    -v 2 </span><span class="se">\</span>
+<span class="s2">    -s test_fsl </span><span class="se">\</span>
+<span class="s2">    -o /volatile/nsap/recalage_cathy/results </span><span class="se">\</span>
+<span class="s2">    -i /volatile/nsap/recalage_cathy/T1W_gado.nii.gz </span><span class="se">\</span>
+<span class="s2">    -r /usr/share/fsl/data/standard/MNI152_T1_1mm.nii.gz </span><span class="se">\</span>
+<span class="s2">    -j /usr/share/fsl/data/standard/MNI152_T1_1mm_brain.nii.gz </span><span class="se">\</span>
+<span class="s2">    -x /volatile/nsap/recalage_cathy/mask_lesion.nii.gz /volatile/nsap/recalage_cathy/mask_necrosis.nii.gz </span><span class="se">\</span>
+<span class="s2">    -c /etc/fsl/5.0/fsl.sh </span><span class="se">\</span>
+<span class="s2">    -k 3 </span><span class="se">\</span>
+<span class="s2">    -t 1 </span><span class="se">\</span>
+<span class="s2">    -f 0.45 </span><span class="se">\</span>
+<span class="s2">    -b </span><span class="se">\</span>
+<span class="s2">    -a normmi </span><span class="se">\</span>
+<span class="s2">    -n </span><span class="se">\</span>
+<span class="s2">    -d</span>
+
+
+<span class="s2">Command example for T1 to atlas affine registration with cropping on</span>
+<span class="s2">the Metastasis data:</span>
+
+<span class="s2">python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_register </span><span class="se">\</span>
+<span class="s2">    -o /volatile/nsap/recalage_cathy/results </span><span class="se">\</span>
+<span class="s2">    -s 585521174283 </span><span class="se">\</span>
+<span class="s2">    -i /neurospin/radiomics/studies/metastasis/base/585521174283/anat/585521174283_enh-gado_T1w.nii.gz </span><span class="se">\</span>
+<span class="s2">    -r /usr/share/fsl/data/standard/MNI152_T1_1mm.nii.gz </span><span class="se">\</span>
+<span class="s2">    -O </span><span class="se">\</span>
+<span class="s2">    -R 0 181 0 217 79 121 </span><span class="se">\</span>
+<span class="s2">    -D </span><span class="se">\</span>
+<span class="s2">    -Q /volatile/nsap/recalage_cathy/results/585521174283/brain.nii.gz </span><span class="se">\</span>
+<span class="s2">    -S </span><span class="se">\</span>
+<span class="s2">    -v 2</span>
+
+<span class="s2">Command example for T1 to atlas non linear registration with cropping on</span>
+<span class="s2">the Metastasis data:</span>
+
+<span class="s2">python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_register </span><span class="se">\</span>
+<span class="s2">    -o /volatile/nsap/recalage_cathy/results/nl </span><span class="se">\</span>
+<span class="s2">    -s 585521174283 </span><span class="se">\</span>
+<span class="s2">    -i /neurospin/radiomics/studies/metastasis/base/585521174283/anat/585521174283_enh-gado_T1w.nii.gz </span><span class="se">\</span>
+<span class="s2">    -r /usr/share/fsl/data/standard/MNI152_T1_1mm.nii.gz </span><span class="se">\</span>
+<span class="s2">    -O </span><span class="se">\</span>
+<span class="s2">    -N </span><span class="se">\</span>
+<span class="s2">    -J /usr/share/fsl/data/standard/MNI152_T1_1mm_brain.nii.gz </span><span class="se">\</span>
+<span class="s2">    -R 0 181 0 217 79 121 </span><span class="se">\</span>
+<span class="s2">    -D </span><span class="se">\</span>
+<span class="s2">    -Q /volatile/nsap/recalage_cathy/results/585521174283/brain.nii.gz </span><span class="se">\</span>
+<span class="s2">    -S </span><span class="se">\</span>
+<span class="s2">    -v 2</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+
+<span class="k">def</span> <span class="nf">is_file</span><span class="p">(</span><span class="n">filearg</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Type for argparse - checks that file exists but does not open.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">filearg</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentError</span><span class="p">(</span>
+            <span class="s2">&quot;The file &#39;{0}&#39; does not exist!&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">filearg</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">filearg</span>
+
+
+<span class="k">def</span> <span class="nf">is_directory</span><span class="p">(</span><span class="n">dirarg</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Type for argparse - checks that directory exists.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">dirarg</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentError</span><span class="p">(</span>
+            <span class="s2">&quot;The directory &#39;{0}&#39; does not exist!&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dirarg</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">dirarg</span>
+
+
+<span class="k">def</span> <span class="nf">get_cmd_line_args</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a command line argument parser and return a dict mapping</span>
+<span class="sd">    &lt;argument name&gt; -&gt; &lt;argument value&gt;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span>
+        <span class="n">prog</span><span class="o">=</span><span class="s2">&quot;pyconnectome_register&quot;</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="n">textwrap</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span><span class="n">DOC</span><span class="p">),</span>
+        <span class="n">formatter_class</span><span class="o">=</span><span class="n">RawTextHelpFormatter</span><span class="p">)</span>
+
+    <span class="c1"># Required arguments</span>
+    <span class="n">required</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="s2">&quot;required arguments&quot;</span><span class="p">)</span>
+    <span class="n">required</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-o&quot;</span><span class="p">,</span> <span class="s2">&quot;--outdir&quot;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;&lt;path&gt;&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">is_directory</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;the analysis output directory where &lt;outdir&gt;/&lt;sid&gt; will be &quot;</span>
+             <span class="s2">&quot;generated.&quot;</span><span class="p">)</span>
+    <span class="n">required</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-s&quot;</span><span class="p">,</span> <span class="s2">&quot;--sid&quot;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;the subject identifier.&quot;</span><span class="p">)</span>
+    <span class="n">required</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-i&quot;</span><span class="p">,</span> <span class="s2">&quot;--inputfile&quot;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">is_file</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;the input MRI volume to be registered.&quot;</span><span class="p">)</span>
+    <span class="n">required</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-r&quot;</span><span class="p">,</span> <span class="s2">&quot;--referencefile&quot;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">is_file</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;the template file used as a reference volume during the linear &quot;</span>
+             <span class="s2">&quot;registration.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Optional arguments</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-C&quot;</span><span class="p">,</span> <span class="s2">&quot;--nosearch&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;if set, perform no search to initializa the linear &quot;</span>
+             <span class="s2">&quot;optimization.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-P&quot;</span><span class="p">,</span> <span class="s2">&quot;--dof&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">12</span><span class="p">],</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;the number of DOF in the linear registration.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-S&quot;</span><span class="p">,</span> <span class="s2">&quot;--dosnap&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;if activated, generate QC snaps.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-R&quot;</span><span class="p">,</span> <span class="s2">&quot;--bbox&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;&lt;INT&gt;&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;a bounding box that will be wraped into the reference space.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-E&quot;</span><span class="p">,</span> <span class="s2">&quot;--erase&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;if activated, clean the result folder if already created.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-X&quot;</span><span class="p">,</span> <span class="s2">&quot;--extrafiles&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">is_file</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;*&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;list of files to apply transform to.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-D&quot;</span><span class="p">,</span> <span class="s2">&quot;--dotissues&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;if activated, segment the scan tissues with FAST and apply &quot;</span>
+             <span class="s2">&quot;spatial intensity variations correction.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-T&quot;</span><span class="p">,</span> <span class="s2">&quot;--intype&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">choices</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;type of the input image 1=T1, 2=T2, 3=PD&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-K&quot;</span><span class="p">,</span> <span class="s2">&quot;--nbklass&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;the number of class in the FAST modelization.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-Z&quot;</span><span class="p">,</span> <span class="s2">&quot;--doreorient&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;if set, use the FSL routine to reorient input images.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-O&quot;</span><span class="p">,</span> <span class="s2">&quot;--docrop&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;if set, reduce the FOV of the input image to remove lower head &quot;</span>
+             <span class="s2">&quot;and neck.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-W&quot;</span><span class="p">,</span> <span class="s2">&quot;--cropwho&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;moving&quot;</span><span class="p">,</span> <span class="n">choices</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;moving&quot;</span><span class="p">,</span> <span class="s2">&quot;reference&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">),</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;select which input images will be cropped.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-I&quot;</span><span class="p">,</span> <span class="s2">&quot;--brainsize&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">170</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;the brain size used during the cropping.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-B&quot;</span><span class="p">,</span> <span class="s2">&quot;--dobrain&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;if set, use the BET2 routine to segment the subject brain.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-Q&quot;</span><span class="p">,</span> <span class="s2">&quot;--brain&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">is_file</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;the subject brain.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-H&quot;</span><span class="p">,</span> <span class="s2">&quot;--brainthr&quot;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s2">&quot;brainthr&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;the BET2 fractional intensity threshold (0-&gt;1).&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-A&quot;</span><span class="p">,</span> <span class="s2">&quot;--cost&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;normmi&quot;</span><span class="p">,</span>
+        <span class="n">choices</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;mutualinfo&quot;</span><span class="p">,</span> <span class="s2">&quot;corratio&quot;</span><span class="p">,</span> <span class="s2">&quot;normcorr&quot;</span><span class="p">,</span> <span class="s2">&quot;normmi&quot;</span><span class="p">,</span> <span class="s2">&quot;leastsq&quot;</span><span class="p">,</span>
+                 <span class="s2">&quot;labeldiff&quot;</span><span class="p">,</span> <span class="s2">&quot;bbr&quot;</span><span class="p">),</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;the affine cost function type.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-N&quot;</span><span class="p">,</span> <span class="s2">&quot;--dononlinear&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;if set, use the FNIRT routine to align the subject brain to the &quot;</span>
+             <span class="s2">&quot;template with a non linear transformation.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-J&quot;</span><span class="p">,</span> <span class="s2">&quot;--referencebrainfile&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">is_file</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;the template brain file used as a reference volume during the &quot;</span>
+             <span class="s2">&quot;non linear registration.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-F&quot;</span><span class="p">,</span> <span class="s2">&quot;--fsl-sh&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">is_file</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;&lt;path&gt;&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;bash script initializing FSL&#39;s environment.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-v&quot;</span><span class="p">,</span> <span class="s2">&quot;--verbose&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;increase the verbosity level: 0 silent, [1, 2] verbose.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Create a dict of arguments to pass to the &#39;main&#39; function</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+    <span class="n">verbose</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;verbose&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;fsl_sh&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;fsl_sh&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">DEFAULT_FSL_PATH</span>
+
+    <span class="k">return</span> <span class="n">kwargs</span><span class="p">,</span> <span class="n">verbose</span>
+</pre></div>
+</div>
+<p>Parse the command line.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">inputs</span><span class="p">,</span> <span class="n">verbose</span> <span class="o">=</span> <span class="n">get_cmd_line_args</span><span class="p">()</span>
+<span class="n">tool</span> <span class="o">=</span> <span class="s2">&quot;pyconnectome_register&quot;</span>
+<span class="n">timestamp</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+<span class="n">tool_version</span> <span class="o">=</span> <span class="n">version</span>
+<span class="n">fsl_version</span> <span class="o">=</span> <span class="n">FSLWrapper</span><span class="p">([],</span> <span class="n">shfile</span><span class="o">=</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;fsl_sh&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">version</span>
+<span class="n">params</span> <span class="o">=</span> <span class="nb">locals</span><span class="p">()</span>
+<span class="n">runtime</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">([(</span><span class="n">name</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
+               <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;tool&quot;</span><span class="p">,</span> <span class="s2">&quot;tool_version&quot;</span><span class="p">,</span> <span class="s2">&quot;fsl_version&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;timestamp&quot;</span><span class="p">)])</span>
+<span class="n">subjdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;outdir&quot;</span><span class="p">],</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;sid&quot;</span><span class="p">])</span>
+<span class="k">if</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;erase&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">subjdir</span><span class="p">):</span>
+    <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">subjdir</span><span class="p">)</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">subjdir</span><span class="p">):</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">subjdir</span><span class="p">)</span>
+<span class="n">outputs</span> <span class="o">=</span> <span class="bp">None</span>
+<span class="n">snaps</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">if</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;dosnap&quot;</span><span class="p">]:</span>
+    <span class="n">snap_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">subjdir</span><span class="p">,</span> <span class="s2">&quot;snap&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">snap_dir</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">snap_dir</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="n">pprint</span><span class="p">(</span><span class="s2">&quot;[info] Starting registration ...&quot;</span><span class="p">)</span>
+    <span class="n">pprint</span><span class="p">(</span><span class="s2">&quot;[info] Runtime:&quot;</span><span class="p">)</span>
+    <span class="n">pprint</span><span class="p">(</span><span class="n">runtime</span><span class="p">)</span>
+    <span class="n">pprint</span><span class="p">(</span><span class="s2">&quot;[info] Inputs:&quot;</span><span class="p">)</span>
+    <span class="n">pprint</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Step -1: Reorient images.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;doreorient&quot;</span><span class="p">]:</span>
+    <span class="n">reorient_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">subjdir</span><span class="p">,</span> <span class="s2">&quot;reorient&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">reorient_dir</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">reorient_dir</span><span class="p">)</span>
+    <span class="n">inputfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+        <span class="n">reorient_dir</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;inputfile&quot;</span><span class="p">]))</span>
+    <span class="n">fslreorient2std</span><span class="p">(</span>
+        <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;inputfile&quot;</span><span class="p">],</span> <span class="n">inputfile</span><span class="p">,</span> <span class="n">fslconfig</span><span class="o">=</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;fsl_sh&quot;</span><span class="p">])</span>
+    <span class="n">referencefile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+        <span class="n">reorient_dir</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;referencefile&quot;</span><span class="p">]))</span>
+    <span class="n">fslreorient2std</span><span class="p">(</span>
+        <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;referencefile&quot;</span><span class="p">],</span> <span class="n">referencefile</span><span class="p">,</span> <span class="n">fslconfig</span><span class="o">=</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;fsl_sh&quot;</span><span class="p">])</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">inputfile</span> <span class="o">=</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;inputfile&quot;</span><span class="p">]</span>
+    <span class="n">referencefile</span> <span class="o">=</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;referencefile&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Step 0: Remove lower head and neck.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">crop_outputs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">]</span>
+<span class="n">crop_outputs_und</span> <span class="o">=</span> <span class="p">[</span><span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">]</span>
+<span class="n">crop_outputs_trf</span> <span class="o">=</span> <span class="p">[</span><span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">]</span>
+<span class="k">if</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;docrop&quot;</span><span class="p">]:</span>
+
+    <span class="c1"># Select step inputs</span>
+    <span class="n">step_inputs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;cropwho&quot;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;moving&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">):</span>
+        <span class="n">step_inputs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">inputfile</span>
+    <span class="k">if</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;cropwho&quot;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;reference&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">):</span>
+        <span class="n">step_inputs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">referencefile</span>
+
+    <span class="c1"># Go through each input</span>
+    <span class="k">for</span> <span class="n">cnt</span><span class="p">,</span> <span class="n">path</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">step_inputs</span><span class="p">):</span>
+
+        <span class="c1"># Stop cas</span>
+        <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Crop</span>
+        <span class="n">basename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="n">crop_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">subjdir</span><span class="p">,</span> <span class="s2">&quot;robustfov&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">crop_dir</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">crop_dir</span><span class="p">)</span>
+        <span class="n">cropped_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">crop_dir</span><span class="p">,</span> <span class="s2">&quot;robustfov_&quot;</span> <span class="o">+</span> <span class="n">basename</span><span class="p">)</span>
+        <span class="n">cropped_trf</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">crop_dir</span><span class="p">,</span> <span class="s2">&quot;robustfov_&quot;</span> <span class="o">+</span> <span class="n">basename</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;.txt&quot;</span><span class="p">)</span>
+        <span class="n">robustfov</span><span class="p">(</span>
+            <span class="n">input_file</span><span class="o">=</span><span class="n">path</span><span class="p">,</span>
+            <span class="n">output_file</span><span class="o">=</span><span class="n">cropped_file</span><span class="p">,</span>
+            <span class="n">brain_size</span><span class="o">=</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;brainsize&quot;</span><span class="p">],</span>
+            <span class="n">matrix_file</span><span class="o">=</span><span class="n">cropped_trf</span><span class="p">,</span>
+            <span class="n">fsl_sh</span><span class="o">=</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;fsl_sh&quot;</span><span class="p">])</span>
+        <span class="n">crop_outputs</span><span class="p">[</span><span class="n">cnt</span><span class="p">]</span> <span class="o">=</span> <span class="n">cropped_file</span>
+        <span class="n">crop_outputs_trf</span><span class="p">[</span><span class="n">cnt</span><span class="p">]</span> <span class="o">=</span> <span class="n">cropped_trf</span>
+
+        <span class="c1"># Restore orginial shape</span>
+        <span class="n">cropped_und_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">crop_dir</span><span class="p">,</span> <span class="s2">&quot;robustfov_und_&quot;</span> <span class="o">+</span> <span class="n">basename</span><span class="p">)</span>
+        <span class="n">cropped_und_file</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">flirt</span><span class="p">(</span>
+            <span class="n">in_file</span><span class="o">=</span><span class="n">cropped_file</span><span class="p">,</span>
+            <span class="n">ref_file</span><span class="o">=</span><span class="n">path</span><span class="p">,</span>
+            <span class="n">out</span><span class="o">=</span><span class="n">cropped_und_file</span><span class="p">,</span>
+            <span class="n">init</span><span class="o">=</span><span class="n">cropped_trf</span><span class="p">,</span>
+            <span class="n">applyxfm</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+            <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
+            <span class="n">shfile</span><span class="o">=</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;fsl_sh&quot;</span><span class="p">])</span>
+        <span class="n">crop_outputs</span><span class="p">[</span><span class="n">cnt</span><span class="p">]</span> <span class="o">=</span> <span class="n">cropped_und_file</span>
+
+        <span class="c1"># Perform QC</span>
+        <span class="k">if</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;dosnap&quot;</span><span class="p">]:</span>
+            <span class="n">snaps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mosaic</span><span class="p">(</span><span class="n">impath</span><span class="o">=</span><span class="n">cropped_file</span><span class="p">,</span>
+                                <span class="n">title</span><span class="o">=</span><span class="s2">&quot;robustfov_{0}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cnt</span><span class="p">),</span>
+                                <span class="n">outdir</span><span class="o">=</span><span class="n">snap_dir</span><span class="p">))</span>
+<span class="k">if</span> <span class="n">crop_outputs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+    <span class="n">cropped_moving_file</span> <span class="o">=</span> <span class="n">crop_outputs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">cropped_moving_file</span> <span class="o">=</span> <span class="n">inputfile</span>
+<span class="k">if</span> <span class="n">crop_outputs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+    <span class="n">cropped_reference_file</span> <span class="o">=</span> <span class="n">crop_outputs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">cropped_reference_file</span> <span class="o">=</span> <span class="n">referencefile</span>
+</pre></div>
+</div>
+<p>Step 1: Brain extraction</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;brain&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+    <span class="n">mask_file</span><span class="p">,</span> <span class="n">mesh_file</span><span class="p">,</span> <span class="n">outline_file</span><span class="p">,</span> <span class="n">inskull_mask_file</span> <span class="o">=</span> <span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="p">)</span> <span class="o">*</span> <span class="mi">4</span>
+    <span class="n">nskull_mesh_file</span><span class="p">,</span> <span class="n">outskull_mesh_file</span><span class="p">,</span> <span class="n">outskin_mask_file</span> <span class="o">=</span> <span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="p">)</span> <span class="o">*</span> <span class="mi">3</span>
+    <span class="n">skull_mask_file</span><span class="p">,</span> <span class="n">outskin_mesh_file</span><span class="p">,</span> <span class="n">outskull_mask_file</span> <span class="o">=</span> <span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="p">)</span> <span class="o">*</span> <span class="mi">3</span>
+    <span class="n">brain_file</span> <span class="o">=</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;brain&quot;</span><span class="p">]</span>
+    <span class="c1"># No BET, use full FOV</span>
+    <span class="k">if</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;docrop&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;cropwho&quot;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;moving&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">):</span>
+        <span class="n">cropped_moving_file</span> <span class="o">=</span> <span class="n">crop_outputs_und</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="k">elif</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;dobrain&quot;</span><span class="p">]:</span>
+    <span class="n">bet_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">subjdir</span><span class="p">,</span> <span class="s2">&quot;bet&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">bet_dir</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">bet_dir</span><span class="p">)</span>
+    <span class="p">(</span><span class="n">brain_file</span><span class="p">,</span> <span class="n">mask_file</span><span class="p">,</span> <span class="n">mesh_file</span><span class="p">,</span> <span class="n">outline_file</span><span class="p">,</span> <span class="n">inskull_mask_file</span><span class="p">,</span>
+     <span class="n">inskull_mesh_file</span><span class="p">,</span> <span class="n">outskull_mask_file</span><span class="p">,</span> <span class="n">outskull_mesh_file</span><span class="p">,</span>
+     <span class="n">outskin_mask_file</span><span class="p">,</span> <span class="n">outskin_mesh_file</span><span class="p">,</span> <span class="n">skull_mask_file</span><span class="p">)</span> <span class="o">=</span> <span class="n">bet2</span><span class="p">(</span>
+        <span class="n">input_file</span><span class="o">=</span><span class="n">cropped_moving_file</span><span class="p">,</span>
+        <span class="n">output_fileroot</span><span class="o">=</span><span class="n">bet_dir</span><span class="p">,</span>
+        <span class="n">outline</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">mask</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        <span class="n">skull</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">nooutput</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">f</span><span class="o">=</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;brainthr&quot;</span><span class="p">],</span>
+        <span class="n">g</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">radius</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">smooth</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">c</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">threshold</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">mesh</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">shfile</span><span class="o">=</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;fsl_sh&quot;</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;dosnap&quot;</span><span class="p">]:</span>
+        <span class="n">snaps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mosaic</span><span class="p">(</span><span class="n">impath</span><span class="o">=</span><span class="n">brain_file</span><span class="p">,</span>
+                            <span class="n">title</span><span class="o">=</span><span class="s2">&quot;bet&quot;</span><span class="p">,</span>
+                            <span class="n">outdir</span><span class="o">=</span><span class="n">snap_dir</span><span class="p">))</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">mask_file</span><span class="p">,</span> <span class="n">mesh_file</span><span class="p">,</span> <span class="n">outline_file</span><span class="p">,</span> <span class="n">inskull_mask_file</span> <span class="o">=</span> <span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="p">)</span> <span class="o">*</span> <span class="mi">4</span>
+    <span class="n">nskull_mesh_file</span><span class="p">,</span> <span class="n">outskull_mesh_file</span><span class="p">,</span> <span class="n">outskin_mask_file</span> <span class="o">=</span> <span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="p">)</span> <span class="o">*</span> <span class="mi">3</span>
+    <span class="n">skull_mask_file</span><span class="p">,</span> <span class="n">outskin_mesh_file</span><span class="p">,</span> <span class="n">outskull_mask_file</span> <span class="o">=</span> <span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="p">)</span> <span class="o">*</span> <span class="mi">3</span>
+    <span class="n">brain_file</span> <span class="o">=</span>  <span class="n">cropped_moving_file</span>
+<span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;[result] Brain image: {0}.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">brain_file</span><span class="p">))</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;[result] Brain mask image: {0}.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mask_file</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Step 2: Tissue segmentation and spatial intensity variations correction.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;dotissues&quot;</span><span class="p">]:</span>
+    <span class="n">fast_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">subjdir</span><span class="p">,</span> <span class="s2">&quot;fast&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">fast_dir</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">fast_dir</span><span class="p">)</span>
+    <span class="n">fast_fileroot</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+        <span class="n">fast_dir</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;inputfile&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">tpm</span><span class="p">,</span> <span class="n">tsm</span><span class="p">,</span> <span class="n">segmentation_anatfile</span><span class="p">,</span> <span class="n">bias_anatfile</span><span class="p">,</span> <span class="n">biascorrected_anatfile</span> <span class="o">=</span> <span class="n">fast</span><span class="p">(</span>
+        <span class="n">input_file</span><span class="o">=</span><span class="n">brain_file</span><span class="p">,</span>
+        <span class="n">out_fileroot</span><span class="o">=</span><span class="n">fast_fileroot</span><span class="p">,</span>
+        <span class="n">klass</span><span class="o">=</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;nbklass&quot;</span><span class="p">],</span>
+        <span class="n">im_type</span><span class="o">=</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;intype&quot;</span><span class="p">],</span>
+        <span class="n">segments</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        <span class="n">bias_field</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        <span class="n">bias_corrected_im</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        <span class="n">probabilities</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        <span class="n">shfile</span><span class="o">=</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;fsl_sh&quot;</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;dosnap&quot;</span><span class="p">]:</span>
+        <span class="n">snaps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mosaic</span><span class="p">(</span><span class="n">impath</span><span class="o">=</span><span class="n">segmentation_anatfile</span><span class="p">,</span>
+                            <span class="n">title</span><span class="o">=</span><span class="s2">&quot;fast_segmentation&quot;</span><span class="p">,</span>
+                            <span class="n">outdir</span><span class="o">=</span><span class="n">snap_dir</span><span class="p">))</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">tpm</span><span class="p">,</span> <span class="n">tsm</span><span class="p">,</span> <span class="n">segmentation_anatfile</span><span class="p">,</span> <span class="n">bias_anatfile</span> <span class="o">=</span> <span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+    <span class="n">biascorrected_anatfile</span> <span class="o">=</span> <span class="n">brain_file</span>
+<span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;[result] Antomical tissues: {0}.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">segmentation_anatfile</span><span class="p">))</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;[result] Antomical bias field: {0}.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bias_anatfile</span><span class="p">))</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;[result] Antomical bias corrected: {0}.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="n">biascorrected_anatfile</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Step 3: Affine registration</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">basename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">biascorrected_anatfile</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">flirt_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">subjdir</span><span class="p">,</span> <span class="s2">&quot;flirt&quot;</span><span class="p">)</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">flirt_dir</span><span class="p">):</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">flirt_dir</span><span class="p">)</span>
+<span class="n">affine_file</span><span class="p">,</span> <span class="n">affine_omat</span> <span class="o">=</span> <span class="n">flirt</span><span class="p">(</span>
+    <span class="n">in_file</span><span class="o">=</span><span class="n">cropped_moving_file</span><span class="p">,</span>
+    <span class="n">ref_file</span><span class="o">=</span><span class="n">cropped_reference_file</span><span class="p">,</span>
+    <span class="n">omat</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">flirt_dir</span><span class="p">,</span> <span class="s2">&quot;flirt_{0}_to_template.txt&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">basename</span><span class="p">)),</span>
+    <span class="n">out</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">flirt_dir</span><span class="p">,</span> <span class="s2">&quot;flirt_{0}.nii.gz&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">basename</span><span class="p">)),</span>
+    <span class="n">init</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+    <span class="n">cost</span><span class="o">=</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;cost&quot;</span><span class="p">],</span>
+    <span class="n">usesqform</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+    <span class="n">displayinit</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+    <span class="n">anglerep</span><span class="o">=</span><span class="s2">&quot;euler&quot;</span><span class="p">,</span>
+    <span class="n">bins</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span>
+    <span class="n">interp</span><span class="o">=</span><span class="s2">&quot;trilinear&quot;</span><span class="p">,</span>
+    <span class="n">dof</span><span class="o">=</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;dof&quot;</span><span class="p">],</span>
+    <span class="n">applyxfm</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+    <span class="n">applyisoxfm</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+    <span class="n">nosearch</span><span class="o">=</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;nosearch&quot;</span><span class="p">],</span>
+    <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
+    <span class="n">shfile</span><span class="o">=</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;fsl_sh&quot;</span><span class="p">])</span>
+<span class="k">if</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;dosnap&quot;</span><span class="p">]:</span>
+    <span class="n">snaps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mosaic</span><span class="p">(</span><span class="n">impath</span><span class="o">=</span><span class="n">cropped_reference_file</span><span class="p">,</span>
+                        <span class="n">overlay</span><span class="o">=</span><span class="n">affine_file</span><span class="p">,</span>
+                        <span class="n">title</span><span class="o">=</span><span class="s2">&quot;affine_registration&quot;</span><span class="p">,</span>
+                        <span class="n">outdir</span><span class="o">=</span><span class="n">snap_dir</span><span class="p">))</span>
+<span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;[result] Affine: {0}.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">affine_file</span><span class="p">))</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;[result] Affine transformation: {0}.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">affine_omat</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Step 4: Non linear registration</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;dononlinear&quot;</span><span class="p">]:</span>
+    <span class="n">fnirt_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">subjdir</span><span class="p">,</span> <span class="s2">&quot;fnirt&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">fnirt_dir</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">fnirt_dir</span><span class="p">)</span>
+    <span class="n">cout</span><span class="p">,</span> <span class="n">iout</span><span class="p">,</span> <span class="n">fout</span><span class="p">,</span> <span class="n">jout</span><span class="p">,</span> <span class="n">refout</span><span class="p">,</span> <span class="n">intout</span><span class="p">,</span> <span class="n">logout</span> <span class="o">=</span> <span class="n">fnirt</span><span class="p">(</span>
+        <span class="n">in_file</span><span class="o">=</span><span class="n">brain_file</span><span class="p">,</span>
+        <span class="n">ref_file</span><span class="o">=</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;referencebrainfile&quot;</span><span class="p">],</span>
+        <span class="n">affine_file</span><span class="o">=</span><span class="n">affine_omat</span><span class="p">,</span>
+        <span class="n">outdir</span><span class="o">=</span><span class="n">fnirt_dir</span><span class="p">,</span>
+        <span class="n">inmask_file</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
+        <span class="n">shfile</span><span class="o">=</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;fsl_sh&quot;</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;dosnap&quot;</span><span class="p">]:</span>
+        <span class="n">snaps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mosaic</span><span class="p">(</span><span class="n">impath</span><span class="o">=</span><span class="n">cropped_reference_file</span><span class="p">,</span>
+                            <span class="n">overlay</span><span class="o">=</span><span class="n">iout</span><span class="p">,</span>
+                            <span class="n">title</span><span class="o">=</span><span class="s2">&quot;nonlinear_registration&quot;</span><span class="p">,</span>
+                            <span class="n">outdir</span><span class="o">=</span><span class="n">snap_dir</span><span class="p">))</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">cout</span><span class="p">,</span> <span class="n">iout</span><span class="p">,</span> <span class="n">fout</span><span class="p">,</span> <span class="n">jout</span><span class="p">,</span> <span class="n">refout</span><span class="p">,</span> <span class="n">intout</span><span class="p">,</span> <span class="n">logout</span> <span class="o">=</span> <span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="p">)</span> <span class="o">*</span> <span class="mi">7</span>
+</pre></div>
+</div>
+<p>Step 5: Create bounding box</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="k">if</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;bbox&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+
+    <span class="c1"># Create bbox</span>
+    <span class="n">bbox_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">subjdir</span><span class="p">,</span> <span class="s2">&quot;bbox&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">bbox_dir</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">bbox_dir</span><span class="p">)</span>
+    <span class="n">bbox_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">bbox_dir</span><span class="p">,</span> <span class="s2">&quot;bbox.nii.gz&quot;</span><span class="p">)</span>
+    <span class="n">roi_from_bbox</span><span class="p">(</span>
+        <span class="n">input_file</span><span class="o">=</span><span class="n">cropped_reference_file</span><span class="p">,</span>
+        <span class="n">bbox</span><span class="o">=</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;bbox&quot;</span><span class="p">],</span>
+        <span class="n">output_file</span><span class="o">=</span><span class="n">bbox_file</span><span class="p">)</span>
+
+    <span class="c1"># Invert anat2dif transform</span>
+    <span class="n">inv_affine_omat</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+        <span class="n">bbox_dir</span><span class="p">,</span> <span class="s2">&quot;flirt_template_to_{0}.txt&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">basename</span><span class="p">))</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">affine_omat</span><span class="p">)</span>
+    <span class="n">m_inv</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+    <span class="n">numpy</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="n">inv_affine_omat</span><span class="p">,</span> <span class="n">m_inv</span><span class="p">)</span>
+
+    <span class="c1"># Send bbox to native space</span>
+    <span class="n">native_bbox_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">bbox_dir</span><span class="p">,</span> <span class="s2">&quot;native_bbox.nii.gz&quot;</span><span class="p">)</span>
+    <span class="n">native_bbox_file</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">flirt</span><span class="p">(</span>
+        <span class="n">in_file</span><span class="o">=</span><span class="n">bbox_file</span><span class="p">,</span>
+        <span class="n">ref_file</span><span class="o">=</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;inputfile&quot;</span><span class="p">],</span>
+        <span class="n">out</span><span class="o">=</span><span class="n">native_bbox_file</span><span class="p">,</span>
+        <span class="n">init</span><span class="o">=</span><span class="n">inv_affine_omat</span><span class="p">,</span>
+        <span class="n">applyxfm</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        <span class="n">interp</span><span class="o">=</span><span class="s2">&quot;nearestneighbour&quot;</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
+        <span class="n">shfile</span><span class="o">=</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;fsl_sh&quot;</span><span class="p">])</span>
+
+    <span class="c1"># Snap</span>
+    <span class="k">if</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;dosnap&quot;</span><span class="p">]:</span>
+        <span class="n">snaps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mosaic</span><span class="p">(</span><span class="n">impath</span><span class="o">=</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;inputfile&quot;</span><span class="p">],</span>
+                            <span class="n">overlay</span><span class="o">=</span><span class="n">native_bbox_file</span><span class="p">,</span>
+                            <span class="n">title</span><span class="o">=</span><span class="s2">&quot;bbox native&quot;</span><span class="p">,</span>
+                            <span class="n">outdir</span><span class="o">=</span><span class="n">snap_dir</span><span class="p">))</span>
+
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">bbox_file</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">native_bbox_file</span> <span class="o">=</span> <span class="bp">None</span>
+</pre></div>
+</div>
+<p>Step 6: Apply deformation to extra files</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">extramnifiles</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">if</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;extrafiles&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+    <span class="n">extra_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">subjdir</span><span class="p">,</span> <span class="s2">&quot;extra&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">extra_dir</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">extra_dir</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;extrafiles&quot;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;dononlinear&quot;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+                <span class="s2">&quot;Use applywarp -r MNI152_T1_1mm.nii -i myvolume.nii &quot;</span>
+                <span class="s2">&quot;-o myvolumeInMNI.nii -w warp_struct2mni.nii &quot;</span>
+                <span class="s2">&quot;--premat=func2struct.mat&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">path_mni_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">extra_dir</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
+            <span class="n">path_mni_file</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">flirt</span><span class="p">(</span>
+                <span class="n">in_file</span><span class="o">=</span><span class="n">path</span><span class="p">,</span>
+                <span class="n">ref_file</span><span class="o">=</span><span class="n">cropped_reference_file</span><span class="p">,</span>
+                <span class="n">out</span><span class="o">=</span><span class="n">path_mni_file</span><span class="p">,</span>
+                <span class="n">init</span><span class="o">=</span><span class="n">affine_omat</span><span class="p">,</span>
+                <span class="n">applyxfm</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                <span class="n">interp</span><span class="o">=</span><span class="s2">&quot;spline&quot;</span><span class="p">,</span>
+                <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
+                <span class="n">shfile</span><span class="o">=</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;fsl_sh&quot;</span><span class="p">])</span>
+            <span class="n">extramnifiles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">path_mni_file</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Update the outputs and save them and the inputs in a &#8216;logs&#8217; directory.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">logdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">subjdir</span><span class="p">,</span> <span class="s2">&quot;logs&quot;</span><span class="p">)</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">logdir</span><span class="p">):</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">logdir</span><span class="p">)</span>
+<span class="n">params</span> <span class="o">=</span> <span class="nb">locals</span><span class="p">()</span>
+<span class="n">outputs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">([(</span><span class="n">name</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
+               <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;cropped_moving_file&quot;</span><span class="p">,</span> <span class="s2">&quot;cropped_reference_file&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;crop_outputs_trf&quot;</span><span class="p">,</span> <span class="s2">&quot;tpm&quot;</span><span class="p">,</span> <span class="s2">&quot;tsm&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;segmentation_anatfile&quot;</span><span class="p">,</span> <span class="s2">&quot;bias_anatfile&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;biascorrected_anatfile&quot;</span><span class="p">,</span> <span class="s2">&quot;brain_file&quot;</span><span class="p">,</span> <span class="s2">&quot;mask_file&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;affine_file&quot;</span><span class="p">,</span> <span class="s2">&quot;affine_omat&quot;</span><span class="p">,</span> <span class="s2">&quot;cout&quot;</span><span class="p">,</span> <span class="s2">&quot;iout&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;fout&quot;</span><span class="p">,</span> <span class="s2">&quot;jout&quot;</span><span class="p">,</span> <span class="s2">&quot;refout&quot;</span><span class="p">,</span> <span class="s2">&quot;intout&quot;</span><span class="p">,</span> <span class="s2">&quot;logout&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;native_bbox_file&quot;</span><span class="p">,</span> <span class="s2">&quot;bbox_file&quot;</span><span class="p">,</span> <span class="s2">&quot;extramnifiles&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;snaps&quot;</span><span class="p">)])</span>
+<span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">final_struct</span> <span class="ow">in</span> <span class="p">[(</span><span class="s2">&quot;inputs&quot;</span><span class="p">,</span> <span class="n">inputs</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;outputs&quot;</span><span class="p">,</span> <span class="n">outputs</span><span class="p">),</span>
+                           <span class="p">(</span><span class="s2">&quot;runtime&quot;</span><span class="p">,</span> <span class="n">runtime</span><span class="p">)]:</span>
+    <span class="n">log_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">logdir</span><span class="p">,</span> <span class="s2">&quot;{0}.json&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">log_file</span><span class="p">,</span> <span class="s2">&quot;wt&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">open_file</span><span class="p">:</span>
+        <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">final_struct</span><span class="p">,</span> <span class="n">open_file</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">check_circular</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                  <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;[info] Outputs:&quot;</span><span class="p">)</span>
+    <span class="n">pprint</span><span class="p">(</span><span class="n">outputs</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Total running time of the script:</strong> ( 0 minutes  0.000 seconds)</p>
+<div class="sphx-glr-footer container">
+<div class="sphx-glr-download container">
+<a class="reference download internal" href="../_downloads/pyconnectome_register.py" download=""><code class="xref download docutils literal"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">pyconnectome_register.py</span></code></a></div>
+<div class="sphx-glr-download container">
+<a class="reference download internal" href="../_downloads/pyconnectome_register.ipynb" download=""><code class="xref download docutils literal"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">pyconnectome_register.ipynb</span></code></a></div>
+</div>
+<p class="sphx-glr-signature">Gallery generated by Sphinx-Gallery</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+
+    <div class="clearer">
+    </div>
+  </div>
+  
+</div>
+
+<div class="footer">
+    &copy; 2017, pyConnectome developers &lt;antoine.grigis@cea.fr&gt;.
+</div>
+  </body>
+</html>

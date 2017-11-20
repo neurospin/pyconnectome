@@ -1,0 +1,363 @@
+:orphan:
+
+pyconnectome usage examples
+===========================
+
+.. contents:: **Contents**
+    :local:
+    :depth: 1
+
+Tutorial examples
+-----------------
+
+
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example automatically generated from package script. ">
+
+.. only:: html
+
+    .. figure:: /auto_gallery/images/thumb/sphx_glr_pyconnectome_compress_tractogram_thumb.png
+
+        :ref:`sphx_glr_auto_gallery_pyconnectome_compress_tractogram.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_gallery/pyconnectome_compress_tractogram
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example automatically generated from package script. ">
+
+.. only:: html
+
+    .. figure:: /auto_gallery/images/thumb/sphx_glr_pyconnectome_metrics_heatmap_thumb.png
+
+        :ref:`sphx_glr_auto_gallery_pyconnectome_metrics_heatmap.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_gallery/pyconnectome_metrics_heatmap
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example automatically generated from package script. ">
+
+.. only:: html
+
+    .. figure:: /auto_gallery/images/thumb/sphx_glr_pyconnectome_life_thumb.png
+
+        :ref:`sphx_glr_auto_gallery_pyconnectome_life.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_gallery/pyconnectome_life
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example automatically generated from package script. ">
+
+.. only:: html
+
+    .. figure:: /auto_gallery/images/thumb/sphx_glr_pyconnectome_ants_template_thumb.png
+
+        :ref:`sphx_glr_auto_gallery_pyconnectome_ants_template.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_gallery/pyconnectome_ants_template
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example automatically generated from package script. ">
+
+.. only:: html
+
+    .. figure:: /auto_gallery/images/thumb/sphx_glr_pyconnectome_probtrackx2_complete_thumb.png
+
+        :ref:`sphx_glr_auto_gallery_pyconnectome_probtrackx2_complete.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_gallery/pyconnectome_probtrackx2_complete
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example automatically generated from package script. ">
+
+.. only:: html
+
+    .. figure:: /auto_gallery/images/thumb/sphx_glr_pyconnectome_mitk_tractogram_thumb.png
+
+        :ref:`sphx_glr_auto_gallery_pyconnectome_mitk_tractogram.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_gallery/pyconnectome_mitk_tractogram
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example automatically generated from package script. ">
+
+.. only:: html
+
+    .. figure:: /auto_gallery/images/thumb/sphx_glr_pyconnectome_reduced_probtrackx2_thumb.png
+
+        :ref:`sphx_glr_auto_gallery_pyconnectome_reduced_probtrackx2.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_gallery/pyconnectome_reduced_probtrackx2
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example automatically generated from package script. ">
+
+.. only:: html
+
+    .. figure:: /auto_gallery/images/thumb/sphx_glr_pyconnectome_report_tractogram_thumb.png
+
+        :ref:`sphx_glr_auto_gallery_pyconnectome_report_tractogram.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_gallery/pyconnectome_report_tractogram
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example automatically generated from package script. ">
+
+.. only:: html
+
+    .. figure:: /auto_gallery/images/thumb/sphx_glr_pyconnectome_tissue_segmentation_thumb.png
+
+        :ref:`sphx_glr_auto_gallery_pyconnectome_tissue_segmentation.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_gallery/pyconnectome_tissue_segmentation
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example automatically generated from package script. ">
+
+.. only:: html
+
+    .. figure:: /auto_gallery/images/thumb/sphx_glr_pyconnectome_mrtrix_tractogram_thumb.png
+
+        :ref:`sphx_glr_auto_gallery_pyconnectome_mrtrix_tractogram.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_gallery/pyconnectome_mrtrix_tractogram
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example automatically generated from package script. ">
+
+.. only:: html
+
+    .. figure:: /auto_gallery/images/thumb/sphx_glr_pyconnectome_metrics_thumb.png
+
+        :ref:`sphx_glr_auto_gallery_pyconnectome_metrics.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_gallery/pyconnectome_metrics
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example automatically generated from package script. ">
+
+.. only:: html
+
+    .. figure:: /auto_gallery/images/thumb/sphx_glr_pyconnectome_bedpostx_thumb.png
+
+        :ref:`sphx_glr_auto_gallery_pyconnectome_bedpostx.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_gallery/pyconnectome_bedpostx
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example automatically generated from package script. ">
+
+.. only:: html
+
+    .. figure:: /auto_gallery/images/thumb/sphx_glr_pyconnectome_ants_register_thumb.png
+
+        :ref:`sphx_glr_auto_gallery_pyconnectome_ants_register.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_gallery/pyconnectome_ants_register
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example automatically generated from package script. ">
+
+.. only:: html
+
+    .. figure:: /auto_gallery/images/thumb/sphx_glr_pyconnectome_reduced_connectome_thumb.png
+
+        :ref:`sphx_glr_auto_gallery_pyconnectome_reduced_connectome.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_gallery/pyconnectome_reduced_connectome
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example automatically generated from package script. ">
+
+.. only:: html
+
+    .. figure:: /auto_gallery/images/thumb/sphx_glr_pyconnectome_probtrackx2_tractogram_thumb.png
+
+        :ref:`sphx_glr_auto_gallery_pyconnectome_probtrackx2_tractogram.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_gallery/pyconnectome_probtrackx2_tractogram
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example automatically generated from package script. ">
+
+.. only:: html
+
+    .. figure:: /auto_gallery/images/thumb/sphx_glr_pyconnectome_register_thumb.png
+
+        :ref:`sphx_glr_auto_gallery_pyconnectome_register.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_gallery/pyconnectome_register
+.. raw:: html
+
+    <div style='clear:both'></div>
+
+
+
+.. only :: html
+
+ .. container:: sphx-glr-footer
+
+
+  .. container:: sphx-glr-download
+
+    :download:`Download all examples in Python source code: auto_gallery_python.zip <//home/ag239446/Desktop/pyconnectome/source/auto_gallery/auto_gallery_python.zip>`
+
+
+
+  .. container:: sphx-glr-download
+
+    :download:`Download all examples in Jupyter notebooks: auto_gallery_jupyter.zip <//home/ag239446/Desktop/pyconnectome/source/auto_gallery/auto_gallery_jupyter.zip>`
+
+
+.. only:: html
+
+ .. rst-class:: sphx-glr-signature
+
+    Gallery generated by Sphinx-Gallery
+
+

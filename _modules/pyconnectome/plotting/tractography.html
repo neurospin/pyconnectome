@@ -1,0 +1,423 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+  
+    <title>PYCONNECTOME &mdash; pyConnectome</title>
+  <!-- htmltitle is before nature.css - we use this hack to load bootstrap first -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="../../../_static/css/bootstrap.min.css" media="screen" />
+
+    
+    <link rel="stylesheet" href="../../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/gallery.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="pyConnectome" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" />
+  
+   
+       <script type="text/javascript" src="../../../_static/sidebar.js"></script>
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="../../../_static/js/bootstrap.min.js" type="text/javascript"></script>
+
+  <script src="../../../_static/js/angular.min.js" type="text/javascript"></script>
+  <script type="text/javascript">
+    var app = angular.module("navApp", []);
+    app.controller('navCtrl', ['$scope', '$window', function($scope, $window) {
+      $scope.isActive = function (viewLocation) {
+        var rel = $window.location.pathname.split("/")
+        rel = rel[rel.length - 1]
+        rel = rel.split(".")[0]
+        var active = (viewLocation === rel);
+        return active;};
+    }]);
+  </script>
+
+  </head>
+  <body role="document"><div class="banner">
+  <div class="container-fluid banner-container">
+    <div class="row banner-inner">
+      <div class="col-xs-4">
+        <img alt="Logo" src="../../../_static/pyconnectome.png">
+      </div>
+      <div class="col-xs-8">
+            <p>Diffusion MRI connectome.</p>
+      </div>
+    </div>  
+  </div>
+</div><nav class="navbar navbar-default navbar-static-top">
+  <div class="container-fluid">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../../../index.html">
+        </a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse" ng-controller="navCtrl" ng-app="navApp">
+      <ul class="nav navbar-nav">
+        <li ng-class="{ active: isActive('index') }"><a href="../../../index.html">Home</a></li>
+        <li ng-class="{ active: isActive('installation') }"><a href="../../../generated/installation.html">Installation</a></li>
+        <li ng-class="{ active: isActive('gallery') }"><a href="../../../auto_gallery/gallery.html">Gallery</a></li>
+        <li ng-class="{ active: isActive('documentation') }"><a href="../../../generated/documentation.html">API documentation</a></li>
+        <!--<li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"> <span class="caret"></span></a>
+          <ul class="dropdown-menu">
+	        <li><a href="../../../generated/pyconnectome.html">Pyconnectome</a></li>
+<li><a href="../../../generated/pyconnectome.tractography.html">Pyconnectome.tractography</a></li>
+<li><a href="../../../generated/pyconnectome.metrics.html">Pyconnectome.metrics</a></li>
+<li><a href="../../../generated/pyconnectome.utils.html">Pyconnectome.utils</a></li>
+<li><a href="../../../generated/pyconnectome.models.html">Pyconnectome.models</a></li>
+<li><a href="../../../generated/pyconnectome.plotting.html">Pyconnectome.plotting</a></li>
+<li><a href="../../../generated/pyconnectome.connectomes.html">Pyconnectome.connectomes</a></li>
+          </ul>
+        </li>-->
+        <li><a href="https://github.com/AGrigis/pysphinxdoc">PYSPHINXDOC</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+<div class="content-wrapper">
+    <div class="sphinxsidebar">
+      <div class="sphinxsidebarwrapper">
+
+        <!-- info setup -->
+          <p class="doc-version">
+           This documentation is for pyconnectome <strong>version 1.0.0</strong>
+          </p>
+        <p class="citing">
+          If you use the software, please do not esitate to 
+          <a &mdash; <a href="https://github.com/neurospin/pyconnectome">
+          Report a Bug</a>.
+        </p>
+
+      <!-- toc tree -->
+      
+
+      </div>
+    </div>
+  
+
+  <div class="content">
+      
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pyconnectome.plotting.tractography</h1><div class="highlight"><pre>
+<span></span><span class="ch">#! /usr/bin/env python</span>
+<span class="c1"># -*- coding: utf-8 -*</span>
+<span class="c1">##########################################################################</span>
+<span class="c1"># NSAp - Copyright (C) CEA, 2017</span>
+<span class="c1"># Distributed under the terms of the CeCILL-B license, as published by</span>
+<span class="c1"># the CEA-CNRS-INRIA. Refer to the LICENSE file or to</span>
+<span class="c1"># http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html for details.</span>
+<span class="c1">##########################################################################</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Modules that provides tractography renderings.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="c1"># Standard import</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">nibabel</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+
+<span class="c1"># Package import</span>
+<span class="kn">from</span> <span class="nn">pyconnectome.utils.reorient</span> <span class="kn">import</span> <span class="n">reorient_image</span>
+
+<span class="c1"># Third party import</span>
+<span class="kn">from</span> <span class="nn">nilearn</span> <span class="kn">import</span> <span class="n">plotting</span>
+
+
+<div class="viewcode-block" id="fiber_density_map"><a class="viewcode-back" href="../../../generated/pyconnectome.plotting.tractography.html#pyconnectome.plotting.tractography.fiber_density_map">[docs]</a><span class="k">def</span> <span class="nf">fiber_density_map</span><span class="p">(</span><span class="n">tracks</span><span class="p">,</span> <span class="n">template</span><span class="p">,</span> <span class="n">outdir</span><span class="p">,</span> <span class="n">basename</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                      <span class="n">fiber_ends_only</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">overlay</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">overlay_alpha</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                      <span class="n">ext</span><span class="o">=</span><span class="s2">&quot;.png&quot;</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="s2">&quot;RAS&quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Create a density map of fibers or fiber-ends as a Nifti, along with a</span>
+<span class="sd">    snap file if requested.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tracks: str</span>
+<span class="sd">        Path to the streamlines. It has to be loadable by nibabel.</span>
+<span class="sd">    template: str</span>
+<span class="sd">        Path to Nifti defining the space of output density map (e.g. nodif).</span>
+<span class="sd">    outdir: str</span>
+<span class="sd">        Path to directory where to output.</span>
+<span class="sd">    basename: str, default None</span>
+<span class="sd">        Filename without extension of output files. By default None, means</span>
+<span class="sd">        &quot;fiber_ends_density&quot; if &#39;fiber_ends_only&#39; is True else &quot;fiber_density&quot;.</span>
+<span class="sd">    fiber_ends_only: bool, default False</span>
+<span class="sd">        If true, create a density map of fiber ends.</span>
+<span class="sd">    overlay: bool, default False</span>
+<span class="sd">        If True, fibers are overlayed on the template in the PDF snapshot.</span>
+<span class="sd">        Otherwise the fiber density is plotted alone.</span>
+<span class="sd">    overlay_alpha: float, default None</span>
+<span class="sd">        fix the overlay alpha value (0-1).</span>
+<span class="sd">    ext: str, default &#39;.png&#39;</span>
+<span class="sd">        Snapshot extension, used to specify the output format.</span>
+<span class="sd">    axes: str, default &#39;RAS&#39;</span>
+<span class="sd">        orientation of the original axes X, Y, and Z</span>
+<span class="sd">        specified with the following convention: L=Left, R=Right,</span>
+<span class="sd">        A=Anterion, P=Posterior, I=Inferior, S=Superior.</span>
+
+<span class="sd">    Return</span>
+<span class="sd">    ------</span>
+<span class="sd">    fiber_density_map: str</span>
+<span class="sd">        Path to the output Nifti density map.</span>
+<span class="sd">    fiber_density_snap: str or None</span>
+<span class="sd">        Path to the output PDF file, if requested (create_pdf = True).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Import here to avoid dependency on dipy &amp; pydcmio for the whole package</span>
+    <span class="kn">from</span> <span class="nn">dipy.tracking.utils</span> <span class="kn">import</span> <span class="n">density_map</span>
+    <span class="kn">from</span> <span class="nn">pydcmio.plotting.slicer</span> <span class="kn">import</span> <span class="n">mosaic</span>
+
+    <span class="c1"># Create the default output file name</span>
+    <span class="k">if</span> <span class="n">basename</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">basename</span> <span class="o">=</span> <span class="s2">&quot;fiber_ends_density&quot;</span> <span class="k">if</span> <span class="n">fiber_ends_only</span> <span class="k">else</span> <span class="s2">&quot;fiber_density&quot;</span>
+
+    <span class="c1"># Load tracks</span>
+    <span class="n">tracks</span> <span class="o">=</span> <span class="n">nibabel</span><span class="o">.</span><span class="n">streamlines</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">tracks</span><span class="p">)</span>
+
+    <span class="c1"># Load template image: needed to get affine matrix and shape</span>
+    <span class="n">template_im</span> <span class="o">=</span> <span class="n">nibabel</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">template</span><span class="p">)</span>
+
+    <span class="c1"># If user has requested density of fiber ends: keep only the end points</span>
+    <span class="c1"># of the fibers as a 2d-array</span>
+    <span class="k">if</span> <span class="n">fiber_ends_only</span><span class="p">:</span>
+        <span class="n">streamlines</span> <span class="o">=</span> <span class="p">[</span><span class="n">arr</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]]</span> <span class="k">for</span> <span class="n">arr</span> <span class="ow">in</span> <span class="n">tracks</span><span class="o">.</span><span class="n">streamlines</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">streamlines</span> <span class="o">=</span> <span class="n">tracks</span><span class="o">.</span><span class="n">streamlines</span>
+
+    <span class="c1"># Compute fiber count in each voxel</span>
+    <span class="n">density_map_arr</span> <span class="o">=</span> <span class="n">density_map</span><span class="p">(</span><span class="n">streamlines</span><span class="o">=</span><span class="n">streamlines</span><span class="p">,</span>
+                                  <span class="n">vol_dims</span><span class="o">=</span><span class="n">template_im</span><span class="o">.</span><span class="n">get_shape</span><span class="p">(),</span>
+                                  <span class="n">affine</span><span class="o">=</span><span class="n">tracks</span><span class="o">.</span><span class="n">affine</span><span class="p">)</span>
+
+    <span class="c1"># Create and write Nifti</span>
+    <span class="n">fiber_density_map</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="n">basename</span> <span class="o">+</span> <span class="s2">&quot;.nii.gz&quot;</span><span class="p">)</span>
+    <span class="n">density_map_nii</span> <span class="o">=</span> <span class="n">nibabel</span><span class="o">.</span><span class="n">Nifti1Image</span><span class="p">(</span><span class="n">density_map_arr</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;int&quot;</span><span class="p">),</span>
+                                          <span class="n">template_im</span><span class="o">.</span><span class="n">get_affine</span><span class="p">())</span>
+    <span class="n">density_map_nii</span><span class="o">.</span><span class="n">to_filename</span><span class="p">(</span><span class="n">fiber_density_map</span><span class="p">)</span>
+
+    <span class="c1"># Swap axes</span>
+    <span class="k">if</span> <span class="n">axes</span> <span class="o">!=</span> <span class="s2">&quot;RAS&quot;</span><span class="p">:</span>
+        <span class="n">reorient_image</span><span class="p">(</span>
+            <span class="n">in_file</span><span class="o">=</span><span class="n">fiber_density_map</span><span class="p">,</span>
+            <span class="n">axes</span><span class="o">=</span><span class="n">axes</span><span class="p">,</span>
+            <span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="n">output_directory</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+            <span class="n">is_direct</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+
+    <span class="c1"># If requested use fibers as overlay on the template</span>
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">outdir</span><span class="o">=</span><span class="n">outdir</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Density Map&quot;</span><span class="p">,</span> <span class="n">basename</span><span class="o">=</span><span class="n">basename</span><span class="p">,</span>
+                  <span class="n">ext</span><span class="o">=</span><span class="n">ext</span><span class="p">,</span> <span class="n">overlay_alpha</span><span class="o">=</span><span class="n">overlay_alpha</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">overlay</span><span class="p">:</span>
+        <span class="n">fiber_density_snap</span> <span class="o">=</span> <span class="n">mosaic</span><span class="p">(</span><span class="n">impath</span><span class="o">=</span><span class="n">template</span><span class="p">,</span> <span class="n">overlay</span><span class="o">=</span><span class="n">fiber_density_map</span><span class="p">,</span>
+                                    <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">fiber_density_snap</span> <span class="o">=</span> <span class="n">mosaic</span><span class="p">(</span><span class="n">impath</span><span class="o">=</span><span class="n">fiber_density_map</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">fiber_density_map</span><span class="p">,</span> <span class="n">fiber_density_snap</span></div>
+
+
+<div class="viewcode-block" id="fiber_length_histogram"><a class="viewcode-back" href="../../../generated/pyconnectome.plotting.tractography.html#pyconnectome.plotting.tractography.fiber_length_histogram">[docs]</a><span class="k">def</span> <span class="nf">fiber_length_histogram</span><span class="p">(</span><span class="n">tracks</span><span class="p">,</span> <span class="n">outdir</span><span class="p">,</span> <span class="n">basename</span><span class="o">=</span><span class="s2">&quot;hist_fiber_lengths&quot;</span><span class="p">,</span>
+                           <span class="n">ext</span><span class="o">=</span><span class="s2">&quot;.png&quot;</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">20</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Create a snapshot showing the histogram of fiber lengths.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tracks: str</span>
+<span class="sd">        Path to the streamlines. It has to be loadable by nibabel.</span>
+<span class="sd">    outdir: str</span>
+<span class="sd">        Path to directory where to output.</span>
+<span class="sd">    basename: str, default &quot;hist_fiber_lengths&quot;</span>
+<span class="sd">        Filename without extension of output files.</span>
+<span class="sd">    ext: str, default &quot;.png&quot;</span>
+<span class="sd">        Snapshot extension, used to specify the output format.</span>
+<span class="sd">    bins: int, default 20</span>
+<span class="sd">        Number of bins in the histogram.</span>
+
+<span class="sd">    Return</span>
+<span class="sd">    ------</span>
+<span class="sd">    snapshot: str</span>
+<span class="sd">        Path to the output snapshot.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Import here to avoid dependencies on dipy and matplotlib</span>
+    <span class="c1"># for the whole package</span>
+    <span class="kn">from</span> <span class="nn">dipy.tracking.utils</span> <span class="kn">import</span> <span class="n">length</span>
+    <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+
+    <span class="c1"># Load tracks</span>
+    <span class="n">tracks_obj</span> <span class="o">=</span> <span class="n">nibabel</span><span class="o">.</span><span class="n">streamlines</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">tracks</span><span class="p">)</span>
+
+    <span class="c1"># Code inspired by dipy documentation, seen at:</span>
+    <span class="c1"># http://nipy.org/dipy/examples_built/streamline_length.html</span>
+
+    <span class="n">fiber_lengths</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">length</span><span class="p">(</span><span class="n">tracks_obj</span><span class="o">.</span><span class="n">streamlines</span><span class="p">))</span>
+
+    <span class="c1"># Create plot with Matplotlib</span>
+    <span class="n">snapshot</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="n">basename</span> <span class="o">+</span> <span class="n">ext</span><span class="p">)</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">fiber_lengths</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;burlywood&#39;</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">bins</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Length&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Count&#39;</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">snapshot</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">snapshot</span></div>
+
+
+<div class="viewcode-block" id="fsleyes_snapshot"><a class="viewcode-back" href="../../../generated/pyconnectome.plotting.tractography.html#pyconnectome.plotting.tractography.fsleyes_snapshot">[docs]</a><span class="k">def</span> <span class="nf">fsleyes_snapshot</span><span class="p">(</span><span class="n">inputfile</span><span class="p">,</span> <span class="n">outdir</span><span class="p">,</span> <span class="n">overlayfile</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                     <span class="n">basename</span><span class="o">=</span><span class="s2">&quot;fsleyes_snap&quot;</span><span class="p">,</span> <span class="n">mask_alpha</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+                     <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;greyscale&quot;</span><span class="p">,</span> <span class="n">mask_cmap</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">,</span>
+                     <span class="n">dr</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">mask_dr</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Create a tri-view snapshot with one overlay.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    inputfile: str</span>
+<span class="sd">        path to the input image to snap.</span>
+<span class="sd">    outdir: str</span>
+<span class="sd">        directoy where to output.</span>
+<span class="sd">    overlayfile: str, default None</span>
+<span class="sd">        path to the image to overlay.</span>
+<span class="sd">    basename: str, default &#39;fsleyes_snap&#39;</span>
+<span class="sd">        basename without extension of the output snapshot.</span>
+<span class="sd">    mask_alpha: int, default 50</span>
+<span class="sd">        a overlay alpha value (0-100).</span>
+<span class="sd">    cmap: str, default &#39;greyscale&#39;</span>
+<span class="sd">        a valid FSLeyes color map for the input file.</span>
+<span class="sd">    mask_cmap: str, default &#39;red&#39;</span>
+<span class="sd">        a valid FSLeyes color map for the mask file.</span>
+<span class="sd">    dr: 2-uplet, default None</span>
+<span class="sd">        the display range (LO, HI) for the input file.</span>
+<span class="sd">    mask_dr: 2-uplet, default None</span>
+<span class="sd">        the display range (LO, HI) for the mask file.</span>
+
+<span class="sd">    Return</span>
+<span class="sd">    ------</span>
+<span class="sd">    snap: str</span>
+<span class="sd">        path to the output snapshot: &lt;outdir&gt;/&lt;basename&gt;.png</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">snap</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="n">basename</span> <span class="o">+</span> <span class="s2">&quot;.png&quot;</span><span class="p">)</span>
+    <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;python&quot;</span><span class="p">,</span> <span class="s2">&quot;-m&quot;</span><span class="p">,</span> <span class="s2">&quot;fsleyes.main&quot;</span><span class="p">,</span> <span class="s2">&quot;render&quot;</span><span class="p">,</span>
+           <span class="s2">&quot;--hideCursor&quot;</span><span class="p">,</span> <span class="s2">&quot;--outfile&quot;</span><span class="p">,</span> <span class="n">snap</span><span class="p">,</span> <span class="n">inputfile</span><span class="p">,</span> <span class="s2">&quot;--cmap&quot;</span><span class="p">,</span> <span class="n">cmap</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">dr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;-dr&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">dr</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">str</span><span class="p">(</span><span class="n">dr</span><span class="p">[</span><span class="mi">1</span><span class="p">])]</span>
+    <span class="k">if</span> <span class="n">overlayfile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="n">overlayfile</span><span class="p">,</span> <span class="s2">&quot;--alpha&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">mask_alpha</span><span class="p">),</span> <span class="s2">&quot;--cmap&quot;</span><span class="p">,</span> <span class="n">mask_cmap</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">mask_dr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;-dr&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">mask_dr</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">str</span><span class="p">(</span><span class="n">mask_dr</span><span class="p">[</span><span class="mi">1</span><span class="p">])]</span>
+    <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">snap</span></div>
+
+
+<div class="viewcode-block" id="nilearn_snapshot"><a class="viewcode-back" href="../../../generated/pyconnectome.plotting.tractography.html#pyconnectome.plotting.tractography.nilearn_snapshot">[docs]</a><span class="k">def</span> <span class="nf">nilearn_snapshot</span><span class="p">(</span><span class="n">inputfile</span><span class="p">,</span> <span class="n">outdir</span><span class="p">,</span> <span class="n">overlayfile</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                     <span class="n">basename</span><span class="o">=</span><span class="s2">&quot;nilearn_snap&quot;</span><span class="p">,</span> <span class="n">mask_alpha</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+                     <span class="n">cmap</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">mask_cmap</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                     <span class="n">dr</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">mask_dr</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">black_bg</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Create a tri-view snapshot with one overlay.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    inputfile: str</span>
+<span class="sd">        path to the input image to snap.</span>
+<span class="sd">    outdir: str</span>
+<span class="sd">        directoy where to output.</span>
+<span class="sd">    overlayfile: str, default None</span>
+<span class="sd">        path to the image to overlay.</span>
+<span class="sd">    basename: str, default &#39;nilearn_snap&#39;</span>
+<span class="sd">        basename without extension of the output snapshot.</span>
+<span class="sd">    mask_alpha: int, default 50</span>
+<span class="sd">        a overlay alpha value (0-100).</span>
+<span class="sd">    cmap: str, default None</span>
+<span class="sd">        a valid nilearn color map for the input file.</span>
+<span class="sd">    mask_cmap: str, default None</span>
+<span class="sd">        a valid nilearn color map for the mask file.</span>
+<span class="sd">    dr: 2-uplet, default None</span>
+<span class="sd">        athe display range (LO, HI) for the input file.</span>
+<span class="sd">    mask_dr: 2-uplet, default None</span>
+<span class="sd">        athe display range (LO, HI) for the mask file.</span>
+<span class="sd">    black_bg: bool, default True</span>
+<span class="sd">        If True, the background of the image is set to be black</span>
+
+<span class="sd">    Return</span>
+<span class="sd">    ------</span>
+<span class="sd">    snap: str</span>
+<span class="sd">        path to the output snapshot: &lt;outdir&gt;/&lt;basename&gt;.png</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Display the image</span>
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="n">cmap</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;cmap&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">plotting</span><span class="o">.</span><span class="n">cm</span><span class="p">,</span> <span class="n">cmap</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid color map &#39;{0}&#39;.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cmap</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">dr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;vmin&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;vmax&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">dr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">display</span> <span class="o">=</span> <span class="n">plotting</span><span class="o">.</span><span class="n">plot_anat</span><span class="p">(</span><span class="n">inputfile</span><span class="p">,</span> <span class="n">black_bg</span><span class="o">=</span><span class="n">black_bg</span><span class="p">,</span>
+                                 <span class="n">draw_cross</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="c1"># Add the overlay</span>
+    <span class="k">if</span> <span class="n">overlayfile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">mask_cmap</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;cmap&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">plotting</span><span class="o">.</span><span class="n">cm</span><span class="p">,</span> <span class="n">mask_cmap</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid color map &#39;{0}&#39;.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mask_cmap</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">mask_dr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;vmin&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mask_dr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;vmax&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mask_dr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">mask_alpha</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;alpha&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mask_alpha</span> <span class="o">/</span> <span class="mf">100.</span>
+        <span class="n">display</span><span class="o">.</span><span class="n">add_overlay</span><span class="p">(</span><span class="n">inputfile</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="c1"># Save the result</span>
+    <span class="n">snap</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="n">basename</span> <span class="o">+</span> <span class="s2">&quot;.png&quot;</span><span class="p">)</span>
+    <span class="n">display</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">snap</span><span class="p">)</span>
+    <span class="n">display</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">snap</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+
+    <div class="clearer">
+    </div>
+  </div>
+  
+</div>
+
+<div class="footer">
+    &copy; 2017, pyConnectome developers &lt;antoine.grigis@cea.fr&gt;.
+</div>
+  </body>
+</html>

@@ -1,0 +1,35 @@
+.. AUTO-GENERATED FILE -- DO NOT EDIT!
+
+:orphan:
+
+API documentation of *pyconnectome.connectomes*
+================================================
+
+
+Wrappers to generate connectomes.
+
+
+.. raw:: html
+
+    <br/>    <!-- Block section -->
+    <table border='1' class='docutils' style='width:100%'>
+    <colgroup><col width='25%'/><col width='75%'/></colgroup>
+    <tbody valign='top'>
+    <tr class='row-odd'>
+    <td><a class='reference internal' href='pyconnectome.connectomes.complete.html'><em>pyconnectome.connectomes.complete</em></a></td>
+    <td>
+        <p>Compute the connectome of a given tesellation, like the FreeSurfer, using
+    FSL Probtrackx2.</p>
+    </td>
+    </tr>
+    <tr class='row-even'>
+    <td><a class='reference internal' href='pyconnectome.connectomes.reduced.html'><em>pyconnectome.connectomes.reduced</em></a></td>
+    <td>
+        <p>Compute the connectome of a given parcellation, like the FreeSurfer aparc+aseg
+    segmentation, using MRtrix, FSL Probtrackx2 or MITK Gibbs Tracking.</p>
+    </td>
+    </tr>
+    </tbody>
+
+
+    </table>

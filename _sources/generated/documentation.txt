@@ -1,0 +1,93 @@
+.. AUTO-GENERATED FILE -- DO NOT EDIT!
+
+API documentation of PYCONNECTOME
+==================================
+
+This is the classes and functions reference in pyconnectome. Please refer to the gallery for further details, as the class and function raw specifications may not be enough to give full guidelines on their uses.
+
+.. rst-class:: documentation-contents
+
+  **Contents**:
+    * `pyconnectome <pyconnectome.html>`_
+    * `pyconnectome.tractography <pyconnectome.tractography.html>`_
+    * `pyconnectome.metrics <pyconnectome.metrics.html>`_
+    * `pyconnectome.utils <pyconnectome.utils.html>`_
+    * `pyconnectome.models <pyconnectome.models.html>`_
+    * `pyconnectome.plotting <pyconnectome.plotting.html>`_
+    * `pyconnectome.connectomes <pyconnectome.connectomes.html>`_
+
+.. raw:: html
+
+    <!-- Block section -->
+
+    <div class='container-fluid'>
+
+    <div class='float-left'>
+
+    <div class='row'>
+
+    <div class='col-md-4'>
+    <h3><a href='pyconnectome.html'>
+    pyconnectome
+    </a></h3>
+    <blockquote>
+        <p>Package to simplify to explore the connectome.
+    In the root location of the module are implemented:</p>
+    <blockquote>
+    <ul class="simple">
+    <li>dedicated exceptions.</li>
+    <li>wrappers.</li>
+    <li>configuration parser.</li>
+    </ul>
+    </blockquote>    </blockquote>
+    </div>
+    <div class='col-md-4'>
+    <h3><a href='pyconnectome.tractography.html'>
+    pyconnectome.tractography
+    </a></h3>
+    <blockquote>
+        <p>Tractography algorithms.</p>    </blockquote>
+    </div>
+    <div class='col-md-4'>
+    <h3><a href='pyconnectome.metrics.html'>
+    pyconnectome.metrics
+    </a></h3>
+    <blockquote>
+        <p>Wrappers to perform network characterization.</p>    </blockquote>
+    </div>
+
+    </div>
+    <div class='row'>    <div class='col-md-4'>
+    <h3><a href='pyconnectome.utils.html'>
+    pyconnectome.utils
+    </a></h3>
+    <blockquote>
+        <p>Utility functions.</p>    </blockquote>
+    </div>
+    <div class='col-md-4'>
+    <h3><a href='pyconnectome.models.html'>
+    pyconnectome.models
+    </a></h3>
+    <blockquote>
+        <p>Diffusion models.</p>    </blockquote>
+    </div>
+    <div class='col-md-4'>
+    <h3><a href='pyconnectome.plotting.html'>
+    pyconnectome.plotting
+    </a></h3>
+    <blockquote>
+        <p>Utility plottings functions.</p>    </blockquote>
+    </div>
+
+    </div>
+    <div class='row'>    <div class='col-md-4'>
+    <h3><a href='pyconnectome.connectomes.html'>
+    pyconnectome.connectomes
+    </a></h3>
+    <blockquote>
+        <p>Wrappers to generate connectomes.</p>    </blockquote>
+    </div>
+
+    </div>
+    </div>
+    </div>

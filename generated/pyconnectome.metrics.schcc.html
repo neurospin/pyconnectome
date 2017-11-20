@@ -1,0 +1,385 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+  
+    <title>PYCONNECTOME &mdash; pyConnectome</title>
+  <!-- htmltitle is before nature.css - we use this hack to load bootstrap first -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="../_static/css/bootstrap.min.css" media="screen" />
+
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="pyConnectome" href="../index.html" />
+  
+   
+       <script type="text/javascript" src="../_static/sidebar.js"></script>
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="../_static/js/bootstrap.min.js" type="text/javascript"></script>
+
+  <script src="../_static/js/angular.min.js" type="text/javascript"></script>
+  <script type="text/javascript">
+    var app = angular.module("navApp", []);
+    app.controller('navCtrl', ['$scope', '$window', function($scope, $window) {
+      $scope.isActive = function (viewLocation) {
+        var rel = $window.location.pathname.split("/")
+        rel = rel[rel.length - 1]
+        rel = rel.split(".")[0]
+        var active = (viewLocation === rel);
+        return active;};
+    }]);
+  </script>
+
+  </head>
+  <body role="document"><div class="banner">
+  <div class="container-fluid banner-container">
+    <div class="row banner-inner">
+      <div class="col-xs-4">
+        <img alt="Logo" src="../_static/pyconnectome.png">
+      </div>
+      <div class="col-xs-8">
+            <p>Diffusion MRI connectome.</p>
+      </div>
+    </div>  
+  </div>
+</div><nav class="navbar navbar-default navbar-static-top">
+  <div class="container-fluid">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+        </a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse" ng-controller="navCtrl" ng-app="navApp">
+      <ul class="nav navbar-nav">
+        <li ng-class="{ active: isActive('index') }"><a href="../index.html">Home</a></li>
+        <li ng-class="{ active: isActive('installation') }"><a href="installation.html">Installation</a></li>
+        <li ng-class="{ active: isActive('gallery') }"><a href="../auto_gallery/gallery.html">Gallery</a></li>
+        <li ng-class="{ active: isActive('documentation') }"><a href="documentation.html">API documentation</a></li>
+        <!--<li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"> <span class="caret"></span></a>
+          <ul class="dropdown-menu">
+	        <li><a href="pyconnectome.html">Pyconnectome</a></li>
+<li><a href="pyconnectome.tractography.html">Pyconnectome.tractography</a></li>
+<li><a href="pyconnectome.metrics.html">Pyconnectome.metrics</a></li>
+<li><a href="pyconnectome.utils.html">Pyconnectome.utils</a></li>
+<li><a href="pyconnectome.models.html">Pyconnectome.models</a></li>
+<li><a href="pyconnectome.plotting.html">Pyconnectome.plotting</a></li>
+<li><a href="pyconnectome.connectomes.html">Pyconnectome.connectomes</a></li>
+          </ul>
+        </li>-->
+        <li><a href="https://github.com/AGrigis/pysphinxdoc">PYSPHINXDOC</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+<div class="content-wrapper">
+    <div class="sphinxsidebar">
+      <div class="sphinxsidebarwrapper">
+
+        <!-- info setup -->
+          <p class="doc-version">
+           This documentation is for pyconnectome <strong>version 1.0.0</strong>
+          </p>
+        <p class="citing">
+          If you use the software, please do not esitate to 
+          <a &mdash; <a href="https://github.com/neurospin/pyconnectome">
+          Report a Bug</a>.
+        </p>
+
+      <!-- toc tree -->
+      <ul class="simple">
+</ul>
+
+
+      </div>
+    </div>
+  
+
+  <div class="content">
+      
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <span class="target" id="module-pyconnectome.metrics.schcc"></span><p>Mapping of the Structural Core of the Human Cerebral Cortex.</p>
+<dl class="function">
+<dt id="pyconnectome.metrics.schcc.advanced_network_analysis">
+<code class="descclassname">pyconnectome.metrics.schcc.</code><code class="descname">advanced_network_analysis</code><span class="sig-paren">(</span><em>graph</em>, <em>kstep=1</em>, <em>sstep=600.0</em>, <em>outdir=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pyconnectome/metrics/schcc.html#advanced_network_analysis"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyconnectome.metrics.schcc.advanced_network_analysis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Map structural cores to delineate network modules, and to identify
+hub regions that link distinct clusters.</p>
+<p>Definition:</p>
+<p>The k-core is the largest subnetwork comprising nodes of degree at
+least k.</p>
+<p>The s-core is the largest subnetwork comprising nodes of strength at
+least s.</p>
+<p>The optimal community structure is a subdivision of the
+network into nonoverlapping groups of nodes which maximizes the number
+of within-group edges and minimizes the number of between-group edges.</p>
+<p>The rich club coefficient, R, at level k is the fraction of edges that
+connect nodes of degree k or higher out of the maximum number of edges
+that such nodes might share.</p>
+<p>Network features:</p>
+<dl class="docutils">
+<dt>kcores:</dt>
+<dd>each node associated k-core number.</dd>
+<dt>klevels:</dt>
+<dd>size of s-cores when the s-level increase.</dd>
+<dt>scores:</dt>
+<dd>each node associated s-core number.</dd>
+<dt>slevels:</dt>
+<dd>size of s-cores when the s-level increase.</dd>
+<dt>community:</dt>
+<dd>the computed community structure.</dd>
+<dt>qstat:</dt>
+<dd>the objective modularity function optimized q-statistic.</dd>
+<dt>rich_clubs:</dt>
+<dd>vector of rich-club coefficients for levels 1 to klevel=the maximum
+degree of the adjacency matrix.</dd>
+<dt>global_efficiency:</dt>
+<dd>the global efficiency is the average of inverse shortest path
+length, and is inversely related to the characteristic path length.</dd>
+<dt>local_efficiency:</dt>
+<dd>the local efficiency is the global efficiency computed on the
+neighborhood of the node, and is related to the clustering coefficient.</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>graph: Graph</strong></p>
+<blockquote>
+<div><p>the graph reprensenting the connectome network.</p>
+</div></blockquote>
+<p><strong>kstep: int (optional, default 1)</strong></p>
+<blockquote>
+<div><p>the k-core size increment.</p>
+</div></blockquote>
+<p><strong>sstep: float (optional, default 600.)</strong></p>
+<blockquote>
+<div><p>the s-core size increment.</p>
+</div></blockquote>
+<p><strong>outdir: str (optional, default None)</strong></p>
+<blockquote>
+<div><p>if specified save some snapshots.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">outputs: dict</p>
+<blockquote>
+<div><p>the network features.</p>
+</div></blockquote>
+<p>snaps: list of file</p>
+<blockquote class="last">
+<div><p>the generates snaps.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyconnectome.metrics.schcc.basic_network_analysis">
+<code class="descclassname">pyconnectome.metrics.schcc.</code><code class="descname">basic_network_analysis</code><span class="sig-paren">(</span><em>graph</em>, <em>outdir=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pyconnectome/metrics/schcc.html#basic_network_analysis"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyconnectome.metrics.schcc.basic_network_analysis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute basic network features.</p>
+<p>Network features:</p>
+<dl class="docutils">
+<dt>degrees:</dt>
+<dd>node degree is the number of links connected to the node.</dd>
+<dt>strengths:</dt>
+<dd>node strength is the sum of weights of links connected to the node.</dd>
+<dt>ccs:</dt>
+<dd>clustering coefficient is a measure of the degree to which nodes in
+a graph tend to cluster together.</dd>
+<dt>avg_ccs:</dt>
+<dd>the average clustering coefficient.</dd>
+<dt>components:</dt>
+<dd>the sorted by size connected components in the graph.</dd>
+<dt>bet_cen:</dt>
+<dd>betweenness centrality is an indicator of a node&#8217;s centrality in a
+network. It is equal to the number of shortest paths from all vertices
+to all others that pass through that node.  A node with high
+betweenness centrality has a large influence on the transfer of items
+through the network, under the assumption that item transfer follows
+the shortest paths.</dd>
+<dt>clo_cen:</dt>
+<dd>closeness centrality (or closeness) of a node is a measure of
+centrality in a network, calculated as the sum of the length of the
+shortest paths between the node and all other nodes in the graph. Thus
+the more central a node is, the closer it is to all other nodes.</dd>
+<dt>eig_cen:</dt>
+<dd>eigenvector centrality (also called eigencentrality) is a measure of
+the influence of a node in a network. It assigns relative scores to all
+nodes in the network based on the concept that connections to
+high-scoring nodes contribute more to the score of the node in
+question than equal connections to low-scoring nodes.</dd>
+<dt>avg_node_con:</dt>
+<dd>nx.average_node_connectivity(graph)</dd>
+<dt>edge_con:</dt>
+<dd>nx.edge_connectivity(graph)</dd>
+<dt>node_con:</dt>
+<dd>nx.node_connectivity(graph)</dd>
+<dt>deg_assortativity</dt>
+<dd>nx.degree_assortativity_coefficient(graph)</dd>
+<dt>density:</dt>
+<dd>nx.density(graph)</dd>
+<dt>transitivity:</dt>
+<dd>nx.transitivity(graph)</dd>
+</dl>
+<p>Note:</p>
+<p>Vertices that primarily either sit at the center of a hub or acts a
+bridge between two hubs have higher betweenness centrality. The bridge
+vertices have high betweenness because all paths connecting the hubs pass
+through them, and the hub center vertices have high betweenness because
+all intra-hub paths pass through them.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>graph: Graph</strong></p>
+<blockquote>
+<div><p>the graph reprensenting the connectome network.</p>
+</div></blockquote>
+<p><strong>outdir: str (optional, default None)</strong></p>
+<blockquote>
+<div><p>if specified save some snapshots.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">outputs: dict</p>
+<blockquote>
+<div><p>the network features.</p>
+</div></blockquote>
+<p>snaps: list of file</p>
+<blockquote class="last">
+<div><p>the generates snaps.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyconnectome.metrics.schcc.create_graph">
+<code class="descclassname">pyconnectome.metrics.schcc.</code><code class="descname">create_graph</code><span class="sig-paren">(</span><em>connectome</em>, <em>labels</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pyconnectome/metrics/schcc.html#create_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyconnectome.metrics.schcc.create_graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a graph structure from the connectome matrix.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>connectome: array (N, N)</strong></p>
+<blockquote>
+<div><p>a matrix representing the structural connections.</p>
+</div></blockquote>
+<p><strong>labels: list of str (N,)</strong></p>
+<blockquote>
+<div><p>the labels used to create the connectome matrix.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">graph: Graph</p>
+<blockquote class="last">
+<div><p>a graph structure.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyconnectome.metrics.schcc.highest_centrality">
+<code class="descclassname">pyconnectome.metrics.schcc.</code><code class="descname">highest_centrality</code><span class="sig-paren">(</span><em>cent_dict</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pyconnectome/metrics/schcc.html#highest_centrality"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyconnectome.metrics.schcc.highest_centrality" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extract the highest central node.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>cent_dict: dict</strong></p>
+<blockquote>
+<div><p>the centrality measures for each node.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">high_cent: 2-uplet</p>
+<blockquote class="last">
+<div><p>a tuple (node, value) with the node with largest value.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyconnectome.metrics.schcc.metric_profile">
+<code class="descclassname">pyconnectome.metrics.schcc.</code><code class="descname">metric_profile</code><span class="sig-paren">(</span><em>features</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pyconnectome/metrics/schcc.html#metric_profile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyconnectome.metrics.schcc.metric_profile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the metric profile.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>features: dict</strong></p>
+<blockquote>
+<div><p>the network features.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">profile: list (N, )</p>
+<blockquote>
+<div><p>the metric profile.</p>
+</div></blockquote>
+<p>header: list (N, )</p>
+<blockquote class="last">
+<div><p>the associated labels.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+
+
+          </div>
+        </div>
+      </div>
+
+    <div class="clearer">
+    </div>
+  </div>
+  
+</div>
+
+<div class="footer">
+    &copy; 2017, pyConnectome developers &lt;antoine.grigis@cea.fr&gt;.
+</div>
+  </body>
+</html>

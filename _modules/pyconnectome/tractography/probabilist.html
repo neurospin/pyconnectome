@@ -1,0 +1,762 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+  
+    <title>PYCONNECTOME &mdash; pyConnectome</title>
+  <!-- htmltitle is before nature.css - we use this hack to load bootstrap first -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="../../../_static/css/bootstrap.min.css" media="screen" />
+
+    
+    <link rel="stylesheet" href="../../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/gallery.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="pyConnectome" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" />
+  
+   
+       <script type="text/javascript" src="../../../_static/sidebar.js"></script>
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="../../../_static/js/bootstrap.min.js" type="text/javascript"></script>
+
+  <script src="../../../_static/js/angular.min.js" type="text/javascript"></script>
+  <script type="text/javascript">
+    var app = angular.module("navApp", []);
+    app.controller('navCtrl', ['$scope', '$window', function($scope, $window) {
+      $scope.isActive = function (viewLocation) {
+        var rel = $window.location.pathname.split("/")
+        rel = rel[rel.length - 1]
+        rel = rel.split(".")[0]
+        var active = (viewLocation === rel);
+        return active;};
+    }]);
+  </script>
+
+  </head>
+  <body role="document"><div class="banner">
+  <div class="container-fluid banner-container">
+    <div class="row banner-inner">
+      <div class="col-xs-4">
+        <img alt="Logo" src="../../../_static/pyconnectome.png">
+      </div>
+      <div class="col-xs-8">
+            <p>Diffusion MRI connectome.</p>
+      </div>
+    </div>  
+  </div>
+</div><nav class="navbar navbar-default navbar-static-top">
+  <div class="container-fluid">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../../../index.html">
+        </a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse" ng-controller="navCtrl" ng-app="navApp">
+      <ul class="nav navbar-nav">
+        <li ng-class="{ active: isActive('index') }"><a href="../../../index.html">Home</a></li>
+        <li ng-class="{ active: isActive('installation') }"><a href="../../../generated/installation.html">Installation</a></li>
+        <li ng-class="{ active: isActive('gallery') }"><a href="../../../auto_gallery/gallery.html">Gallery</a></li>
+        <li ng-class="{ active: isActive('documentation') }"><a href="../../../generated/documentation.html">API documentation</a></li>
+        <!--<li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"> <span class="caret"></span></a>
+          <ul class="dropdown-menu">
+	        <li><a href="../../../generated/pyconnectome.html">Pyconnectome</a></li>
+<li><a href="../../../generated/pyconnectome.tractography.html">Pyconnectome.tractography</a></li>
+<li><a href="../../../generated/pyconnectome.metrics.html">Pyconnectome.metrics</a></li>
+<li><a href="../../../generated/pyconnectome.utils.html">Pyconnectome.utils</a></li>
+<li><a href="../../../generated/pyconnectome.models.html">Pyconnectome.models</a></li>
+<li><a href="../../../generated/pyconnectome.plotting.html">Pyconnectome.plotting</a></li>
+<li><a href="../../../generated/pyconnectome.connectomes.html">Pyconnectome.connectomes</a></li>
+          </ul>
+        </li>-->
+        <li><a href="https://github.com/AGrigis/pysphinxdoc">PYSPHINXDOC</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+<div class="content-wrapper">
+    <div class="sphinxsidebar">
+      <div class="sphinxsidebarwrapper">
+
+        <!-- info setup -->
+          <p class="doc-version">
+           This documentation is for pyconnectome <strong>version 1.0.0</strong>
+          </p>
+        <p class="citing">
+          If you use the software, please do not esitate to 
+          <a &mdash; <a href="https://github.com/neurospin/pyconnectome">
+          Report a Bug</a>.
+        </p>
+
+      <!-- toc tree -->
+      
+
+      </div>
+    </div>
+  
+
+  <div class="content">
+      
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pyconnectome.tractography.probabilist</h1><div class="highlight"><pre>
+<span></span><span class="c1">##########################################################################</span>
+<span class="c1"># NSAp - Copyright (C) CEA, 2016</span>
+<span class="c1"># Distributed under the terms of the CeCILL-B license, as published by</span>
+<span class="c1"># the CEA-CNRS-INRIA. Refer to the LICENSE file or to</span>
+<span class="c1"># http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html</span>
+<span class="c1"># for details.</span>
+<span class="c1">##########################################################################</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Probabilistic tractography using FSL or MRtrix.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># System import</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+
+<span class="c1"># Package import</span>
+<span class="kn">from</span> <span class="nn">pyconnectome</span> <span class="kn">import</span> <span class="n">DEFAULT_FSL_PATH</span>
+<span class="kn">from</span> <span class="nn">pyconnectome.wrapper</span> <span class="kn">import</span> <span class="n">FSLWrapper</span>
+<span class="kn">from</span> <span class="nn">pyconnectome.utils.filetools</span> <span class="kn">import</span> <span class="n">mrtrix_extract_b0s_and_mean_b0</span>
+
+<span class="c1"># Third-party</span>
+<span class="kn">from</span> <span class="nn">pyfreesurfer</span> <span class="kn">import</span> <span class="n">DEFAULT_FREESURFER_PATH</span>
+<span class="kn">from</span> <span class="nn">pyfreesurfer.wrapper</span> <span class="kn">import</span> <span class="n">FSWrapper</span>
+<span class="kn">from</span> <span class="nn">pyfreesurfer.utils.filetools</span> <span class="kn">import</span> <span class="n">get_or_check_freesurfer_subjects_dir</span>
+<span class="kn">from</span> <span class="nn">pyconnectomist.utils.dwitools</span> <span class="kn">import</span> <span class="n">read_bvals_bvecs</span>
+<span class="kn">from</span> <span class="nn">pyconnectome.utils.regtools</span> <span class="kn">import</span> <span class="n">freesurfer_bbregister_t1todif</span>
+
+
+<div class="viewcode-block" id="probtrackx2"><a class="viewcode-back" href="../../../generated/pyconnectome.tractography.probabilist.html#pyconnectome.tractography.probabilist.probtrackx2">[docs]</a><span class="k">def</span> <span class="nf">probtrackx2</span><span class="p">(</span>
+        <span class="n">samples</span><span class="p">,</span>
+        <span class="n">mask</span><span class="p">,</span>
+        <span class="n">seed</span><span class="p">,</span>
+        <span class="n">out</span><span class="o">=</span><span class="s2">&quot;fdt_paths&quot;</span><span class="p">,</span>
+        <span class="nb">dir</span><span class="o">=</span><span class="s2">&quot;logdir&quot;</span><span class="p">,</span>
+        <span class="n">forcedir</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">simple</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">network</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">opd</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">pd</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">os2t</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">targetmasks</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">waypoints</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">onewaycondition</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">avoid</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">stop</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">wtstop</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">omatrix1</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">omatrix2</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">target2</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">omatrix3</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">target3</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">xfm</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">invxfm</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">seedref</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">nsamples</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span>
+        <span class="n">nsteps</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span>
+        <span class="n">steplength</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+        <span class="n">distthresh</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">cthr</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
+        <span class="n">fibthresh</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
+        <span class="n">loopcheck</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">usef</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">sampvox</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">randfib</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">savepaths</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">shfile</span><span class="o">=</span><span class="n">DEFAULT_FSL_PATH</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Wraps command probtrackx2.</span>
+
+<span class="sd">    Single voxel</span>
+<span class="sd">    ------------</span>
+
+<span class="sd">    [1] Connectivity from a single seed point.</span>
+
+<span class="sd">    probtrackx2(samples=&quot;/.../fsl.bedpostX/merged&quot;,</span>
+<span class="sd">                mask=&quot;/.../fsl.bedpostX/nodif_brain_mask&quot;,</span>
+<span class="sd">                seed=&quot;$PATH/tracto/seedvox_coordinates.txt&quot;,</span>
+<span class="sd">                simple=True,</span>
+<span class="sd">                loopcheck=True,</span>
+<span class="sd">                dir=&quot;$PATH&quot;,</span>
+<span class="sd">                out=&quot;SingleVoxel_paths&quot;)</span>
+
+<span class="sd">    [2] Tracking in a standard / no-diffusion space.</span>
+
+<span class="sd">    probtrackx2(samples=&quot;/.../fsl.bedpostX/merged&quot;,</span>
+<span class="sd">                mask=&quot;/.../fsl.bedpostX/nodif_brain_mask&quot;,</span>
+<span class="sd">                seed=&quot;$PATH/tracto/seedvox_coordinates.txt&quot;,</span>
+<span class="sd">                seeref=&quot;/.../fsl.bedpostX/nodif_brain_mask&quot;,</span>
+<span class="sd">                simple=True,</span>
+<span class="sd">                loopcheck=True,</span>
+<span class="sd">                dir=&quot;$PATH&quot;,</span>
+<span class="sd">                out=&quot;SingleVoxel_paths&quot;)</span>
+
+<span class="sd">    Single mask</span>
+<span class="sd">    -----------</span>
+
+<span class="sd">    probtrackx2(seed=&quot;/.../lh-precentral.nii.gz&quot;,</span>
+<span class="sd">                loopcheck=True,</span>
+<span class="sd">                onewaycondition=True,</span>
+<span class="sd">                samples=&quot;/.../fsl.bedpostX/merged&quot;,</span>
+<span class="sd">                mask=&quot;/.../fsl.bedpostX/nodif_brain_mask&quot;,</span>
+<span class="sd">                dir=&quot;$PATH&quot;)</span>
+
+<span class="sd">    Multiple masks</span>
+<span class="sd">    --------------</span>
+<span class="sd">    probtrackx2(network=True,</span>
+<span class="sd">                seed=&quot;$PATH/masks.txt&quot;,</span>
+<span class="sd">                loopcheck=True,</span>
+<span class="sd">                onewaycondition=True,</span>
+<span class="sd">                samples=&quot;/.../fsl.bedpostX/merged&quot;,</span>
+<span class="sd">                mask=&quot;/.../fsl.bedpostX/nodif_brain_mask&quot;,</span>
+<span class="sd">                dir=&quot;$PATH&quot;)</span>
+
+<span class="sd">    Usage:</span>
+<span class="sd">    probtrackx2 -s &lt;basename&gt; -m &lt;maskname&gt; -x &lt;seedfile&gt; -o &lt;output&gt;</span>
+<span class="sd">                --targetmasks=&lt;textfile&gt;</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    samples: str (mandatory)</span>
+<span class="sd">        Basename for samples files - e.g. &#39;merged&#39;.</span>
+<span class="sd">    mask: str (mandatory)</span>
+<span class="sd">        Bet binary mask file in diffusion space.</span>
+<span class="sd">    seed: str (mandatory)</span>
+<span class="sd">        Seed volume or list (ascii text file) of volumes and/or surfaces.</span>
+<span class="sd">    out: str (optional, default &quot;fdt_paths&quot;)</span>
+<span class="sd">        Output file.</span>
+<span class="sd">    dir: str (optional, default &#39;logdir&#39;)</span>
+<span class="sd">        Directory to put the final volumes in - code makes this directory.</span>
+<span class="sd">    forcedir: bool (optional, default False)</span>
+<span class="sd">        Use the actual directory name given - i.e. don&#39;t add + to make a new</span>
+<span class="sd">        directory.</span>
+<span class="sd">    simple: (optional, default False)</span>
+<span class="sd">        Track from a list of voxels (seed must be a ASCII list of coordinates).</span>
+<span class="sd">    network: bool (optional, default False)</span>
+<span class="sd">        Activate network mode - only keep paths going through at least one of</span>
+<span class="sd">        the other seed masks.</span>
+<span class="sd">    opd: bool (optional, default False)</span>
+<span class="sd">        Output path distribution</span>
+<span class="sd">    pd: bool (optional, default False)</span>
+<span class="sd">        Correct path distribution for the length of the pathways</span>
+<span class="sd">    os2t: bool (optional, default False)</span>
+<span class="sd">        Output seeds to targets</span>
+<span class="sd">    targetmasks: (optional, default None)</span>
+<span class="sd">        File containing a list of target masks - for seeds_to_targets</span>
+<span class="sd">        classification.</span>
+<span class="sd">    waypoints: (optional, default None)</span>
+<span class="sd">        Waypoint mask or ascii list of waypoint masks - only keep paths going</span>
+<span class="sd">        through ALL the masks.</span>
+<span class="sd">    onewaycondition: (optional, default False)</span>
+<span class="sd">        Apply waypoint conditions to each half tract separately.</span>
+<span class="sd">    avoid: (optional, default None)</span>
+<span class="sd">        Reject pathways passing through locations given by this mask.</span>
+<span class="sd">    stop: (optional, default None)</span>
+<span class="sd">        Stop tracking at locations given by this mask file.</span>
+<span class="sd">    wtstop: (optional, default None)</span>
+<span class="sd">        One mask or text file with mask names. Allow propagation within mask</span>
+<span class="sd">        but terminate on exit. If multiple masks, non-overlapping volumes</span>
+<span class="sd">        expected.</span>
+<span class="sd">    omatrix1: bool (optional, default False)</span>
+<span class="sd">        Output matrix1 - SeedToSeed Connectivity.</span>
+<span class="sd">    omatrix2: bool (optional, default False)</span>
+<span class="sd">        Output matrix2 - SeedToLowResMask.</span>
+<span class="sd">    target2: (optional, default None)</span>
+<span class="sd">        Low resolution binary brain mask for storing connectivity distribution</span>
+<span class="sd">        in matrix2 mode.</span>
+<span class="sd">    omatrix3: bool (optional, default False)</span>
+<span class="sd">        Output matrix3 (NxN connectivity matrix).</span>
+<span class="sd">    target3: (optional, default None)</span>
+<span class="sd">        Mask used for NxN connectivity matrix (or Nxn if lrtarget3 is set).</span>
+<span class="sd">    xfm: (optional, default None)</span>
+<span class="sd">        Transform taking seed space to DTI space (either FLIRT matrix or FNIRT</span>
+<span class="sd">        warpfield) - default is identity.</span>
+<span class="sd">    invxfm: (optional, default None)</span>
+<span class="sd">        Transform taking DTI space to seed space (compulsory when using a</span>
+<span class="sd">        warpfield for seeds_to_dti).</span>
+<span class="sd">    seedref: (optional, default None)</span>
+<span class="sd">        Reference vol to define seed space in simple mode - diffusion space</span>
+<span class="sd">        assumed if absent.</span>
+<span class="sd">    nsamples: int (optional, default 5000)</span>
+<span class="sd">        Number of samples.</span>
+<span class="sd">    nsteps: int (optional, default 2000)</span>
+<span class="sd">        Number of steps per sample.</span>
+<span class="sd">    steplength: float (optional, default 0.5)</span>
+<span class="sd">        Step length in mm.</span>
+<span class="sd">    distthresh: float (optional, default 0.0)</span>
+<span class="sd">        Discards samples shorter than this threshold (in mm)</span>
+<span class="sd">    cthr: float (optional, default 0.2)</span>
+<span class="sd">        Curvature threshold.</span>
+<span class="sd">    fibthresh: float (optional, default 0.01)</span>
+<span class="sd">        Volume fraction before subsidary fibre orientations are considered.</span>
+<span class="sd">    loopcheck: (optional, default False)</span>
+<span class="sd">        Perform loopchecks on paths - slower, but allows lower curvature</span>
+<span class="sd">        threshold.</span>
+<span class="sd">    usef: (optional, default None)</span>
+<span class="sd">        Use anisotropy to constrain tracking.</span>
+<span class="sd">    sampvox: float (optional, default 0.0)</span>
+<span class="sd">        Sample random points within x mm sphere seed voxels (e.g. --sampvox=5).</span>
+<span class="sd">    randfib: int (optional, default 0)</span>
+<span class="sd">        Set to 1 to randomly sample initial fibres (with f &gt; fibthresh).</span>
+<span class="sd">        Set to 2 to sample in proportion fibres (with f &gt; fibthresh) to f.</span>
+<span class="sd">        Set to 3 to sample ALL populations at random (even if f &lt; fibthresh)</span>
+<span class="sd">    savepaths: bool, optional</span>
+<span class="sd">        Probtrackx2 hidden option: output a ASCII text file with all the</span>
+<span class="sd">        coordinates (can be quite large if you run many streamlines).</span>
+<span class="sd">    shfile: str (optional, default NeuroSpin path)</span>
+<span class="sd">        The FSL configuration batch.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    proba_files: list of str</span>
+<span class="sd">        A list of files containing probabilistic fiber maps.</span>
+<span class="sd">    network_file: str</span>
+<span class="sd">        A voxel-by-target connection matrix.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check the input parameters</span>
+    <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="p">(</span><span class="n">seed</span><span class="p">,</span> <span class="n">mask</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;{0}&#39; is not a valid input file.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
+
+    <span class="c1"># Define the FSL command</span>
+    <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;probtrackx2&quot;</span><span class="p">,</span>
+           <span class="s2">&quot;-s&quot;</span><span class="p">,</span> <span class="n">samples</span><span class="p">,</span>
+           <span class="s2">&quot;-m&quot;</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span>
+           <span class="s2">&quot;-x&quot;</span><span class="p">,</span> <span class="n">seed</span><span class="p">,</span>
+           <span class="s2">&quot;--out=</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">out</span><span class="p">,</span>
+           <span class="s2">&quot;--dir=</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">dir</span><span class="p">,</span>
+           <span class="s2">&quot;--nsamples=</span><span class="si">%i</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">nsamples</span><span class="p">,</span>
+           <span class="s2">&quot;--nsteps=</span><span class="si">%i</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">nsteps</span><span class="p">,</span>
+           <span class="s2">&quot;--steplength=</span><span class="si">%f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">steplength</span><span class="p">,</span>
+           <span class="s2">&quot;--distthresh=</span><span class="si">%f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">distthresh</span><span class="p">,</span>
+           <span class="s2">&quot;--cthr=</span><span class="si">%f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">cthr</span><span class="p">,</span>
+           <span class="s2">&quot;--fibthresh=</span><span class="si">%f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">fibthresh</span><span class="p">,</span>
+           <span class="s2">&quot;--sampvox=</span><span class="si">%f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">sampvox</span><span class="p">,</span>
+           <span class="s2">&quot;--randfib=</span><span class="si">%i</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">randfib</span><span class="p">]</span>
+
+    <span class="c1"># Add optional arguments</span>
+    <span class="k">if</span> <span class="n">forcedir</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;--forcedir&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">opd</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;--opd&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">pd</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;--pd&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">os2t</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;--os2t&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">network</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;--network&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">loopcheck</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;--loopcheck&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">omatrix1</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;--omatrix1&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">omatrix2</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;--omatrix2&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">omatrix3</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;--omatrix3&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">onewaycondition</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;--onewaycondition&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">simple</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;--simple&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">avoid</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;--avoid=</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">avoid</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">targetmasks</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;--targetmasks=</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">targetmasks</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">waypoints</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;--waypoints=</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">waypoints</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">stop</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;--stop=</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">stop</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">wtstop</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;--wtstop=</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">wtstop</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">usef</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;--usef=</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">usef</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">seedref</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;--seedref=</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">seedref</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">target2</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;--target2=</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">target2</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">target3</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;--target3=</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">target3</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">xfm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;--xfm=</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">xfm</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">invxfm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;--invxfm=</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">invxfm</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">savepaths</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;--savepaths&quot;</span><span class="p">]</span>
+
+    <span class="c1"># Call probtrackx</span>
+    <span class="n">fslprocess</span> <span class="o">=</span> <span class="n">FSLWrapper</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">shfile</span><span class="o">=</span><span class="n">shfile</span><span class="p">)</span>
+    <span class="n">fslprocess</span><span class="p">()</span>
+
+    <span class="c1"># Get the outputs</span>
+    <span class="n">proba_files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">dir</span><span class="p">,</span> <span class="n">out</span> <span class="o">+</span> <span class="s2">&quot;*&quot;</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">network</span><span class="p">:</span>
+        <span class="n">network_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">dir</span><span class="p">,</span> <span class="s2">&quot;fdt_network_matrix&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">network_file</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">return</span> <span class="n">proba_files</span><span class="p">,</span> <span class="n">network_file</span></div>
+
+
+<div class="viewcode-block" id="mrtrix_tractogram"><a class="viewcode-back" href="../../../generated/pyconnectome.tractography.probabilist.html#pyconnectome.tractography.probabilist.mrtrix_tractogram">[docs]</a><span class="k">def</span> <span class="nf">mrtrix_tractogram</span><span class="p">(</span>
+        <span class="n">outdir</span><span class="p">,</span>
+        <span class="n">tempdir</span><span class="p">,</span>
+        <span class="n">subject_id</span><span class="p">,</span>
+        <span class="n">dwi</span><span class="p">,</span>
+        <span class="n">bvals</span><span class="p">,</span>
+        <span class="n">bvecs</span><span class="p">,</span>
+        <span class="n">nb_threads</span><span class="p">,</span>
+        <span class="n">global_tractography</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">mtracks</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">maxlength</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">cutoff</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">seed_gmwmi</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">sift_mtracks</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">sift2</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">nodif_brain</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">nodif_brain_mask</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">fast_t1_brain</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">subjects_dir</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">mif_gz</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        <span class="n">delete_raw_tracks</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">delete_dwi_mif</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        <span class="n">fs_sh</span><span class="o">=</span><span class="n">DEFAULT_FREESURFER_PATH</span><span class="p">,</span>
+        <span class="n">fsl_sh</span><span class="o">=</span><span class="n">DEFAULT_FSL_PATH</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the connectome using MRtrix.</span>
+
+<span class="sd">    Requirements:</span>
+<span class="sd">        - FreeSurfer: result of recon-all on the T1.</span>
+<span class="sd">        - a T1 parcellation that defines the nodes of the connectome, it has</span>
+<span class="sd">          to be in the FreeSurfer space (i.e. aligned with</span>
+<span class="sd">          &lt;subjects dir&gt;/&lt;subject&gt;/mri/brain.mgz), e.g. aparc+aseg from</span>
+<span class="sd">          FreeSurfer.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    outdir: str</span>
+<span class="sd">        Path to directory where to output.</span>
+<span class="sd">    tempdir: str</span>
+<span class="sd">        Path to the directory where temporary directories should be written.</span>
+<span class="sd">        It should be a partition with 5+ GB available.</span>
+<span class="sd">    subject_id: str</span>
+<span class="sd">        Subject identifier.</span>
+<span class="sd">    dwi: str</span>
+<span class="sd">        Path to the diffusion-weighted images (Nifti required).</span>
+<span class="sd">    bvals: str</span>
+<span class="sd">        Path to the bvalue list.</span>
+<span class="sd">    bvecs: str</span>
+<span class="sd">        Path to the list of diffusion-sensitized directions.</span>
+<span class="sd">    nb_threads: int</span>
+<span class="sd">        Number of threads.</span>
+<span class="sd">    global_tractography: bool, default False</span>
+<span class="sd">        If True run global tractography (tckglobal) instead of local (tckgen).</span>
+<span class="sd">    mtracks: int, default None</span>
+<span class="sd">        For non-global tractography only. Number of millions of tracks of the</span>
+<span class="sd">        raw tractogram.</span>
+<span class="sd">    maxlength: int, default None</span>
+<span class="sd">        For non-global tractography only. Max fiber length in mm.</span>
+<span class="sd">    cutoff: float, default None</span>
+<span class="sd">        For non-global tractography only.</span>
+<span class="sd">        FOD amplitude cutoff, stopping criteria.</span>
+<span class="sd">    seed_gmwmi: bool, default False</span>
+<span class="sd">        For non-global tractography only.</span>
+<span class="sd">        Set this option if you want to activate the &#39;-seed_gmwmi&#39; option of</span>
+<span class="sd">        MRtrix &#39;tckgen&#39;, to seed from the GM/WM interface. Otherwise, and by</span>
+<span class="sd">        default, the seeding is done in white matter (&#39;-seed_dynamic&#39; option).</span>
+<span class="sd">    sift_mtracks: int, default None</span>
+<span class="sd">        For non-global tractography only.</span>
+<span class="sd">        Number of millions of tracks to keep with SIFT.</span>
+<span class="sd">        If not set, SIFT is not applied.</span>
+<span class="sd">    sift2: bool, default False</span>
+<span class="sd">        For non-global tractography only.</span>
+<span class="sd">        To activate SIFT2.</span>
+<span class="sd">    nodif_brain: str, default None</span>
+<span class="sd">        Diffusion brain-only Nifti volume with bvalue ~ 0. If not passed, it is</span>
+<span class="sd">        generated automatically by averaging all the b0 volumes of the DWI.</span>
+<span class="sd">    nodif_brain_mask: str, default None</span>
+<span class="sd">        Path to the Nifti brain binary mask in diffusion. If not passed, it is</span>
+<span class="sd">        created with MRtrix &#39;dwi2mask&#39;.</span>
+<span class="sd">    fast_t1_brain: str, default None</span>
+<span class="sd">        By default FSL FAST is run on the FreeSurfer &#39;brain.mgz&#39;. If you want</span>
+<span class="sd">        the WM probability map to be computed from another T1, pass the T1</span>
+<span class="sd">        brain-only volume. Note that it has to be aligned with diffusion.</span>
+<span class="sd">        This argument is useful for HCP, where some FreeSurfer &#39;brain.mgz&#39;</span>
+<span class="sd">        cannot be processed by FSL FAST.</span>
+<span class="sd">    subjects_dir: str, default None</span>
+<span class="sd">        Path to the FreeSurfer subjects directory. Required if the environment</span>
+<span class="sd">        variable $SUBJECTS_DIR is not set.</span>
+<span class="sd">    mif_gz: bool, default True</span>
+<span class="sd">        Use compressed MIF files (.mif.gz) instead of .mif to save space.</span>
+<span class="sd">    delete_raw_tracks: bool, default False</span>
+<span class="sd">        Delete the raw tracks (&lt;outdir&gt;/&lt;mtracks&gt;M.tck) at the end of</span>
+<span class="sd">        processing, to save space.</span>
+<span class="sd">    delete_dwi_mif: bool, default True</span>
+<span class="sd">        Delete &lt;outdir&gt;/DWI.mif(.gz) at the end of processing, which is a copy</span>
+<span class="sd">        of the input &lt;dwi&gt; in the MIF format, to save space.</span>
+<span class="sd">    fs_sh: str, default NeuroSpin path</span>
+<span class="sd">        Path to the Bash script setting the FreeSurfer environment</span>
+<span class="sd">    fsl_sh: str, default NeuroSpin path</span>
+<span class="sd">        Path to the Bash script setting the FSL environment.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tracks: str</span>
+<span class="sd">        The generated tractogram.</span>
+<span class="sd">    sift_tracks: str</span>
+<span class="sd">        The SIFT filtered tractogram.</span>
+<span class="sd">    sift2_weights: str</span>
+<span class="sd">        The SIFT2 tractogram associated weights.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="c1"># STEP 0 - Check arguments</span>
+
+    <span class="c1"># FreeSurfer $SUBJECTS_DIR has to be passed or set as an env variable</span>
+    <span class="n">subjects_dir</span> <span class="o">=</span> <span class="n">get_or_check_freesurfer_subjects_dir</span><span class="p">(</span><span class="n">subjects_dir</span><span class="p">)</span>
+
+    <span class="c1"># Use compressed MIF files or not</span>
+    <span class="n">MIF_EXT</span> <span class="o">=</span> <span class="s2">&quot;.mif.gz&quot;</span> <span class="k">if</span> <span class="n">mif_gz</span> <span class="k">else</span> <span class="s2">&quot;.mif&quot;</span>
+
+    <span class="c1"># Is SIFT to be applied</span>
+    <span class="n">sift</span> <span class="o">=</span> <span class="p">(</span><span class="n">sift_mtracks</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">)</span>
+
+    <span class="c1"># Check input and optional paths</span>
+    <span class="n">paths_to_check</span> <span class="o">=</span> <span class="p">[</span><span class="n">dwi</span><span class="p">,</span> <span class="n">bvals</span><span class="p">,</span> <span class="n">bvecs</span><span class="p">,</span> <span class="n">fsl_sh</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="p">[</span><span class="n">nodif_brain</span><span class="p">,</span> <span class="n">nodif_brain_mask</span><span class="p">,</span> <span class="n">fast_t1_brain</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">p</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">paths_to_check</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">paths_to_check</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;File or directory does not exist: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">p</span><span class="p">)</span>
+
+    <span class="c1"># Identify whether the DWI acquisition is single or multi-shell</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">nb_shells</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">read_bvals_bvecs</span><span class="p">(</span><span class="n">bvals</span><span class="p">,</span> <span class="n">bvecs</span><span class="p">,</span> <span class="n">min_bval</span><span class="o">=</span><span class="mf">200.</span><span class="p">)</span>
+    <span class="n">is_multi_shell</span> <span class="o">=</span> <span class="n">nb_shells</span> <span class="o">&gt;</span> <span class="mi">1</span>
+
+    <span class="c1"># Check compatibility of arguments</span>
+    <span class="k">if</span> <span class="n">global_tractography</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_multi_shell</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;MRtrix global tractography is only applicable &quot;</span>
+                             <span class="s2">&quot;to multi shell data.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">seed_gmwmi</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;seed_gmwmi&#39; cannot be applied when requesting &quot;</span>
+                             <span class="s2">&quot;global tractography.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">sift</span> <span class="ow">or</span> <span class="n">sift2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;SIFT or SIFT2 are not meant to be used with &quot;</span>
+                             <span class="s2">&quot;global tractography.&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">value_of_required_arg</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">mtracks</span><span class="o">=</span><span class="n">mtracks</span><span class="p">,</span> <span class="n">maxlength</span><span class="o">=</span><span class="n">maxlength</span><span class="p">,</span>
+                                     <span class="n">cutoff</span><span class="o">=</span><span class="n">cutoff</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">required_arg</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">value_of_required_arg</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;When &#39;global_tractography&#39; is set to False &quot;</span>
+                                 <span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> is required.&quot;</span> <span class="o">%</span> <span class="n">required_arg</span><span class="p">)</span>
+
+    <span class="c1"># Create &lt;outdir&gt; and/or &lt;tempdir&gt; if not existing</span>
+    <span class="k">for</span> <span class="n">directory</span> <span class="ow">in</span> <span class="p">[</span><span class="n">outdir</span><span class="p">,</span> <span class="n">tempdir</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">directory</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span>
+
+    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="c1"># STEP 1 - Format DWI and compute nodif brain and nodif brain mask if</span>
+    <span class="c1"># not provided</span>
+
+    <span class="c1"># Convert DWI to MRtrix format</span>
+    <span class="n">dwi_mif</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;DWI.mif&quot;</span><span class="p">)</span>
+    <span class="n">cmd_1a</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;mrconvert&quot;</span><span class="p">,</span> <span class="n">dwi</span><span class="p">,</span> <span class="n">dwi_mif</span><span class="p">,</span> <span class="s2">&quot;-fslgrad&quot;</span><span class="p">,</span> <span class="n">bvecs</span><span class="p">,</span> <span class="n">bvals</span><span class="p">,</span>
+              <span class="s2">&quot;-datatype&quot;</span><span class="p">,</span> <span class="s2">&quot;float32&quot;</span><span class="p">,</span> <span class="s2">&quot;-stride&quot;</span><span class="p">,</span> <span class="s2">&quot;0,0,0,1&quot;</span><span class="p">,</span>
+              <span class="s2">&quot;-nthreads&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%i</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">nb_threads</span><span class="p">,</span> <span class="s2">&quot;-failonwarn&quot;</span><span class="p">]</span>
+    <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">cmd_1a</span><span class="p">)</span>
+
+    <span class="c1"># If user has not provided a &#39;nodif_brain_mask&#39;, compute one with</span>
+    <span class="c1"># MRtrix &#39;dwi2mask&#39;</span>
+    <span class="k">if</span> <span class="n">nodif_brain_mask</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">nodif_brain_mask</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;nodif_brain_mask.nii.gz&quot;</span><span class="p">)</span>
+        <span class="n">cmd_1b</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;dwi2mask&quot;</span><span class="p">,</span> <span class="n">dwi_mif</span><span class="p">,</span> <span class="n">nodif_brain_mask</span><span class="p">]</span>
+        <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">cmd_1b</span><span class="p">)</span>
+
+    <span class="c1"># If user has not provided a &#39;nodif_brain&#39;, apply &#39;nodif_brain_mask&#39; to</span>
+    <span class="c1"># mean b=0 volume</span>
+    <span class="k">if</span> <span class="n">nodif_brain</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="c1"># Extract b=0 volumes and compute mean b=0 volume</span>
+        <span class="n">b0s</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;b0s.nii.gz&quot;</span><span class="p">)</span>
+        <span class="n">mean_b0</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;mean_b0.nii.gz&quot;</span><span class="p">)</span>
+        <span class="n">mrtrix_extract_b0s_and_mean_b0</span><span class="p">(</span><span class="n">dwi</span><span class="o">=</span><span class="n">dwi_mif</span><span class="p">,</span> <span class="n">b0s</span><span class="o">=</span><span class="n">b0s</span><span class="p">,</span> <span class="n">mean_b0</span><span class="o">=</span><span class="n">mean_b0</span><span class="p">,</span>
+                                       <span class="n">nb_threads</span><span class="o">=</span><span class="n">nb_threads</span><span class="p">)</span>
+        <span class="c1"># Apply nodif_brain_mask to dwi</span>
+        <span class="n">nodif_brain</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;nodif_brain.nii.gz&quot;</span><span class="p">)</span>
+        <span class="n">cmd_1b</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;mri_mask&quot;</span><span class="p">,</span> <span class="n">mean_b0</span><span class="p">,</span> <span class="n">nodif_brain_mask</span><span class="p">,</span> <span class="n">nodif_brain</span><span class="p">]</span>
+        <span class="n">FSWrapper</span><span class="p">(</span><span class="n">cmd_1b</span><span class="p">,</span> <span class="n">shfile</span><span class="o">=</span><span class="n">fs_sh</span><span class="p">)()</span>
+
+    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="c1"># STEP 2 - Register DWI to T1 using FreeSurfer bbregister</span>
+    <span class="c1"># - compute the rigid transformation</span>
+    <span class="c1"># - apply transformation to align T1 without downsampling</span>
+    <span class="n">t1_brain_to_dif</span><span class="p">,</span> <span class="n">dif2anat_dat</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">freesurfer_bbregister_t1todif</span><span class="p">(</span>
+            <span class="n">outdir</span><span class="o">=</span><span class="n">outdir</span><span class="p">,</span>
+            <span class="n">subject_id</span><span class="o">=</span><span class="n">subject_id</span><span class="p">,</span>
+            <span class="n">nodif_brain</span><span class="o">=</span><span class="n">nodif_brain</span><span class="p">,</span>
+            <span class="n">subjects_dir</span><span class="o">=</span><span class="n">subjects_dir</span><span class="p">,</span>
+            <span class="n">fs_sh</span><span class="o">=</span><span class="n">fs_sh</span><span class="p">,</span>
+            <span class="n">fsl_sh</span><span class="o">=</span><span class="n">fsl_sh</span><span class="p">)</span>
+
+    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="c1"># STEP 3 - &quot;5 tissue types&quot; segmentation</span>
+    <span class="c1"># Generate the 5TT image based on a FSL FAST</span>
+    <span class="n">five_tissues</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;5TT</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">MIF_EXT</span><span class="p">)</span>
+    <span class="n">fast_t1_brain</span> <span class="o">=</span> <span class="n">t1_brain_to_dif</span> <span class="k">if</span> <span class="n">fast_t1_brain</span> <span class="ow">is</span> <span class="bp">None</span> <span class="k">else</span> <span class="n">fast_t1_brain</span>
+    <span class="n">cmd_3</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;5ttgen&quot;</span><span class="p">,</span> <span class="s2">&quot;fsl&quot;</span><span class="p">,</span> <span class="n">fast_t1_brain</span><span class="p">,</span> <span class="n">five_tissues</span><span class="p">,</span> <span class="s2">&quot;-premasked&quot;</span><span class="p">,</span>
+             <span class="s2">&quot;-tempdir&quot;</span><span class="p">,</span> <span class="n">tempdir</span><span class="p">,</span> <span class="s2">&quot;-nthreads&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%i</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">nb_threads</span><span class="p">]</span>
+    <span class="n">FSLWrapper</span><span class="p">(</span><span class="n">cmd_3</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">,</span> <span class="n">shfile</span><span class="o">=</span><span class="n">fsl_sh</span><span class="p">)()</span>
+
+    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="c1"># STEP 4 - Estimation of the response function of fibers in each voxel</span>
+    <span class="k">if</span> <span class="n">is_multi_shell</span><span class="p">:</span>
+        <span class="n">rf_wm</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;RF_WM.txt&quot;</span><span class="p">)</span>
+        <span class="n">rf_gm</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;RF_GM.txt&quot;</span><span class="p">)</span>
+        <span class="n">rf_csf</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;RF_CSF.txt&quot;</span><span class="p">)</span>
+        <span class="n">cmd_4</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;dwi2response&quot;</span><span class="p">,</span> <span class="s2">&quot;msmt_5tt&quot;</span><span class="p">,</span> <span class="n">dwi_mif</span><span class="p">,</span> <span class="n">five_tissues</span><span class="p">,</span>
+                 <span class="n">rf_wm</span><span class="p">,</span> <span class="n">rf_gm</span><span class="p">,</span> <span class="n">rf_csf</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">rf</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;RF.txt&quot;</span><span class="p">)</span>
+        <span class="n">cmd_4</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;dwi2response&quot;</span><span class="p">,</span> <span class="s2">&quot;tournier&quot;</span><span class="p">,</span> <span class="n">dwi_mif</span><span class="p">,</span> <span class="n">rf</span><span class="p">]</span>
+    <span class="n">rf_voxels</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;RF_voxels</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">MIF_EXT</span><span class="p">)</span>
+    <span class="n">cmd_4</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;-voxels&quot;</span><span class="p">,</span> <span class="n">rf_voxels</span><span class="p">,</span> <span class="s2">&quot;-tempdir&quot;</span><span class="p">,</span> <span class="n">tempdir</span><span class="p">,</span>
+              <span class="s2">&quot;-nthreads&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%i</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">nb_threads</span><span class="p">]</span>
+    <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">cmd_4</span><span class="p">)</span>
+
+    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="c1"># STEP 5 - Compute FODs</span>
+    <span class="n">wm_fods</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;WM_FODs</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">MIF_EXT</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">is_multi_shell</span><span class="p">:</span>
+        <span class="n">gm_mif</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;GM</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">MIF_EXT</span><span class="p">)</span>
+        <span class="n">csf_mif</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;CSF</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">MIF_EXT</span><span class="p">)</span>
+        <span class="n">cmd_5</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;dwi2fod&quot;</span><span class="p">,</span> <span class="s2">&quot;msmt_csd&quot;</span><span class="p">,</span> <span class="n">dwi_mif</span><span class="p">,</span> <span class="n">rf_wm</span><span class="p">,</span> <span class="n">wm_fods</span><span class="p">,</span>
+                 <span class="n">rf_gm</span><span class="p">,</span> <span class="n">gm_mif</span><span class="p">,</span> <span class="n">rf_csf</span><span class="p">,</span> <span class="n">csf_mif</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">cmd_5</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;dwi2fod&quot;</span><span class="p">,</span> <span class="s2">&quot;csd&quot;</span><span class="p">,</span> <span class="n">dwi_mif</span><span class="p">,</span> <span class="n">rf</span><span class="p">,</span> <span class="n">wm_fods</span><span class="p">]</span>
+    <span class="n">cmd_5</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;-mask&quot;</span><span class="p">,</span> <span class="n">nodif_brain_mask</span><span class="p">,</span> <span class="s2">&quot;-nthreads&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%i</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">nb_threads</span><span class="p">,</span>
+              <span class="s2">&quot;-failonwarn&quot;</span><span class="p">]</span>
+    <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">cmd_5</span><span class="p">)</span>
+
+    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="c1"># STEP 6 - Image to visualize for multi-shell</span>
+    <span class="k">if</span> <span class="n">is_multi_shell</span><span class="p">:</span>
+        <span class="n">wm_fods_vol0</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;WM_FODs_vol0</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">MIF_EXT</span><span class="p">)</span>
+        <span class="n">cmd_6a</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;mrconvert&quot;</span><span class="p">,</span> <span class="n">wm_fods</span><span class="p">,</span> <span class="n">wm_fods_vol0</span><span class="p">,</span> <span class="s2">&quot;-coord&quot;</span><span class="p">,</span> <span class="s2">&quot;3&quot;</span><span class="p">,</span> <span class="s2">&quot;0&quot;</span><span class="p">,</span>
+                  <span class="s2">&quot;-nthreads&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%i</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">nb_threads</span><span class="p">]</span>
+        <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">cmd_6a</span><span class="p">)</span>
+
+        <span class="n">tissueRGB_mif</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;tissueRGB</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">MIF_EXT</span><span class="p">)</span>
+        <span class="n">cmd_6b</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;mrcat&quot;</span><span class="p">,</span> <span class="n">csf_mif</span><span class="p">,</span> <span class="n">gm_mif</span><span class="p">,</span> <span class="n">wm_fods_vol0</span><span class="p">,</span> <span class="n">tissueRGB_mif</span><span class="p">,</span>
+                  <span class="s2">&quot;-axis&quot;</span><span class="p">,</span> <span class="s2">&quot;3&quot;</span><span class="p">,</span> <span class="s2">&quot;-nthreads&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%i</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">nb_threads</span><span class="p">,</span> <span class="s2">&quot;-failonwarn&quot;</span><span class="p">]</span>
+        <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">cmd_6b</span><span class="p">)</span>
+
+    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="c1"># STEP 7 - Tractography: tckglobal or tckgen</span>
+    <span class="k">if</span> <span class="n">global_tractography</span><span class="p">:</span>
+        <span class="n">tracks</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;global.tck&quot;</span><span class="p">)</span>
+        <span class="n">global_fod</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;fod</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">MIF_EXT</span><span class="p">)</span>
+        <span class="n">fiso_mif</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;fiso</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">MIF_EXT</span><span class="p">)</span>
+        <span class="n">cmd_7</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;tckglobal&quot;</span><span class="p">,</span> <span class="n">dwi_mif</span><span class="p">,</span> <span class="n">rf_wm</span><span class="p">,</span> <span class="s2">&quot;-riso&quot;</span><span class="p">,</span> <span class="n">rf_csf</span><span class="p">,</span> <span class="s2">&quot;-riso&quot;</span><span class="p">,</span> <span class="n">rf_gm</span><span class="p">,</span>
+                 <span class="s2">&quot;-mask&quot;</span><span class="p">,</span> <span class="n">nodif_brain_mask</span><span class="p">,</span> <span class="s2">&quot;-niter&quot;</span><span class="p">,</span> <span class="s2">&quot;1e8&quot;</span><span class="p">,</span>
+                 <span class="s2">&quot;-fod&quot;</span><span class="p">,</span> <span class="n">global_fod</span><span class="p">,</span> <span class="s2">&quot;-fiso&quot;</span><span class="p">,</span> <span class="n">fiso_mif</span><span class="p">,</span> <span class="n">tracks</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Anatomically Constrained Tractography:</span>
+        <span class="c1"># iFOD2 algorithm with backtracking and crop fibers at GM/WM interface</span>
+        <span class="n">tracks</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%i</span><span class="s2">M.tck&quot;</span> <span class="o">%</span> <span class="n">mtracks</span><span class="p">)</span>
+        <span class="n">cmd_7</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;tckgen&quot;</span><span class="p">,</span> <span class="n">wm_fods</span><span class="p">,</span> <span class="n">tracks</span><span class="p">,</span> <span class="s2">&quot;-act&quot;</span><span class="p">,</span> <span class="n">five_tissues</span><span class="p">,</span> <span class="s2">&quot;-backtrack&quot;</span><span class="p">,</span>
+                 <span class="s2">&quot;-crop_at_gmwmi&quot;</span><span class="p">,</span> <span class="s2">&quot;-maxlength&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%i</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">maxlength</span><span class="p">,</span>
+                 <span class="s2">&quot;-number&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%d</span><span class="s2">M&quot;</span> <span class="o">%</span> <span class="n">mtracks</span><span class="p">,</span> <span class="s2">&quot;-cutoff&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%f</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">cutoff</span><span class="p">]</span>
+
+        <span class="c1"># Requested seeding strategy: -seed_gmwmi or -seed_dynamic</span>
+        <span class="k">if</span> <span class="n">seed_gmwmi</span><span class="p">:</span>
+            <span class="n">gmwmi_mask</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;gmwmi_mask</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">MIF_EXT</span><span class="p">)</span>
+            <span class="n">cmd_7b</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;5tt2gmwmi&quot;</span><span class="p">,</span> <span class="n">five_tissues</span><span class="p">,</span> <span class="n">gmwmi_mask</span><span class="p">]</span>
+            <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">cmd_7b</span><span class="p">)</span>
+            <span class="n">cmd_7</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;-seed_gmwmi&quot;</span><span class="p">,</span> <span class="n">gmwmi_mask</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cmd_7</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;-seed_dynamic&quot;</span><span class="p">,</span> <span class="n">wm_fods</span><span class="p">]</span>
+    <span class="n">cmd_7</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;-nthreads&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%i</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">nb_threads</span><span class="p">,</span> <span class="s2">&quot;-failonwarn&quot;</span><span class="p">]</span>
+    <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">cmd_7</span><span class="p">)</span>
+
+    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="c1"># STEP 8 - Filter tracts with SIFT if requested</span>
+    <span class="n">sift_tracks</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="k">if</span> <span class="n">sift</span><span class="p">:</span>
+        <span class="n">sift_tracks</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%i</span><span class="s2">M_SIFT.tck&quot;</span> <span class="o">%</span> <span class="n">sift_mtracks</span><span class="p">)</span>
+        <span class="n">cmd_8</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;tcksift&quot;</span><span class="p">,</span> <span class="n">tracks</span><span class="p">,</span> <span class="n">wm_fods</span><span class="p">,</span> <span class="n">sift_tracks</span><span class="p">,</span>
+                 <span class="s2">&quot;-act&quot;</span><span class="p">,</span> <span class="n">five_tissues</span><span class="p">,</span> <span class="s2">&quot;-term_number&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%i</span><span class="s2">M&quot;</span> <span class="o">%</span> <span class="n">sift_mtracks</span><span class="p">,</span>
+                 <span class="s2">&quot;-nthreads&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%i</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">nb_threads</span><span class="p">,</span> <span class="s2">&quot;-failonwarn&quot;</span><span class="p">]</span>
+        <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">cmd_8</span><span class="p">)</span>
+
+    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="c1"># STEP 9 - run SIFT2 if requested (compute weights of fibers)</span>
+    <span class="n">sift2_weights</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="k">if</span> <span class="n">sift2</span><span class="p">:</span>
+        <span class="n">sift2_weights</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;sift2_weights.txt&quot;</span><span class="p">)</span>
+        <span class="n">cmd_9</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;tcksift2&quot;</span><span class="p">,</span> <span class="n">tracks</span><span class="p">,</span> <span class="n">wm_fods</span><span class="p">,</span> <span class="n">sift2_weights</span><span class="p">,</span>
+                 <span class="s2">&quot;-act&quot;</span><span class="p">,</span> <span class="n">five_tissues</span><span class="p">,</span>
+                 <span class="s2">&quot;-nthreads&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%i</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">nb_threads</span><span class="p">,</span> <span class="s2">&quot;-failonwarn&quot;</span><span class="p">]</span>
+        <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">cmd_9</span><span class="p">)</span>
+
+    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="c1"># STEP 10 - clean if requested</span>
+    <span class="k">if</span> <span class="n">delete_raw_tracks</span><span class="p">:</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">tracks</span><span class="p">)</span>
+        <span class="n">tracks</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">if</span> <span class="n">delete_dwi_mif</span><span class="p">:</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">dwi_mif</span><span class="p">)</span>
+        <span class="n">dwi_mif</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">mif_gz</span><span class="p">:</span>
+            <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">([</span><span class="s2">&quot;gzip&quot;</span><span class="p">,</span> <span class="n">dwi_mif</span><span class="p">])</span>
+            <span class="n">dwi_mif</span> <span class="o">+=</span> <span class="s2">&quot;.gz&quot;</span>
+
+    <span class="k">return</span> <span class="n">tracks</span><span class="p">,</span> <span class="n">sift_tracks</span><span class="p">,</span> <span class="n">sift2_weights</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+
+    <div class="clearer">
+    </div>
+  </div>
+  
+</div>
+
+<div class="footer">
+    &copy; 2017, pyConnectome developers &lt;antoine.grigis@cea.fr&gt;.
+</div>
+  </body>
+</html>

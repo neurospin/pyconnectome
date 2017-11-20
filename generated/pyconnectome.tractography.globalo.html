@@ -1,0 +1,259 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+  
+    <title>PYCONNECTOME &mdash; pyConnectome</title>
+  <!-- htmltitle is before nature.css - we use this hack to load bootstrap first -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="../_static/css/bootstrap.min.css" media="screen" />
+
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="pyConnectome" href="../index.html" />
+  
+   
+       <script type="text/javascript" src="../_static/sidebar.js"></script>
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="../_static/js/bootstrap.min.js" type="text/javascript"></script>
+
+  <script src="../_static/js/angular.min.js" type="text/javascript"></script>
+  <script type="text/javascript">
+    var app = angular.module("navApp", []);
+    app.controller('navCtrl', ['$scope', '$window', function($scope, $window) {
+      $scope.isActive = function (viewLocation) {
+        var rel = $window.location.pathname.split("/")
+        rel = rel[rel.length - 1]
+        rel = rel.split(".")[0]
+        var active = (viewLocation === rel);
+        return active;};
+    }]);
+  </script>
+
+  </head>
+  <body role="document"><div class="banner">
+  <div class="container-fluid banner-container">
+    <div class="row banner-inner">
+      <div class="col-xs-4">
+        <img alt="Logo" src="../_static/pyconnectome.png">
+      </div>
+      <div class="col-xs-8">
+            <p>Diffusion MRI connectome.</p>
+      </div>
+    </div>  
+  </div>
+</div><nav class="navbar navbar-default navbar-static-top">
+  <div class="container-fluid">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+        </a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse" ng-controller="navCtrl" ng-app="navApp">
+      <ul class="nav navbar-nav">
+        <li ng-class="{ active: isActive('index') }"><a href="../index.html">Home</a></li>
+        <li ng-class="{ active: isActive('installation') }"><a href="installation.html">Installation</a></li>
+        <li ng-class="{ active: isActive('gallery') }"><a href="../auto_gallery/gallery.html">Gallery</a></li>
+        <li ng-class="{ active: isActive('documentation') }"><a href="documentation.html">API documentation</a></li>
+        <!--<li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"> <span class="caret"></span></a>
+          <ul class="dropdown-menu">
+	        <li><a href="pyconnectome.html">Pyconnectome</a></li>
+<li><a href="pyconnectome.tractography.html">Pyconnectome.tractography</a></li>
+<li><a href="pyconnectome.metrics.html">Pyconnectome.metrics</a></li>
+<li><a href="pyconnectome.utils.html">Pyconnectome.utils</a></li>
+<li><a href="pyconnectome.models.html">Pyconnectome.models</a></li>
+<li><a href="pyconnectome.plotting.html">Pyconnectome.plotting</a></li>
+<li><a href="pyconnectome.connectomes.html">Pyconnectome.connectomes</a></li>
+          </ul>
+        </li>-->
+        <li><a href="https://github.com/AGrigis/pysphinxdoc">PYSPHINXDOC</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+<div class="content-wrapper">
+    <div class="sphinxsidebar">
+      <div class="sphinxsidebarwrapper">
+
+        <!-- info setup -->
+          <p class="doc-version">
+           This documentation is for pyconnectome <strong>version 1.0.0</strong>
+          </p>
+        <p class="citing">
+          If you use the software, please do not esitate to 
+          <a &mdash; <a href="https://github.com/neurospin/pyconnectome">
+          Report a Bug</a>.
+        </p>
+
+      <!-- toc tree -->
+      <ul class="simple">
+</ul>
+
+
+      </div>
+    </div>
+  
+
+  <div class="content">
+      
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <span class="target" id="module-pyconnectome.tractography.globalo"></span><p>Compute global tractography using MRtrix or MITK Gibbs Tracking.</p>
+<dl class="function">
+<dt id="pyconnectome.tractography.globalo.mitk_gibbs_tractogram">
+<code class="descclassname">pyconnectome.tractography.globalo.</code><code class="descname">mitk_gibbs_tractogram</code><span class="sig-paren">(</span><em>outdir</em>, <em>subject_id</em>, <em>dwi</em>, <em>bvals</em>, <em>bvecs</em>, <em>nodif_brain=None</em>, <em>nodif_brain_mask=None</em>, <em>subjects_dir=None</em>, <em>sh_order=4</em>, <em>reg_factor=0.006</em>, <em>nb_iterations=500000000.0</em>, <em>particle_length=0</em>, <em>particle_width=0</em>, <em>particle_weight=0</em>, <em>start_temperature=0.1</em>, <em>end_temperature=0.001</em>, <em>inex_energy_balance=0</em>, <em>min_fiber_length=20</em>, <em>curvature_threshold=45</em>, <em>tempdir=None</em>, <em>fs_sh='/i2bm/local/freesurfer/SetUpFreeSurfer.sh'</em>, <em>fsl_sh='/etc/fsl/5.0/fsl.sh'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pyconnectome/tractography/globalo.html#mitk_gibbs_tractogram"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyconnectome.tractography.globalo.mitk_gibbs_tractogram" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wrapper to the MITK global tractography tool (Gibbs Tracking).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>outdir: str</strong></p>
+<blockquote>
+<div><p>Directory where to output.</p>
+</div></blockquote>
+<p><strong>subject_id: str</strong></p>
+<blockquote>
+<div><p>Subject id used with FreeSurfer &#8216;recon-all&#8217; command.</p>
+</div></blockquote>
+<p><strong>dwi: str</strong></p>
+<blockquote>
+<div><p>Path to the diffusion-weighted images (Nifti required).</p>
+</div></blockquote>
+<p><strong>bvals: str</strong></p>
+<blockquote>
+<div><p>Path to the bvalue list.</p>
+</div></blockquote>
+<p><strong>bvecs: str</strong></p>
+<blockquote>
+<div><p>Path to the list of diffusion-sensitized directions.</p>
+</div></blockquote>
+<p><strong>nodif_brain: str, default None</strong></p>
+<blockquote>
+<div><p>Diffusion brain-only Nifti volume with bvalue ~ 0. If not passed, it is
+generated automatically by averaging all the b0 volumes of the DWI.</p>
+</div></blockquote>
+<p><strong>nodif_brain_mask: str, default None</strong></p>
+<blockquote>
+<div><p>Path to the Nifti brain binary mask in diffusion. If not passed, it is
+created with MRtrix &#8216;dwi2mask&#8217;.</p>
+</div></blockquote>
+<p><strong>subjects_dir: str or None, default None</strong></p>
+<blockquote>
+<div><p>Path to the FreeSurfer subjects directory. Required if the FreeSurfer
+environment variable (i.e. $SUBJECTS_DIR) is not set.</p>
+</div></blockquote>
+<p><strong>sh_order: int, default 4</strong></p>
+<blockquote>
+<div><p>Qball reconstruction spherical harmonics order.</p>
+</div></blockquote>
+<p><strong>reg_factor: float, default</strong></p>
+<blockquote>
+<div><p>Qball reconstruction regularization factor..</p>
+</div></blockquote>
+<p><strong>nb_iterations: int, default 5E8</strong></p>
+<blockquote>
+<div><p>Gibbs tracking number of iterations.</p>
+</div></blockquote>
+<p><strong>particle_length: float, default 0</strong></p>
+<blockquote>
+<div><p>Gibbs tracking particle length, selected automatically if 0.</p>
+</div></blockquote>
+<p><strong>particle_width: float, default 0</strong></p>
+<blockquote>
+<div><p>Gibbs tracking particle width, selected automatically if 0.</p>
+</div></blockquote>
+<p><strong>particle_weight: float, default 0</strong></p>
+<blockquote>
+<div><p>Gibbs tracking particle weight, selected automatically if 0.</p>
+</div></blockquote>
+<p><strong>start_temperature: float, default 0.1</strong></p>
+<blockquote>
+<div><p>Gibbs tracking start temperature.</p>
+</div></blockquote>
+<p><strong>end_temperature: float, default 0.001</strong></p>
+<blockquote>
+<div><p>Gibbs tracking end temperature.</p>
+</div></blockquote>
+<p><strong>inex_energy_balance: float, default 0</strong></p>
+<blockquote>
+<div><p>Gibbs tracking weighting between in/ext energies.</p>
+</div></blockquote>
+<p><strong>min_fiber_length: int, default 20</strong></p>
+<blockquote>
+<div><p>Minimum fiber length in mm. Fibers that are shorter are discarded.</p>
+</div></blockquote>
+<p><strong>curvature_threshold: int, default 45</strong></p>
+<blockquote>
+<div><p>Maximum fiber curvature in degrees.</p>
+</div></blockquote>
+<p><strong>tempdir: str</strong></p>
+<blockquote>
+<div><p>Path to the directory where temporary directories should be written.
+It should be a partition with 5+ GB available.</p>
+</div></blockquote>
+<p><strong>fs_sh: str, default NeuroSpin path</strong></p>
+<blockquote>
+<div><p>Path to the Bash script setting the FreeSurfer environment</p>
+</div></blockquote>
+<p><strong>fsl_sh: str, default NeuroSpin path</strong></p>
+<blockquote>
+<div><p>Path to the Bash script setting the FSL environment.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">mitk_tractogram: str</p>
+<blockquote class="last">
+<div><p>The computed global tractogram in VTK format.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+
+
+          </div>
+        </div>
+      </div>
+
+    <div class="clearer">
+    </div>
+  </div>
+  
+</div>
+
+<div class="footer">
+    &copy; 2017, pyConnectome developers &lt;antoine.grigis@cea.fr&gt;.
+</div>
+  </body>
+</html>

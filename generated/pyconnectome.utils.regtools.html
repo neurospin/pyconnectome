@@ -1,0 +1,477 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+  
+    <title>PYCONNECTOME &mdash; pyConnectome</title>
+  <!-- htmltitle is before nature.css - we use this hack to load bootstrap first -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="../_static/css/bootstrap.min.css" media="screen" />
+
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="pyConnectome" href="../index.html" />
+  
+   
+       <script type="text/javascript" src="../_static/sidebar.js"></script>
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="../_static/js/bootstrap.min.js" type="text/javascript"></script>
+
+  <script src="../_static/js/angular.min.js" type="text/javascript"></script>
+  <script type="text/javascript">
+    var app = angular.module("navApp", []);
+    app.controller('navCtrl', ['$scope', '$window', function($scope, $window) {
+      $scope.isActive = function (viewLocation) {
+        var rel = $window.location.pathname.split("/")
+        rel = rel[rel.length - 1]
+        rel = rel.split(".")[0]
+        var active = (viewLocation === rel);
+        return active;};
+    }]);
+  </script>
+
+  </head>
+  <body role="document"><div class="banner">
+  <div class="container-fluid banner-container">
+    <div class="row banner-inner">
+      <div class="col-xs-4">
+        <img alt="Logo" src="../_static/pyconnectome.png">
+      </div>
+      <div class="col-xs-8">
+            <p>Diffusion MRI connectome.</p>
+      </div>
+    </div>  
+  </div>
+</div><nav class="navbar navbar-default navbar-static-top">
+  <div class="container-fluid">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+        </a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse" ng-controller="navCtrl" ng-app="navApp">
+      <ul class="nav navbar-nav">
+        <li ng-class="{ active: isActive('index') }"><a href="../index.html">Home</a></li>
+        <li ng-class="{ active: isActive('installation') }"><a href="installation.html">Installation</a></li>
+        <li ng-class="{ active: isActive('gallery') }"><a href="../auto_gallery/gallery.html">Gallery</a></li>
+        <li ng-class="{ active: isActive('documentation') }"><a href="documentation.html">API documentation</a></li>
+        <!--<li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"> <span class="caret"></span></a>
+          <ul class="dropdown-menu">
+	        <li><a href="pyconnectome.html">Pyconnectome</a></li>
+<li><a href="pyconnectome.tractography.html">Pyconnectome.tractography</a></li>
+<li><a href="pyconnectome.metrics.html">Pyconnectome.metrics</a></li>
+<li><a href="pyconnectome.utils.html">Pyconnectome.utils</a></li>
+<li><a href="pyconnectome.models.html">Pyconnectome.models</a></li>
+<li><a href="pyconnectome.plotting.html">Pyconnectome.plotting</a></li>
+<li><a href="pyconnectome.connectomes.html">Pyconnectome.connectomes</a></li>
+          </ul>
+        </li>-->
+        <li><a href="https://github.com/AGrigis/pysphinxdoc">PYSPHINXDOC</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+<div class="content-wrapper">
+    <div class="sphinxsidebar">
+      <div class="sphinxsidebarwrapper">
+
+        <!-- info setup -->
+          <p class="doc-version">
+           This documentation is for pyconnectome <strong>version 1.0.0</strong>
+          </p>
+        <p class="citing">
+          If you use the software, please do not esitate to 
+          <a &mdash; <a href="https://github.com/neurospin/pyconnectome">
+          Report a Bug</a>.
+        </p>
+
+      <!-- toc tree -->
+      <ul class="simple">
+</ul>
+
+
+      </div>
+    </div>
+  
+
+  <div class="content">
+      
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <span class="target" id="module-pyconnectome.utils.regtools"></span><p>Registration utilities.</p>
+<dl class="function">
+<dt id="pyconnectome.utils.regtools.flirt">
+<code class="descclassname">pyconnectome.utils.regtools.</code><code class="descname">flirt</code><span class="sig-paren">(</span><em>in_file</em>, <em>ref_file</em>, <em>omat=None</em>, <em>out=None</em>, <em>init=None</em>, <em>cost='corratio'</em>, <em>usesqform=False</em>, <em>displayinit=False</em>, <em>anglerep='euler'</em>, <em>bins=256</em>, <em>interp='trilinear'</em>, <em>dof=12</em>, <em>applyxfm=False</em>, <em>applyisoxfm=None</em>, <em>nosearch=False</em>, <em>verbose=0</em>, <em>shfile='/etc/fsl/5.0/fsl.sh'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pyconnectome/utils/regtools.html#flirt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyconnectome.utils.regtools.flirt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wraps command flirt.</p>
+<p>The basic usage is:
+flirt [options] -in &lt;inputvol&gt; -ref &lt;refvol&gt; -out &lt;outputvol&gt;
+flirt [options] -in &lt;inputvol&gt; -ref &lt;refvol&gt; -omat &lt;outputmatrix&gt;
+flirt [options] -in &lt;inputvol&gt; -ref &lt;refvol&gt; -applyxfm -init &lt;matrix&gt;
+-out &lt;outputvol&gt;</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>in_file: str (mandatory)</strong></p>
+<blockquote>
+<div><p>Input volume.</p>
+</div></blockquote>
+<p><strong>ref_file: str (mandatory)</strong></p>
+<blockquote>
+<div><p>Reference volume.</p>
+</div></blockquote>
+<p><strong>omat: str (optional, default None)</strong></p>
+<blockquote>
+<div><p>Matrix filename. Output in 4x4 ascii format.</p>
+</div></blockquote>
+<p><strong>out: str (optional, default None)</strong></p>
+<blockquote>
+<div><p>Output volume.</p>
+</div></blockquote>
+<p><strong>init: (optional, default None)</strong></p>
+<blockquote>
+<div><p>Input 4x4 affine matrix</p>
+</div></blockquote>
+<p><strong>cost: str (optional, default &#8220;corratio&#8221;)</strong></p>
+<blockquote>
+<div><p>Choose the most appropriate option: &#8220;mutualinfo&#8221;, &#8220;corratio&#8221;,
+&#8220;normcorr&#8221;, &#8220;normmi&#8221;, &#8220;leastsq&#8221;, &#8220;labeldiff&#8221;, &#8220;bbr&#8221;.</p>
+</div></blockquote>
+<p><strong>usesqform: bool (optional, default False)</strong></p>
+<blockquote>
+<div><p>Initialise using appropriate sform or qform.</p>
+</div></blockquote>
+<p><strong>displayinit: bool</strong></p>
+<blockquote>
+<div><p>Display initial matrix.</p>
+</div></blockquote>
+<p><strong>anglerep: str (optional default &#8220;euler&#8221;)</strong></p>
+<blockquote>
+<div><p>Choose the most appropriate option: &#8220;quaternion&#8221;, &#8220;euler&#8221;.</p>
+</div></blockquote>
+<p><strong>bins: int (optional, default 256)</strong></p>
+<blockquote>
+<div><p>Number of histogram bins</p>
+</div></blockquote>
+<p><strong>interp: str (optional, default &#8220;trilinear&#8221;)</strong></p>
+<blockquote>
+<div><p>Choose the most appropriate option: &#8220;trilinear&#8221;, &#8220;nearestneighbour&#8221;,
+&#8220;sinc&#8221;, &#8220;spline&#8221;. (final interpolation: def - trilinear)</p>
+</div></blockquote>
+<p><strong>dof: int (optional, default 12)</strong></p>
+<blockquote>
+<div><p>Number of transform dofs.</p>
+</div></blockquote>
+<p><strong>applyxfm: bool</strong></p>
+<blockquote>
+<div><p>Applies transform (no optimisation) - requires -init.</p>
+</div></blockquote>
+<p><strong>applyisoxfm: float (optional)</strong></p>
+<blockquote>
+<div><p>The integer defines the scale. As applyxfm but forces isotropic
+resampling.</p>
+</div></blockquote>
+<p><strong>verbose: int (optional)</strong></p>
+<blockquote>
+<div><p>0 is least and default.</p>
+</div></blockquote>
+<p><strong>nosearch: bool (optional, default False)</strong></p>
+<blockquote>
+<div><p>if set perform no search to initializa the optimization.</p>
+</div></blockquote>
+<p><strong>shfile: str (optional, default DEFAULT_FSL_PATH)</strong></p>
+<blockquote>
+<div><p>The FSL configuration batch.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">out: str</p>
+<blockquote>
+<div><p>Output volume.</p>
+</div></blockquote>
+<p>omat: str</p>
+<blockquote class="last">
+<div><p>Output matrix filename. Output in 4x4 ascii format.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyconnectome.utils.regtools.flirt2aff">
+<code class="descclassname">pyconnectome.utils.regtools.</code><code class="descname">flirt2aff</code><span class="sig-paren">(</span><em>mat_file</em>, <em>in_file</em>, <em>ref_file</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pyconnectome/utils/regtools.html#flirt2aff"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyconnectome.utils.regtools.flirt2aff" title="Permalink to this definition">¶</a></dt>
+<dd><p>Map from &#8216;in_file&#8217; image voxels to &#8216;ref_file&#8217; voxels given <cite>omat</cite> FSL
+affine transformation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>mat_file: str (mandatory)</strong></p>
+<blockquote>
+<div><p>filename of output &#8216;-omat&#8217; transformation file from FSL flirt.</p>
+</div></blockquote>
+<p><strong>in_file: str (mandatory)</strong></p>
+<blockquote>
+<div><p>filename of the image passed to flirt as the &#8216;-in&#8217; image.</p>
+</div></blockquote>
+<p><strong>ref_file: str (mandatory)</strong></p>
+<blockquote>
+<div><p>filename of the image passed to flirt as the &#8216;-ref&#8217; image.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">omat: array (4, 4)</p>
+<blockquote class="last">
+<div><p>array containing the transform from voxel coordinates in image
+for &#8216;in_file&#8217; to voxel coordinates in image for &#8216;ref_file&#8217;.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyconnectome.utils.regtools.fnirt">
+<code class="descclassname">pyconnectome.utils.regtools.</code><code class="descname">fnirt</code><span class="sig-paren">(</span><em>in_file</em>, <em>ref_file</em>, <em>affine_file</em>, <em>outdir</em>, <em>inmask_file=None</em>, <em>verbose=0</em>, <em>shfile='/etc/fsl/5.0/fsl.sh'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pyconnectome/utils/regtools.html#fnirt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyconnectome.utils.regtools.fnirt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wraps command fnirt.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>in_file: str (mandatory)</strong></p>
+<blockquote>
+<div><p>Input volume.</p>
+</div></blockquote>
+<p><strong>ref_file: str (mandatory)</strong></p>
+<blockquote>
+<div><p>Reference volume.</p>
+</div></blockquote>
+<p><strong>affine_file: str (optional, default None)</strong></p>
+<blockquote>
+<div><p>Affine matrix filename in 4x4 ascii format.</p>
+</div></blockquote>
+<p><strong>outdir: str</strong></p>
+<blockquote>
+<div><p>The destination folder.</p>
+</div></blockquote>
+<p><strong>inmask_file: str (optional, default None)</strong></p>
+<blockquote>
+<div><p>Name of file with mask in input image space.</p>
+</div></blockquote>
+<p><strong>verbose: int (optional)</strong></p>
+<blockquote>
+<div><p>0 is least and default.</p>
+</div></blockquote>
+<p><strong>shfile: str (optional, default DEFAULT_FSL_PATH)</strong></p>
+<blockquote>
+<div><p>The FSL configuration batch.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">cout: str</p>
+<blockquote>
+<div><p>Name of output file with field coefficients.</p>
+</div></blockquote>
+<p>iout: str</p>
+<blockquote>
+<div><p>Name of output image.</p>
+</div></blockquote>
+<p>fout: str</p>
+<blockquote>
+<div><p>Name of output file with field.</p>
+</div></blockquote>
+<p>jout: str</p>
+<blockquote>
+<div><p>Name of file for writing out the Jacobian of the field.</p>
+</div></blockquote>
+<p>refout: str</p>
+<blockquote>
+<div><p>Name of file for writing out intensity modulated.</p>
+</div></blockquote>
+<p>intout: str</p>
+<blockquote>
+<div><p>Name of files for writing information pertaining to intensity mapping</p>
+</div></blockquote>
+<p>logout: str</p>
+<blockquote class="last">
+<div><p>Name of log-file.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyconnectome.utils.regtools.freesurfer_bbregister_t1todif">
+<code class="descclassname">pyconnectome.utils.regtools.</code><code class="descname">freesurfer_bbregister_t1todif</code><span class="sig-paren">(</span><em>outdir</em>, <em>subject_id</em>, <em>nodif_brain</em>, <em>subjects_dir=None</em>, <em>fs_sh='/i2bm/local/freesurfer/SetUpFreeSurfer.sh'</em>, <em>fsl_sh='/etc/fsl/5.0/fsl.sh'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pyconnectome/utils/regtools.html#freesurfer_bbregister_t1todif"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyconnectome.utils.regtools.freesurfer_bbregister_t1todif" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute DWI to T1 transformation and project the T1 to the diffusion
+space without resampling.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>outdir: str</strong></p>
+<blockquote>
+<div><p>Directory where to output.</p>
+</div></blockquote>
+<p><strong>subject_id: str</strong></p>
+<blockquote>
+<div><p>Subject id used with FreeSurfer &#8216;recon-all&#8217; command.</p>
+</div></blockquote>
+<p><strong>nodif_brain: str</strong></p>
+<blockquote>
+<div><p>Path to the preprocessed brain-only DWI volume.</p>
+</div></blockquote>
+<p><strong>subjects_dir: str or None, default None</strong></p>
+<blockquote>
+<div><p>Path to the FreeSurfer subjects directory. Required if the FreeSurfer
+environment variable (i.e. $SUBJECTS_DIR) is not set.</p>
+</div></blockquote>
+<p><strong>fs_sh: str, default NeuroSpin path</strong></p>
+<blockquote>
+<div><p>Path to the Bash script setting the FreeSurfer environment</p>
+</div></blockquote>
+<p><strong>fsl_sh: str, default NeuroSpin path</strong></p>
+<blockquote>
+<div><p>Path to the Bash script setting the FSL environment.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">t1_brain_to_dif: str</p>
+<blockquote>
+<div><p>The anatomical image in the diffusion space (without resampling).</p>
+</div></blockquote>
+<p>dif2anat_dat, dif2anat_mat: str</p>
+<blockquote class="last">
+<div><p>The DWI to T1 transformation in FreeSurfer or FSL space respectivelly.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyconnectome.utils.regtools.mcflirt">
+<code class="descclassname">pyconnectome.utils.regtools.</code><code class="descname">mcflirt</code><span class="sig-paren">(</span><em>in_file</em>, <em>out_fileroot</em>, <em>cost='normcorr'</em>, <em>bins=256</em>, <em>dof=6</em>, <em>reg_to_mean=True</em>, <em>mats=False</em>, <em>plots=True</em>, <em>verbose=0</em>, <em>shfile='/etc/fsl/5.0/fsl.sh'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pyconnectome/utils/regtools.html#mcflirt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyconnectome.utils.regtools.mcflirt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wraps command mcflirt.</p>
+<p>MCFLIRT is an intra-modal motion correction tool designed for use on
+fMRI time series and based on optimization and registration techniques
+used in FLIRT, a fully automated robust and accurate tool for linear
+(affine) inter- and inter-modal brain image registration.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>in_file: str (mandatory)</strong></p>
+<blockquote>
+<div><p>Input serie file path.</p>
+</div></blockquote>
+<p><strong>out_fileroot: str (mandatory)</strong></p>
+<blockquote>
+<div><p>Output serie file path without extension.</p>
+</div></blockquote>
+<p><strong>cost: str(optional, default None)</strong></p>
+<blockquote>
+<div><p>The optimization cost function.
+Choose the most appropriate option: &#8220;mutualinfo&#8221;, &#8220;woods&#8221;,
+&#8220;corratio&#8221;, &#8220;normcorr&#8221;, &#8220;normmi&#8221;, &#8220;leastsquares&#8221;.</p>
+</div></blockquote>
+<p><strong>bins: int (optional, default 256)</strong></p>
+<blockquote>
+<div><p>Number of histogram bins.</p>
+</div></blockquote>
+<p><strong>dof: int (optional, default 6)</strong></p>
+<blockquote>
+<div><p>Number of transform degrees of freedom.</p>
+</div></blockquote>
+<p><strong>reg_to_mean: bool (optional, default True)</strong></p>
+<blockquote>
+<div><p>If set, register to mean, otherwise to middle volume of the serie.</p>
+</div></blockquote>
+<p><strong>mats: bool (optional, default False)</strong></p>
+<blockquote>
+<div><p>If set save transformation matricies in subdirectory outfilename.mat</p>
+</div></blockquote>
+<p><strong>plot: bool (optional, default True)</strong></p>
+<blockquote>
+<div><p>If set save transformation parameters in file outputfilename.par</p>
+</div></blockquote>
+<p><strong>verbose: int (optional)</strong></p>
+<blockquote>
+<div><p>0 is least and default.</p>
+</div></blockquote>
+<p><strong>shfile: str (optional, default DEFAULT_FSL_PATH)</strong></p>
+<blockquote>
+<div><p>The FSL configuration batch.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">func_file: str</p>
+<blockquote>
+<div><p>Output realigned serie.</p>
+</div></blockquote>
+<p>mean_file: str</p>
+<blockquote>
+<div><p>Mean serie tempalte.</p>
+</div></blockquote>
+<p>par_file: str</p>
+<blockquote class="last">
+<div><p>The motion correction transformation parameters.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+
+
+          </div>
+        </div>
+      </div>
+
+    <div class="clearer">
+    </div>
+  </div>
+  
+</div>
+
+<div class="footer">
+    &copy; 2017, pyConnectome developers &lt;antoine.grigis@cea.fr&gt;.
+</div>
+  </body>
+</html>

@@ -1,0 +1,426 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+  
+    <title>PYCONNECTOME &mdash; pyConnectome</title>
+  <!-- htmltitle is before nature.css - we use this hack to load bootstrap first -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="../_static/css/bootstrap.min.css" media="screen" />
+
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="pyConnectome" href="../index.html" />
+  
+   
+       <script type="text/javascript" src="../_static/sidebar.js"></script>
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="../_static/js/bootstrap.min.js" type="text/javascript"></script>
+
+  <script src="../_static/js/angular.min.js" type="text/javascript"></script>
+  <script type="text/javascript">
+    var app = angular.module("navApp", []);
+    app.controller('navCtrl', ['$scope', '$window', function($scope, $window) {
+      $scope.isActive = function (viewLocation) {
+        var rel = $window.location.pathname.split("/")
+        rel = rel[rel.length - 1]
+        rel = rel.split(".")[0]
+        var active = (viewLocation === rel);
+        return active;};
+    }]);
+  </script>
+
+  </head>
+  <body role="document"><div class="banner">
+  <div class="container-fluid banner-container">
+    <div class="row banner-inner">
+      <div class="col-xs-4">
+        <img alt="Logo" src="../_static/pyconnectome.png">
+      </div>
+      <div class="col-xs-8">
+            <p>Diffusion MRI connectome.</p>
+      </div>
+    </div>  
+  </div>
+</div><nav class="navbar navbar-default navbar-static-top">
+  <div class="container-fluid">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+        </a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse" ng-controller="navCtrl" ng-app="navApp">
+      <ul class="nav navbar-nav">
+        <li ng-class="{ active: isActive('index') }"><a href="../index.html">Home</a></li>
+        <li ng-class="{ active: isActive('installation') }"><a href="../generated/installation.html">Installation</a></li>
+        <li ng-class="{ active: isActive('gallery') }"><a href="gallery.html">Gallery</a></li>
+        <li ng-class="{ active: isActive('documentation') }"><a href="../generated/documentation.html">API documentation</a></li>
+        <!--<li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"> <span class="caret"></span></a>
+          <ul class="dropdown-menu">
+	        <li><a href="../generated/pyconnectome.html">Pyconnectome</a></li>
+<li><a href="../generated/pyconnectome.tractography.html">Pyconnectome.tractography</a></li>
+<li><a href="../generated/pyconnectome.metrics.html">Pyconnectome.metrics</a></li>
+<li><a href="../generated/pyconnectome.utils.html">Pyconnectome.utils</a></li>
+<li><a href="../generated/pyconnectome.models.html">Pyconnectome.models</a></li>
+<li><a href="../generated/pyconnectome.plotting.html">Pyconnectome.plotting</a></li>
+<li><a href="../generated/pyconnectome.connectomes.html">Pyconnectome.connectomes</a></li>
+          </ul>
+        </li>-->
+        <li><a href="https://github.com/AGrigis/pysphinxdoc">PYSPHINXDOC</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+<div class="content-wrapper">
+    <div class="sphinxsidebar">
+      <div class="sphinxsidebarwrapper">
+
+        <!-- info setup -->
+          <p class="doc-version">
+           This documentation is for pyconnectome <strong>version 1.0.0</strong>
+          </p>
+        <p class="citing">
+          If you use the software, please do not esitate to 
+          <a &mdash; <a href="https://github.com/neurospin/pyconnectome">
+          Report a Bug</a>.
+        </p>
+
+      <!-- toc tree -->
+      <ul>
+<li><a class="reference internal" href="#">Pyconnectome Mrtrix Tractogram</a></li>
+</ul>
+
+
+      </div>
+    </div>
+  
+
+  <div class="content">
+      
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="pyconnectome-mrtrix-tractogram">
+<span id="sphx-glr-auto-gallery-pyconnectome-mrtrix-tractogram-py"></span><h1>Pyconnectome Mrtrix Tractogram<a class="headerlink" href="#pyconnectome-mrtrix-tractogram" title="Permalink to this headline">¶</a></h1>
+<p>Example automatically generated from package script.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># System import</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pprint</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">import</span> <span class="nn">textwrap</span>
+<span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">RawTextHelpFormatter</span>
+
+<span class="c1"># Bredala module</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">bredala</span>
+    <span class="n">bredala</span><span class="o">.</span><span class="n">USE_PROFILER</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">bredala</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;pyconnectome.tractography.probabilist&quot;</span><span class="p">,</span>
+                     <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;mrtrix_tractogram&quot;</span><span class="p">])</span>
+<span class="k">except</span><span class="p">:</span>
+    <span class="k">pass</span>
+
+<span class="c1"># PyFreeSurfer import</span>
+<span class="kn">from</span> <span class="nn">pyfreesurfer</span> <span class="kn">import</span> <span class="n">DEFAULT_FREESURFER_PATH</span>
+<span class="kn">from</span> <span class="nn">pyfreesurfer.wrapper</span> <span class="kn">import</span> <span class="n">FSWrapper</span>
+
+<span class="c1"># Package import</span>
+<span class="kn">from</span> <span class="nn">pyconnectome</span> <span class="kn">import</span> <span class="n">__version__</span> <span class="k">as</span> <span class="n">version</span>
+<span class="kn">from</span> <span class="nn">pyconnectome</span> <span class="kn">import</span> <span class="n">DEFAULT_FSL_PATH</span>
+<span class="kn">from</span> <span class="nn">pyconnectome.wrapper</span> <span class="kn">import</span> <span class="n">FSLWrapper</span>
+<span class="kn">from</span> <span class="nn">pyconnectome.tractography.probabilist</span> <span class="kn">import</span> <span class="n">mrtrix_tractogram</span>
+
+
+<span class="c1"># Parameters to keep trace</span>
+<span class="n">__hopla__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;runtime&quot;</span><span class="p">,</span> <span class="s2">&quot;inputs&quot;</span><span class="p">,</span> <span class="s2">&quot;outputs&quot;</span><span class="p">]</span>
+
+
+<span class="n">DOC</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">Compute the tractogram of a diffusion dataset using MRtrix.</span>
+
+<span class="s2">Requirements:</span>
+<span class="s2">    - preprocessed DWI with bvals/bvecs: if distortion artifacts from</span>
+<span class="s2">      acquisition have been properly corrected.</span>
+<span class="s2">    - FreeSurfer recon-all or a T1 aligned to diffusion. T1 can be kept in</span>
+<span class="s2">      its native resolution as long as it is registered to diffusion.</span>
+
+
+<span class="s2">Example of command for HCP, using SIFT2:</span>
+
+<span class="s2">python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_mrtrix_tractogram </span><span class="se">\</span>
+<span class="s2">    -o /tmp/nsap/tractograms/mrtrix </span><span class="se">\</span>
+<span class="s2">    -d /tmp/nsap/tractograms/mrtrix/tmp </span><span class="se">\</span>
+<span class="s2">    -s 889579 </span><span class="se">\</span>
+<span class="s2">    -i /neurospin/hcp/ANALYSIS/3T_freesurfer/889579/T1w/Diffusion/data.nii.gz </span><span class="se">\</span>
+<span class="s2">    -b /neurospin/hcp/ANALYSIS/3T_freesurfer/889579/T1w/Diffusion/bvals </span><span class="se">\</span>
+<span class="s2">    -r /neurospin/hcp/ANALYSIS/3T_freesurfer/889579/T1w/Diffusion/bvecs </span><span class="se">\</span>
+<span class="s2">    -n 5 </span><span class="se">\</span>
+<span class="s2">    -T 1 </span><span class="se">\</span>
+<span class="s2">    -L 250 </span><span class="se">\</span>
+<span class="s2">    -C 0.06 </span><span class="se">\</span>
+<span class="s2">    -I </span><span class="se">\</span>
+<span class="s2">    -Z </span><span class="se">\</span>
+<span class="s2">    -M /neurospin/hcp/ANALYSIS/3T_freesurfer/889579/T1w/Diffusion/nodif_brain_mask.nii.gz </span><span class="se">\</span>
+<span class="s2">    -A /neurospin/hcp/ANALYSIS/3T_freesurfer/889579/T1w/T1w_acpc_dc_restore.nii.gz </span><span class="se">\</span>
+<span class="s2">    -S /neurospin/hcp/ANALYSIS/3T_freesurfer/889579/T1w </span><span class="se">\</span>
+<span class="s2">    -v 2</span>
+
+<span class="s2">Example of command for HCP, using global tractography (experimental):</span>
+
+<span class="s2">python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_mrtrix_tractogram </span><span class="se">\</span>
+<span class="s2">    -o /tmp/nsap/tractograms/mrtrix </span><span class="se">\</span>
+<span class="s2">    -d /tmp/nsap/tractograms/mrtrix/tmp </span><span class="se">\</span>
+<span class="s2">    -s 889579 </span><span class="se">\</span>
+<span class="s2">    -i /neurospin/hcp/ANALYSIS/3T_freesurfer/889579/T1w/Diffusion/data.nii.gz </span><span class="se">\</span>
+<span class="s2">    -b /neurospin/hcp/ANALYSIS/3T_freesurfer/889579/T1w/Diffusion/bvals </span><span class="se">\</span>
+<span class="s2">    -r /neurospin/hcp/ANALYSIS/3T_freesurfer/889579/T1w/Diffusion/bvecs </span><span class="se">\</span>
+<span class="s2">    -G </span><span class="se">\</span>
+<span class="s2">    -M /neurospin/hcp/ANALYSIS/3T_freesurfer/889579/T1w/Diffusion/nodif_brain_mask.nii.gz </span><span class="se">\</span>
+<span class="s2">    -A /neurospin/hcp/ANALYSIS/3T_freesurfer/889579/T1w/T1w_acpc_dc_restore.nii.gz </span><span class="se">\</span>
+<span class="s2">    -S</span>
+<span class="s2">    -v 2</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+
+<span class="k">def</span> <span class="nf">is_file</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Check file&#39;s existence - argparse &#39;type&#39; argument.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentError</span><span class="p">(</span><span class="s2">&quot;File does not exist: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">filepath</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">filepath</span>
+
+
+<span class="k">def</span> <span class="nf">get_cmd_line_args</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a command line argument parser and return a dict mapping</span>
+<span class="sd">    &lt;argument name&gt; -&gt; &lt;argument value&gt;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span>
+        <span class="n">prog</span><span class="o">=</span><span class="s2">&quot;pyconnectome_mrtrix_tractogram&quot;</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="n">textwrap</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span><span class="n">DOC</span><span class="p">),</span>
+        <span class="n">formatter_class</span><span class="o">=</span><span class="n">RawTextHelpFormatter</span><span class="p">)</span>
+
+    <span class="c1"># Required arguments</span>
+    <span class="n">required</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="s2">&quot;required arguments&quot;</span><span class="p">)</span>
+    <span class="n">required</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-o&quot;</span><span class="p">,</span> <span class="s2">&quot;--outdir&quot;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;&lt;path&gt;&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Directory where to output.&quot;</span><span class="p">)</span>
+    <span class="n">required</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-d&quot;</span><span class="p">,</span> <span class="s2">&quot;--tempdir&quot;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;&lt;path&gt;&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Where to write temporary directories e.g. /tmp.&quot;</span><span class="p">)</span>
+    <span class="n">required</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-s&quot;</span><span class="p">,</span> <span class="s2">&quot;--subject-id&quot;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;&lt;id&gt;&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Subject identifier.&quot;</span><span class="p">)</span>
+    <span class="n">required</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-i&quot;</span><span class="p">,</span> <span class="s2">&quot;--dwi&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">is_file</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;&lt;path&gt;&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path to the diffusion data.&quot;</span><span class="p">)</span>
+    <span class="n">required</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-b&quot;</span><span class="p">,</span> <span class="s2">&quot;--bvals&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">is_file</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;&lt;path&gt;&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path to the bvalue list.&quot;</span><span class="p">)</span>
+    <span class="n">required</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-r&quot;</span><span class="p">,</span> <span class="s2">&quot;--bvecs&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">is_file</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;&lt;path&gt;&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path to the list of diffusion-sensitized directions.&quot;</span><span class="p">)</span>
+    <span class="n">required</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-n&quot;</span><span class="p">,</span> <span class="s2">&quot;--nb-threads&quot;</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;&lt;int&gt;&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Number of threads.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Optional arguments</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-G&quot;</span><span class="p">,</span> <span class="s2">&quot;--global-tractography&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;If set run global tractography (tckglobal) instead of local &quot;</span>
+             <span class="s2">&quot;(tckgen).&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-T&quot;</span><span class="p">,</span> <span class="s2">&quot;--mtracks&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;&lt;int&gt;&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;For non-global tractography only. &quot;</span>
+             <span class="s2">&quot;Number of millions of tracks in raw tractogram.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-L&quot;</span><span class="p">,</span> <span class="s2">&quot;--maxlength&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;&lt;int&gt;&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;For non-global tractography only. Max fiber length in mm.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-C&quot;</span><span class="p">,</span> <span class="s2">&quot;--cutoff&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;&lt;float&gt;&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;For non-global tractography only. FOD cutoff=stopping criteria.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-I&quot;</span><span class="p">,</span> <span class="s2">&quot;--seed-gmwmi&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Set this option if you want to activate the &quot;</span>
+             <span class="s2">&quot;&#39;-seed_gmwmi&#39; option of MRtrix &#39;tckgen&#39;, to &quot;</span>
+             <span class="s2">&quot;seed from the GM/WM interface. Otherwise, and &quot;</span>
+             <span class="s2">&quot;by default, the seeding is done in white matter &quot;</span>
+             <span class="s2">&quot;(&#39;-seed_dynamic&#39; option).&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-R&quot;</span><span class="p">,</span> <span class="s2">&quot;--sift-mtracks&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;&lt;int&gt;&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Number of millions of tracks to keep with SIFT. &quot;</span>
+             <span class="s2">&quot;If not set, SIFT is not applied.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-Z&quot;</span><span class="p">,</span> <span class="s2">&quot;--sift2&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;To activate SIFT2.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-B&quot;</span><span class="p">,</span> <span class="s2">&quot;--nodif-brain&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">is_file</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;&lt;path&gt;&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Diffusion brain-only Nifti volume with bvalue ~ 0. If not &quot;</span>
+              <span class="s2">&quot;passed, it is generated automatically by averaging all the b0 &quot;</span>
+              <span class="s2">&quot;volumes of the DWI.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-M&quot;</span><span class="p">,</span> <span class="s2">&quot;--nodif-brain-mask&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">is_file</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;&lt;path&gt;&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path to the Nifti brain binary mask in diffusion. If not &quot;</span>
+        <span class="s2">&quot;passed, it is created with MRtrix &#39;dwi2mask&#39;.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-A&quot;</span><span class="p">,</span> <span class="s2">&quot;--fast-t1-brain&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">is_file</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;&lt;path&gt;&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;By default FSL FAST is run on the FreeSurfer &#39;brain.mgz&#39;. If &quot;</span>
+             <span class="s2">&quot;you want the WM probability map to be computed from another T1, &quot;</span>
+             <span class="s2">&quot;pass the T1 brain-only volume. Note that it has to be aligned &quot;</span>
+             <span class="s2">&quot;with diffusion. This argument is useful for HCP, where some &quot;</span>
+             <span class="s2">&quot;FreeSurfer &#39;brain.mgz&#39; cannot be processed by FSL FAST.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-S&quot;</span><span class="p">,</span> <span class="s2">&quot;--subjects-dir&quot;</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;&lt;path&gt;&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;FreeSurfer subjects directory. To set or bypass the &quot;</span>
+             <span class="s2">&quot;$SUBJECTS_DIR environment variable.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-U&quot;</span><span class="p">,</span> <span class="s2">&quot;--no-mif-gz&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_false&quot;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s2">&quot;mif_gz&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;To not compress MIF files: .mif instead of .mif.gz.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-D&quot;</span><span class="p">,</span> <span class="s2">&quot;--delete-raw-tracks&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;To save disk space, delete the raw tracks when &quot;</span>
+             <span class="s2">&quot;the connectome has been computed.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-K&quot;</span><span class="p">,</span> <span class="s2">&quot;--keep-dwi-mif&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_false&quot;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s2">&quot;delete_dwi_mif&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;To not delete &lt;outdir&gt;/DWI.mif, which is a copy &quot;</span>
+             <span class="s2">&quot;of the input &lt;dwi&gt; in the .mif format.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-H&quot;</span><span class="p">,</span> <span class="s2">&quot;--fs-sh&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">is_file</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;&lt;path&gt;&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Bash script initializing FreeSurfer&#39;s environment.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-F&quot;</span><span class="p">,</span> <span class="s2">&quot;--fsl-sh&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">is_file</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;&lt;path&gt;&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Bash script initializing FSL&#39;s environment.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-v&quot;</span><span class="p">,</span> <span class="s2">&quot;--verbose&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">default</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Increase the verbosity level: 0 silent, [1, 2] verbose.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Create a dict of arguments to pass to the &#39;main&#39; function</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+    <span class="n">verbose</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;verbose&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;fs_sh&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;fs_sh&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">DEFAULT_FREESURFER_PATH</span>
+    <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;fsl_sh&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;fsl_sh&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">DEFAULT_FSL_PATH</span>
+
+    <span class="k">return</span> <span class="n">kwargs</span><span class="p">,</span> <span class="n">verbose</span>
+</pre></div>
+</div>
+<p>Parse the command line.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">inputs</span><span class="p">,</span> <span class="n">verbose</span> <span class="o">=</span> <span class="n">get_cmd_line_args</span><span class="p">()</span>
+<span class="n">tool</span> <span class="o">=</span> <span class="s2">&quot;pyconnectome_mrtrix_tractogram&quot;</span>
+<span class="n">timestamp</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+<span class="n">tool_version</span> <span class="o">=</span> <span class="n">version</span>
+<span class="n">fsl_version</span> <span class="o">=</span> <span class="n">FSLWrapper</span><span class="p">([],</span> <span class="n">shfile</span><span class="o">=</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;fsl_sh&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">version</span>
+<span class="n">freesurfer_version</span> <span class="o">=</span> <span class="n">FSWrapper</span><span class="p">([],</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;fs_sh&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">version</span>
+<span class="n">params</span> <span class="o">=</span> <span class="nb">locals</span><span class="p">()</span>
+<span class="n">runtime</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">([(</span><span class="n">name</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
+               <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;tool&quot;</span><span class="p">,</span> <span class="s2">&quot;tool_version&quot;</span><span class="p">,</span> <span class="s2">&quot;fsl_version&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;freesurfer_version&quot;</span><span class="p">,</span> <span class="s2">&quot;timestamp&quot;</span><span class="p">)])</span>
+<span class="n">outputs</span> <span class="o">=</span> <span class="bp">None</span>
+<span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="n">pprint</span><span class="p">(</span><span class="s2">&quot;[info] Starting MRTrix3 tractogram ...&quot;</span><span class="p">)</span>
+    <span class="n">pprint</span><span class="p">(</span><span class="s2">&quot;[info] Runtime:&quot;</span><span class="p">)</span>
+    <span class="n">pprint</span><span class="p">(</span><span class="n">runtime</span><span class="p">)</span>
+    <span class="n">pprint</span><span class="p">(</span><span class="s2">&quot;[info] Inputs:&quot;</span><span class="p">)</span>
+    <span class="n">pprint</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Start the tractogram computation.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">tracks</span><span class="p">,</span> <span class="n">sift_tracks</span><span class="p">,</span> <span class="n">sift2_weights</span> <span class="o">=</span> <span class="n">mrtrix_tractogram</span><span class="p">(</span><span class="o">**</span><span class="n">inputs</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Update the outputs and save them and the inputs in a &#8216;logs&#8217; directory.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">logdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;outdir&quot;</span><span class="p">],</span> <span class="s2">&quot;logs&quot;</span><span class="p">)</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">logdir</span><span class="p">):</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">logdir</span><span class="p">)</span>
+<span class="n">params</span> <span class="o">=</span> <span class="nb">locals</span><span class="p">()</span>
+<span class="n">outputs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">([(</span><span class="n">name</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
+               <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;tracks&quot;</span><span class="p">,</span> <span class="s2">&quot;sift_tracks&quot;</span><span class="p">,</span> <span class="s2">&quot;sift2_weights&quot;</span><span class="p">)])</span>
+<span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">final_struct</span> <span class="ow">in</span> <span class="p">[(</span><span class="s2">&quot;inputs&quot;</span><span class="p">,</span> <span class="n">inputs</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;outputs&quot;</span><span class="p">,</span> <span class="n">outputs</span><span class="p">),</span>
+                           <span class="p">(</span><span class="s2">&quot;runtime&quot;</span><span class="p">,</span> <span class="n">runtime</span><span class="p">)]:</span>
+    <span class="n">log_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">logdir</span><span class="p">,</span> <span class="s2">&quot;{0}.json&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">log_file</span><span class="p">,</span> <span class="s2">&quot;wt&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">open_file</span><span class="p">:</span>
+        <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">final_struct</span><span class="p">,</span> <span class="n">open_file</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">check_circular</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                  <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+    <span class="n">pprint</span><span class="p">(</span><span class="s2">&quot;[info] Outputs:&quot;</span><span class="p">)</span>
+    <span class="n">pprint</span><span class="p">(</span><span class="n">outputs</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Total running time of the script:</strong> ( 0 minutes  0.000 seconds)</p>
+<div class="sphx-glr-footer container">
+<div class="sphx-glr-download container">
+<a class="reference download internal" href="../_downloads/pyconnectome_mrtrix_tractogram.py" download=""><code class="xref download docutils literal"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">pyconnectome_mrtrix_tractogram.py</span></code></a></div>
+<div class="sphx-glr-download container">
+<a class="reference download internal" href="../_downloads/pyconnectome_mrtrix_tractogram.ipynb" download=""><code class="xref download docutils literal"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">pyconnectome_mrtrix_tractogram.ipynb</span></code></a></div>
+</div>
+<p class="sphx-glr-signature">Gallery generated by Sphinx-Gallery</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+
+    <div class="clearer">
+    </div>
+  </div>
+  
+</div>
+
+<div class="footer">
+    &copy; 2017, pyConnectome developers &lt;antoine.grigis@cea.fr&gt;.
+</div>
+  </body>
+</html>

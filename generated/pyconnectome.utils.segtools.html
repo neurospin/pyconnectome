@@ -1,0 +1,537 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+  
+    <title>PYCONNECTOME &mdash; pyConnectome</title>
+  <!-- htmltitle is before nature.css - we use this hack to load bootstrap first -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="../_static/css/bootstrap.min.css" media="screen" />
+
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="pyConnectome" href="../index.html" />
+  
+   
+       <script type="text/javascript" src="../_static/sidebar.js"></script>
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="../_static/js/bootstrap.min.js" type="text/javascript"></script>
+
+  <script src="../_static/js/angular.min.js" type="text/javascript"></script>
+  <script type="text/javascript">
+    var app = angular.module("navApp", []);
+    app.controller('navCtrl', ['$scope', '$window', function($scope, $window) {
+      $scope.isActive = function (viewLocation) {
+        var rel = $window.location.pathname.split("/")
+        rel = rel[rel.length - 1]
+        rel = rel.split(".")[0]
+        var active = (viewLocation === rel);
+        return active;};
+    }]);
+  </script>
+
+  </head>
+  <body role="document"><div class="banner">
+  <div class="container-fluid banner-container">
+    <div class="row banner-inner">
+      <div class="col-xs-4">
+        <img alt="Logo" src="../_static/pyconnectome.png">
+      </div>
+      <div class="col-xs-8">
+            <p>Diffusion MRI connectome.</p>
+      </div>
+    </div>  
+  </div>
+</div><nav class="navbar navbar-default navbar-static-top">
+  <div class="container-fluid">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+        </a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse" ng-controller="navCtrl" ng-app="navApp">
+      <ul class="nav navbar-nav">
+        <li ng-class="{ active: isActive('index') }"><a href="../index.html">Home</a></li>
+        <li ng-class="{ active: isActive('installation') }"><a href="installation.html">Installation</a></li>
+        <li ng-class="{ active: isActive('gallery') }"><a href="../auto_gallery/gallery.html">Gallery</a></li>
+        <li ng-class="{ active: isActive('documentation') }"><a href="documentation.html">API documentation</a></li>
+        <!--<li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"> <span class="caret"></span></a>
+          <ul class="dropdown-menu">
+	        <li><a href="pyconnectome.html">Pyconnectome</a></li>
+<li><a href="pyconnectome.tractography.html">Pyconnectome.tractography</a></li>
+<li><a href="pyconnectome.metrics.html">Pyconnectome.metrics</a></li>
+<li><a href="pyconnectome.utils.html">Pyconnectome.utils</a></li>
+<li><a href="pyconnectome.models.html">Pyconnectome.models</a></li>
+<li><a href="pyconnectome.plotting.html">Pyconnectome.plotting</a></li>
+<li><a href="pyconnectome.connectomes.html">Pyconnectome.connectomes</a></li>
+          </ul>
+        </li>-->
+        <li><a href="https://github.com/AGrigis/pysphinxdoc">PYSPHINXDOC</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+<div class="content-wrapper">
+    <div class="sphinxsidebar">
+      <div class="sphinxsidebarwrapper">
+
+        <!-- info setup -->
+          <p class="doc-version">
+           This documentation is for pyconnectome <strong>version 1.0.0</strong>
+          </p>
+        <p class="citing">
+          If you use the software, please do not esitate to 
+          <a &mdash; <a href="https://github.com/neurospin/pyconnectome">
+          Report a Bug</a>.
+        </p>
+
+      <!-- toc tree -->
+      <ul class="simple">
+</ul>
+
+
+      </div>
+    </div>
+  
+
+  <div class="content">
+      
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <span class="target" id="module-pyconnectome.utils.segtools"></span><p>Segmentation utilities.</p>
+<dl class="function">
+<dt id="pyconnectome.utils.segtools.bet2">
+<code class="descclassname">pyconnectome.utils.segtools.</code><code class="descname">bet2</code><span class="sig-paren">(</span><em>input_file</em>, <em>output_fileroot</em>, <em>outline=False</em>, <em>mask=False</em>, <em>skull=False</em>, <em>nooutput=False</em>, <em>f=0.5</em>, <em>g=0</em>, <em>radius=None</em>, <em>smooth=None</em>, <em>c=None</em>, <em>threshold=False</em>, <em>mesh=False</em>, <em>shfile='/etc/fsl/5.0/fsl.sh'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pyconnectome/utils/segtools.html#bet2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyconnectome.utils.segtools.bet2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wraps command bet2.</p>
+<p>Deletes non-brain tissue from an image of the whole head. It can also
+estimate the inner and outer skull surfaces, and outer scalp surface,
+if you have good quality T1 and T2 input images.</p>
+<dl class="docutils">
+<dt>The basic usage is:</dt>
+<dd>bet2 &lt;input_fileroot&gt; &lt;output_fileroot&gt; [options]</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>input_file: (mandatory)</strong></p>
+<blockquote>
+<div><p>Input image.</p>
+</div></blockquote>
+<p><strong>output_fileroot: (mandatory)</strong></p>
+<blockquote>
+<div><p>Output directory.</p>
+</div></blockquote>
+<p><strong>outline: bool (optional, default False)</strong></p>
+<blockquote>
+<div><p>Generate brain surface outline overlaid onto original image.</p>
+</div></blockquote>
+<p><strong>mask: bool (optional, default False)</strong></p>
+<blockquote>
+<div><p>Generate binary brain mask.</p>
+</div></blockquote>
+<p><strong>skull: bool (optional, default False)</strong></p>
+<blockquote>
+<div><p>Generate approximate skull image.
+(not as clean as what betsurf generates).</p>
+</div></blockquote>
+<p><strong>nooutput: bool (optional, default False)</strong></p>
+<blockquote>
+<div><p>Don&#8217;t generate segmented brain image output.</p>
+</div></blockquote>
+<p><strong>f: float (optional, default 0.5)</strong></p>
+<blockquote>
+<div><p>Fractional intensity threshold (0-&gt;1).
+Smaller values give larger brain outline estimates.</p>
+</div></blockquote>
+<p><strong>g: int (optional, default 0)</strong></p>
+<blockquote>
+<div><p>Vertical gradient in fractional intensity threshold (-1-&gt;1).
+Positive values give larger brain outline at bottom, smaller at top.</p>
+</div></blockquote>
+<p><strong>radius: (optional)</strong></p>
+<blockquote>
+<div><p>Head radius (mm not voxels).
+Initial surface sphere is set to half of this.</p>
+</div></blockquote>
+<p><strong>smooth</strong> : float (optional, default 1)</p>
+<blockquote>
+<div><p>Smoothness factor.
+Values smaller than 1 produce more detailed brain surface, values
+larger than one produce smoother, less detailed surface.</p>
+</div></blockquote>
+<p><strong>c: (optional)</strong></p>
+<blockquote>
+<div><p>Centre-of-gravity (voxels not mm) of initial mesh surface (x, y, z).</p>
+</div></blockquote>
+<p><strong>threshold: bool (optional, default False)</strong></p>
+<blockquote>
+<div><p>Apply thresholding to segmented brain image and mask.</p>
+</div></blockquote>
+<p><strong>mesh: bool (optional, default False).</strong></p>
+<blockquote>
+<div><p>Generates brain surface as mesh in .vtk format.</p>
+</div></blockquote>
+<p><strong>shfile: (optional, default DEFAULT_FSL_PATH)</strong></p>
+<blockquote>
+<div><p>The FSL configuration batch.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">output: str</p>
+<blockquote>
+<div><p>the extracted brain volume.</p>
+</div></blockquote>
+<p>mask_file: str</p>
+<blockquote>
+<div><p>the binary mask of the extracted brain volume.</p>
+</div></blockquote>
+<p>mesh_file: str</p>
+<blockquote>
+<div><p>the brain surface as a vtk mesh.</p>
+</div></blockquote>
+<p>outline_file: str</p>
+<blockquote>
+<div><p>the brain surface outline overlaid onto original image.</p>
+</div></blockquote>
+<p>inskull_mask_file, inskull_mesh_file,</p>
+<p>outskull_mask_file, outskull_mesh_file,</p>
+<p>outskin_mask_file, outskin_mesh_file,</p>
+<p>skull_mask_file: str</p>
+<blockquote>
+<div><p>rough skull image.</p>
+</div></blockquote>
+<p>shfile: str (optional, default local path)</p>
+<blockquote class="last">
+<div><p>the path to the FSL &#8216;fsl.sh&#8217; configuration file.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyconnectome.utils.segtools.create_lausanne2008_lut">
+<code class="descclassname">pyconnectome.utils.segtools.</code><code class="descname">create_lausanne2008_lut</code><span class="sig-paren">(</span><em>outdir</em>, <em>freesurfer_lut=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pyconnectome/utils/segtools.html#create_lausanne2008_lut"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyconnectome.utils.segtools.create_lausanne2008_lut" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a Look Up Table for the Lausanne2008 atlas. It has the same
+format as the FreeSurfer LUT (FreeSurferColorLUT.txt), but it lists only
+the regions of the Lausanne2008 atlas and the integer labels are the
+row/col positions of the regions in the connectome.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>outdir: str</strong></p>
+<blockquote>
+<div><p>Path to directory where to write &#8220;Lausanne2008LUT.txt&#8221;</p>
+</div></blockquote>
+<p><strong>freesurfer_lut: str, default None</strong></p>
+<blockquote class="last">
+<div><p>Path to the FreeSurfer Look Up Table. If not passed, try to use
+$FREESURFER_HOME/FreeSurferColorLUT.txt. If not found raise Exception.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyconnectome.utils.segtools.fast">
+<code class="descclassname">pyconnectome.utils.segtools.</code><code class="descname">fast</code><span class="sig-paren">(</span><em>input_file</em>, <em>out_fileroot</em>, <em>klass=3</em>, <em>im_type=1</em>, <em>segments=False</em>, <em>bias_field=True</em>, <em>bias_corrected_im=True</em>, <em>probabilities=False</em>, <em>shfile='/etc/fsl/5.0/fsl.sh'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pyconnectome/utils/segtools.html#fast"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyconnectome.utils.segtools.fast" title="Permalink to this definition">¶</a></dt>
+<dd><p>FAST (FMRIB&#8217;s Automated Segmentation Tool) segments a 3D image of
+the brain into different tissue types (Grey Matter, White Matter, CSF,
+etc.), whilst also correcting for spatial intensity variations
+(also known as bias field or RF inhomogeneities).
+The underlying method is based on a hidden Markov random field model and
+an associated Expectation-Maximization algorithm.</p>
+<p>Usage: fast [options] file(s)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>input_file: str (mandatory)</strong></p>
+<blockquote>
+<div><p>the image to be segmented.</p>
+</div></blockquote>
+<p><strong>out: str (mandatory)</strong></p>
+<blockquote>
+<div><p>output basename.</p>
+</div></blockquote>
+<p><strong>klass: int (optional, default 3)</strong></p>
+<blockquote>
+<div><p>number of tissue-type classes.</p>
+</div></blockquote>
+<p><strong>im_type: int (optional, default 1)</strong></p>
+<blockquote>
+<div><p>type of image 1=T1, 2=T2, 3=PD.</p>
+</div></blockquote>
+<p><strong>segments: bool (optional, default False)</strong></p>
+<blockquote>
+<div><p>outputs a separate binary image for each tissue type.</p>
+</div></blockquote>
+<p><strong>bias_field: bool (optional, default True)</strong></p>
+<blockquote>
+<div><p>output estimated bias field.</p>
+</div></blockquote>
+<p><strong>bias_corrected_im: bool (optional, default True)</strong></p>
+<blockquote>
+<div><p>output bias-corrected image.</p>
+</div></blockquote>
+<p><strong>probabilities: bool (optional, default False)</strong></p>
+<blockquote>
+<div><p>outputs individual probability maps.</p>
+</div></blockquote>
+<p><strong>shfile: str (optional, default local path)</strong></p>
+<blockquote>
+<div><p>the path to the FSL &#8216;fsl.sh&#8217; configuration file.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">tpm: list of str</p>
+<blockquote>
+<div><p>the generated tissue preobaility maps.</p>
+</div></blockquote>
+<p>tsm: list of str</p>
+<blockquote>
+<div><p>the generated tissue segmentation maps.</p>
+</div></blockquote>
+<p>segmentation_file: str</p>
+<blockquote>
+<div><p>the segmented tissues.</p>
+</div></blockquote>
+<p>bias_file: str</p>
+<blockquote>
+<div><p>the bias field.</p>
+</div></blockquote>
+<p>biascorrected_file: str</p>
+<blockquote class="last">
+<div><p>the bias corrected input image.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyconnectome.utils.segtools.fix_freesurfer_subcortical_parcellation">
+<code class="descclassname">pyconnectome.utils.segtools.</code><code class="descname">fix_freesurfer_subcortical_parcellation</code><span class="sig-paren">(</span><em>parc</em>, <em>t1_brain</em>, <em>lut</em>, <em>output</em>, <em>tempdir=None</em>, <em>nb_threads=None</em>, <em>fsl_sh='/etc/fsl/5.0/fsl.sh'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pyconnectome/utils/segtools.html#fix_freesurfer_subcortical_parcellation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyconnectome.utils.segtools.fix_freesurfer_subcortical_parcellation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use the MRtrix labelsgmfix command to correct the FreeSurfer
+subcortical parcellation.
+It uses FSL First to recompute 5 subcortical structures.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>parc: str</strong></p>
+<blockquote>
+<div><p>Path to the FreeSurfer parcellation, generally aparc+aseg or
+aparc.a2009s+aseg.</p>
+</div></blockquote>
+<p><strong>t1_brain: str</strong></p>
+<blockquote>
+<div><p>Path to the T1 brain-only image on which recompute the segmentation.</p>
+</div></blockquote>
+<p><strong>lut: str</strong></p>
+<blockquote>
+<div><p>Path to the Look Up Table. If you haven&#8217;t change the labels it should
+be FreeSurfer LUT (FreeSurferColorLUT.txt in $FREESURFER_HOME dir).</p>
+</div></blockquote>
+<p><strong>output: str</strong></p>
+<blockquote>
+<div><p>Path to output fixed parcellation.</p>
+</div></blockquote>
+<p><strong>tempdir: str, default None</strong></p>
+<blockquote>
+<div><p>Directory that MRtrix will use as temporary directory.</p>
+</div></blockquote>
+<p><strong>nb_threads: int, default None</strong></p>
+<blockquote>
+<div><p>Number of threads that MRtrix is allowed to use.</p>
+</div></blockquote>
+<p><strong>fsl_sh: str, default DEFAULT_FSL_PATH</strong></p>
+<blockquote>
+<div><p>The FSL configuration script.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">output: str</p>
+<blockquote class="last">
+<div><p>Path to output fixed parcellation.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyconnectome.utils.segtools.get_region_names_of_lausanne_2008_atlas">
+<code class="descclassname">pyconnectome.utils.segtools.</code><code class="descname">get_region_names_of_lausanne_2008_atlas</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pyconnectome/utils/segtools.html#get_region_names_of_lausanne_2008_atlas"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyconnectome.utils.segtools.get_region_names_of_lausanne_2008_atlas" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the ordered region names of the Lausanne 2008 atlas as in
+standard papers.</p>
+<p>It corresponds to the Desikan atlas in the cortex, without the corpus
+callosum along with 7 subcortical regions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">atlas_names: list of str</p>
+<blockquote class="last">
+<div><p>Ordered region names of the Lausanne 2008 atlas.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyconnectome.utils.segtools.robustfov">
+<code class="descclassname">pyconnectome.utils.segtools.</code><code class="descname">robustfov</code><span class="sig-paren">(</span><em>input_file</em>, <em>output_file</em>, <em>brain_size=170</em>, <em>matrix_file=None</em>, <em>fsl_sh='/etc/fsl/5.0/fsl.sh'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pyconnectome/utils/segtools.html#robustfov"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyconnectome.utils.segtools.robustfov" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reduce FOV of image to remove lower head and neck.
+It is based on FSL robustfov command.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>input_file: str</strong></p>
+<blockquote>
+<div><p>the file to be cropped.</p>
+</div></blockquote>
+<p><strong>output_file: str</strong></p>
+<blockquote>
+<div><p>the cropped file name.</p>
+</div></blockquote>
+<p><strong>brain_size: float (default 170)</strong></p>
+<blockquote>
+<div><p>the size of brain in z-dimension (in mm).</p>
+</div></blockquote>
+<p><strong>matrix_file: str (default None)</strong></p>
+<blockquote>
+<div><p>if set, write the transformation matrix.</p>
+</div></blockquote>
+<p><strong>fsl_sh: str, default DEFAULT_FSL_PATH</strong></p>
+<blockquote class="last">
+<div><p>The FSL configuration script.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyconnectome.utils.segtools.roi_from_bbox">
+<code class="descclassname">pyconnectome.utils.segtools.</code><code class="descname">roi_from_bbox</code><span class="sig-paren">(</span><em>input_file</em>, <em>bbox</em>, <em>output_file</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pyconnectome/utils/segtools.html#roi_from_bbox"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyconnectome.utils.segtools.roi_from_bbox" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a ROI image from a bounding box.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>input_file: str</strong></p>
+<blockquote>
+<div><p>the reference image where the bbox is defined.</p>
+</div></blockquote>
+<p><strong>bbox: 6-uplet</strong></p>
+<blockquote>
+<div><p>the corner of the bbox in voxel coordinates: xmin, xmax, ymin, ymax,
+zmin, zmax.</p>
+</div></blockquote>
+<p><strong>output_file: str</strong></p>
+<blockquote class="last">
+<div><p>the desired ROI image file.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pyconnectome.utils.segtools.white_matter_interface">
+<code class="descclassname">pyconnectome.utils.segtools.</code><code class="descname">white_matter_interface</code><span class="sig-paren">(</span><em>t1_brain_file</em>, <em>outdir</em>, <em>tempdir</em>, <em>fsl_sh='/etc/fsl/5.0/fsl.sh'</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pyconnectome/utils/segtools.html#white_matter_interface"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pyconnectome.utils.segtools.white_matter_interface" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a probabilist mask image appropriate for seeding streamlines
+on the grey matter-white matter interface using MRtrix.
+This mask deals with partial volume effects.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>t1_brain_file: str</strong></p>
+<blockquote>
+<div><p>the anatomical file used to generate the probabilist mask using MRtrix
+and FSL FAST.</p>
+</div></blockquote>
+<p><strong>outdir: str</strong></p>
+<blockquote>
+<div><p>the destination folder.</p>
+</div></blockquote>
+<p><strong>tempdir: str</strong></p>
+<blockquote>
+<div><p>a temporary folder for MRtrix with sufficient space.</p>
+</div></blockquote>
+<p><strong>fsl_sh: str, default DEFAULT_FSL_PATH</strong></p>
+<blockquote>
+<div><p>the FSL configuration script.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">gmwmi_mask_file: str</p>
+<blockquote class="last">
+<div><p>the generated probabilist seed mask.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+
+
+          </div>
+        </div>
+      </div>
+
+    <div class="clearer">
+    </div>
+  </div>
+  
+</div>
+
+<div class="footer">
+    &copy; 2017, pyConnectome developers &lt;antoine.grigis@cea.fr&gt;.
+</div>
+  </body>
+</html>

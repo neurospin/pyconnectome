@@ -1,0 +1,44 @@
+.. AUTO-GENERATED FILE -- DO NOT EDIT!
+
+:orphan:
+
+API documentation of *pyconnectome*
+====================================
+
+
+Package to simplify to explore the connectome.
+In the root location of the module are implemented:
+
+    * dedicated exceptions.
+    * wrappers.
+    * configuration parser.
+
+
+.. raw:: html
+
+    <br/>    <!-- Block section -->
+    <table border='1' class='docutils' style='width:100%'>
+    <colgroup><col width='25%'/><col width='75%'/></colgroup>
+    <tbody valign='top'>
+    <tr class='row-odd'>
+    <td><a class='reference internal' href='pyconnectome.exceptions.html'><em>pyconnectome.exceptions</em></a></td>
+    <td>
+        <p>Module custom exceptions.</p>
+    </td>
+    </tr>
+    <tr class='row-even'>
+    <td><a class='reference internal' href='pyconnectome.configuration.html'><em>pyconnectome.configuration</em></a></td>
+    <td>
+        <p>Module that provides tools to configure external softwares.</p>
+    </td>
+    </tr>
+    <tr class='row-odd'>
+    <td><a class='reference internal' href='pyconnectome.wrapper.html'><em>pyconnectome.wrapper</em></a></td>
+    <td>
+        <p>Modules that provides tools to wrap external softwares.</p>
+    </td>
+    </tr>
+    </tbody>
+
+
+    </table>

@@ -1,0 +1,382 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+  
+    <title>PYCONNECTOME &mdash; pyConnectome</title>
+  <!-- htmltitle is before nature.css - we use this hack to load bootstrap first -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="../../../_static/css/bootstrap.min.css" media="screen" />
+
+    
+    <link rel="stylesheet" href="../../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/gallery.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="pyConnectome" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" />
+  
+   
+       <script type="text/javascript" src="../../../_static/sidebar.js"></script>
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="../../../_static/js/bootstrap.min.js" type="text/javascript"></script>
+
+  <script src="../../../_static/js/angular.min.js" type="text/javascript"></script>
+  <script type="text/javascript">
+    var app = angular.module("navApp", []);
+    app.controller('navCtrl', ['$scope', '$window', function($scope, $window) {
+      $scope.isActive = function (viewLocation) {
+        var rel = $window.location.pathname.split("/")
+        rel = rel[rel.length - 1]
+        rel = rel.split(".")[0]
+        var active = (viewLocation === rel);
+        return active;};
+    }]);
+  </script>
+
+  </head>
+  <body role="document"><div class="banner">
+  <div class="container-fluid banner-container">
+    <div class="row banner-inner">
+      <div class="col-xs-4">
+        <img alt="Logo" src="../../../_static/pyconnectome.png">
+      </div>
+      <div class="col-xs-8">
+            <p>Diffusion MRI connectome.</p>
+      </div>
+    </div>  
+  </div>
+</div><nav class="navbar navbar-default navbar-static-top">
+  <div class="container-fluid">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../../../index.html">
+        </a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse" ng-controller="navCtrl" ng-app="navApp">
+      <ul class="nav navbar-nav">
+        <li ng-class="{ active: isActive('index') }"><a href="../../../index.html">Home</a></li>
+        <li ng-class="{ active: isActive('installation') }"><a href="../../../generated/installation.html">Installation</a></li>
+        <li ng-class="{ active: isActive('gallery') }"><a href="../../../auto_gallery/gallery.html">Gallery</a></li>
+        <li ng-class="{ active: isActive('documentation') }"><a href="../../../generated/documentation.html">API documentation</a></li>
+        <!--<li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"> <span class="caret"></span></a>
+          <ul class="dropdown-menu">
+	        <li><a href="../../../generated/pyconnectome.html">Pyconnectome</a></li>
+<li><a href="../../../generated/pyconnectome.tractography.html">Pyconnectome.tractography</a></li>
+<li><a href="../../../generated/pyconnectome.metrics.html">Pyconnectome.metrics</a></li>
+<li><a href="../../../generated/pyconnectome.utils.html">Pyconnectome.utils</a></li>
+<li><a href="../../../generated/pyconnectome.models.html">Pyconnectome.models</a></li>
+<li><a href="../../../generated/pyconnectome.plotting.html">Pyconnectome.plotting</a></li>
+<li><a href="../../../generated/pyconnectome.connectomes.html">Pyconnectome.connectomes</a></li>
+          </ul>
+        </li>-->
+        <li><a href="https://github.com/AGrigis/pysphinxdoc">PYSPHINXDOC</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+<div class="content-wrapper">
+    <div class="sphinxsidebar">
+      <div class="sphinxsidebarwrapper">
+
+        <!-- info setup -->
+          <p class="doc-version">
+           This documentation is for pyconnectome <strong>version 1.0.0</strong>
+          </p>
+        <p class="citing">
+          If you use the software, please do not esitate to 
+          <a &mdash; <a href="https://github.com/neurospin/pyconnectome">
+          Report a Bug</a>.
+        </p>
+
+      <!-- toc tree -->
+      
+
+      </div>
+    </div>
+  
+
+  <div class="content">
+      
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pyconnectome.connectomes.complete</h1><div class="highlight"><pre>
+<span></span><span class="c1">##########################################################################</span>
+<span class="c1"># NSAp - Copyright (C) CEA, 2016</span>
+<span class="c1"># Distributed under the terms of the CeCILL-B license, as published by</span>
+<span class="c1"># the CEA-CNRS-INRIA. Refer to the LICENSE file or to</span>
+<span class="c1"># http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html</span>
+<span class="c1"># for details.</span>
+<span class="c1">##########################################################################</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Compute the connectome of a given tesellation, like the FreeSurfer, using</span>
+<span class="sd">FSL Probtrackx2.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># Standard import</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">import</span> <span class="nn">nibabel</span>
+
+<span class="c1"># PyFreeSurfer import</span>
+<span class="kn">from</span> <span class="nn">pyfreesurfer</span> <span class="kn">import</span> <span class="n">DEFAULT_FREESURFER_PATH</span>
+<span class="kn">from</span> <span class="nn">pyfreesurfer.wrapper</span> <span class="kn">import</span> <span class="n">FSWrapper</span>
+<span class="kn">from</span> <span class="nn">pyfreesurfer.utils.filetools</span> <span class="kn">import</span> <span class="n">get_or_check_freesurfer_subjects_dir</span>
+<span class="kn">from</span> <span class="nn">pyfreesurfer.conversions.volconvs</span> <span class="kn">import</span> <span class="n">mri_binarize</span>
+<span class="kn">from</span> <span class="nn">pyfreesurfer.conversions.volconvs</span> <span class="kn">import</span> <span class="n">mri_convert</span>
+
+<span class="c1"># Package import</span>
+<span class="kn">from</span> <span class="nn">pyconnectome</span> <span class="kn">import</span> <span class="n">DEFAULT_FSL_PATH</span>
+<span class="kn">from</span> <span class="nn">pyconnectome.wrapper</span> <span class="kn">import</span> <span class="n">FSLWrapper</span>
+<span class="kn">from</span> <span class="nn">pyconnectome.tractography.probabilist</span> <span class="kn">import</span> <span class="n">probtrackx2</span>
+
+
+<div class="viewcode-block" id="probtrackx2_connectome_complete"><a class="viewcode-back" href="../../../generated/pyconnectome.connectomes.complete.html#pyconnectome.connectomes.complete.probtrackx2_connectome_complete">[docs]</a><span class="k">def</span> <span class="nf">probtrackx2_connectome_complete</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span>
+                                    <span class="n">subject_id</span><span class="p">,</span>
+                                    <span class="n">lh_surf</span><span class="p">,</span>
+                                    <span class="n">rh_surf</span><span class="p">,</span>
+                                    <span class="n">nodif_brain</span><span class="p">,</span>
+                                    <span class="n">nodif_brain_mask</span><span class="p">,</span>
+                                    <span class="n">bedpostx_dir</span><span class="p">,</span>
+                                    <span class="n">nsamples</span><span class="p">,</span>
+                                    <span class="n">nsteps</span><span class="p">,</span>
+                                    <span class="n">steplength</span><span class="p">,</span>
+                                    <span class="n">subjects_dir</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                                    <span class="n">loopcheck</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                                    <span class="n">cthr</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
+                                    <span class="n">fibthresh</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
+                                    <span class="n">distthresh</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+                                    <span class="n">sampvox</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+                                    <span class="n">fs_sh</span><span class="o">=</span><span class="n">DEFAULT_FREESURFER_PATH</span><span class="p">,</span>
+                                    <span class="n">fsl_sh</span><span class="o">=</span><span class="n">DEFAULT_FSL_PATH</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Compute the connectome of a given tesellation, like the FreeSurfer,</span>
+<span class="sd">    using ProbTrackx2.</span>
+
+<span class="sd">    Requirements:</span>
+<span class="sd">        - brain masks for the preprocessed DWI: nodif_brain and</span>
+<span class="sd">          nodif_brain_mask.</span>
+<span class="sd">        - FreeSurfer: result of recon-all on the T1.</span>
+<span class="sd">        - FSL Bedpostx: computed for the preprocessed DWI.</span>
+
+<span class="sd">    Connectome construction strategy:</span>
+<span class="sd">        - Pathways are constructed from &#39;constitutive points&#39; and not from</span>
+<span class="sd">          endpoints. A pathway is the result of 2 samples propagating in</span>
+<span class="sd">          opposite directions from a seed point. It is done using the</span>
+<span class="sd">          --omatrix3 option of Probtrackx2.</span>
+<span class="sd">        - The seed mask is the mask of WM voxels that are neighbors</span>
+<span class="sd">          (12-connexity) of nodes.</span>
+<span class="sd">        - The stop mask is the inverse of white matter, i.e. a sample stops</span>
+<span class="sd">          propagating as soon as it leaves the white matter.</span>
+
+<span class="sd">    Note:</span>
+
+<span class="sd">    --randfib refers to initialization of streamlines only (i.e. the very first</span>
+<span class="sd">    step) and only affects voxels with more than one fiber reconstructed:</span>
+<span class="sd">    randfib==0, only sample from the strongest fiber</span>
+<span class="sd">    randfib==1, randomly sample from all fibers regardless of strength that are</span>
+<span class="sd">    above --fibthresh</span>
+<span class="sd">    randfib==2, sample fibers stronger than --fibthresh in proportion to their</span>
+<span class="sd">    strength (in my opinion, this is the best choice)</span>
+<span class="sd">    randfib==3, sample all fibers randomly regardless of whether or not they</span>
+<span class="sd">    are above --fibthresh.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    outdir: str</span>
+<span class="sd">        Directory where to output.</span>
+<span class="sd">    subject_id: str</span>
+<span class="sd">        Subject id used with FreeSurfer &#39;recon-all&#39; command.</span>
+<span class="sd">    lh_surf: str</span>
+<span class="sd">        The left hemisphere surface.</span>
+<span class="sd">    rh_surf: str</span>
+<span class="sd">        The left hemisphere surface.</span>
+<span class="sd">    nodif_brain: str</span>
+<span class="sd">        Path to the preprocessed brain-only DWI volume.</span>
+<span class="sd">    nodif_brain_mask: str</span>
+<span class="sd">        Path to the brain binary mask.</span>
+<span class="sd">    bedpostx_dir: str</span>
+<span class="sd">        Bedpostx output directory.</span>
+<span class="sd">    nsamples: int</span>
+<span class="sd">        Number of samples per voxel to initiate in the seed mask.</span>
+<span class="sd">    nsteps: int</span>
+<span class="sd">        Maximum number of steps for a given sample.</span>
+<span class="sd">    steplength: int</span>
+<span class="sd">        Step size in mm.</span>
+<span class="sd">    subjects_dir: str or None, default None</span>
+<span class="sd">        Path to the FreeSurfer subjects directory. Required if the FreeSurfer</span>
+<span class="sd">        environment variable (i.e. $SUBJECTS_DIR) is not set.</span>
+<span class="sd">    cthr: float, optional</span>
+<span class="sd">        Probtrackx2 option.</span>
+<span class="sd">    fibthresh, distthresh, sampvox: float, optional</span>
+<span class="sd">        Probtrackx2 options.</span>
+<span class="sd">    loopcheck: bool, optional</span>
+<span class="sd">        Probtrackx2 option.</span>
+<span class="sd">    fs_sh: str, default NeuroSpin path</span>
+<span class="sd">        Path to the Bash script setting the FreeSurfer environment</span>
+<span class="sd">    fsl_sh: str, default NeuroSpin path</span>
+<span class="sd">        Path to the Bash script setting the FSL environment.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    ------</span>
+<span class="sd">    coords: str</span>
+<span class="sd">        The connectome coordinates.</span>
+<span class="sd">    weights: str</span>
+<span class="sd">        The connectome weights.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="c1"># STEP 0 - Check arguments</span>
+
+    <span class="c1"># FreeSurfer subjects_dir</span>
+    <span class="n">subjects_dir</span> <span class="o">=</span> <span class="n">get_or_check_freesurfer_subjects_dir</span><span class="p">(</span><span class="n">subjects_dir</span><span class="p">)</span>
+
+    <span class="c1"># Check input paths</span>
+    <span class="n">paths_to_check</span> <span class="o">=</span> <span class="p">[</span><span class="n">nodif_brain</span><span class="p">,</span> <span class="n">nodif_brain_mask</span><span class="p">,</span> <span class="n">bedpostx_dir</span><span class="p">,</span>
+                      <span class="n">fs_sh</span><span class="p">,</span> <span class="n">fsl_sh</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">paths_to_check</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;File or directory does not exist: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">p</span><span class="p">)</span>
+
+    <span class="c1"># Create &lt;outdir&gt; if not existing</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">outdir</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">outdir</span><span class="p">)</span>
+
+    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="c1"># STEP 1 - Compute T1 &lt;-&gt; DWI rigid transformation</span>
+
+    <span class="c1"># FreeSurfer T1 to Nifti</span>
+    <span class="n">fs_t1_brain</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">subjects_dir</span><span class="p">,</span> <span class="n">subject_id</span><span class="p">,</span> <span class="s2">&quot;mri&quot;</span><span class="p">,</span> <span class="s2">&quot;brain.mgz&quot;</span><span class="p">)</span>
+    <span class="n">t1_brain</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;t1_brain.nii.gz&quot;</span><span class="p">)</span>
+    <span class="n">cmd_1a</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;mri_convert&quot;</span><span class="p">,</span> <span class="n">fs_t1_brain</span><span class="p">,</span> <span class="n">t1_brain</span><span class="p">]</span>
+    <span class="n">FSWrapper</span><span class="p">(</span><span class="n">cmd_1a</span><span class="p">,</span> <span class="n">shfile</span><span class="o">=</span><span class="n">fs_sh</span><span class="p">)()</span>
+
+    <span class="c1"># Register diffusion to T1</span>
+    <span class="n">dif2anat_dat</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;dif2anat.dat&quot;</span><span class="p">)</span>
+    <span class="n">dif2anat_mat</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;dif2anat.mat&quot;</span><span class="p">)</span>
+    <span class="n">nodif_brain_reg</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;nodif_brain_to_t1.nii.gz&quot;</span><span class="p">)</span>
+    <span class="n">cmd_1b</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;bbregister&quot;</span><span class="p">,</span>
+              <span class="s2">&quot;--s&quot;</span><span class="p">,</span>      <span class="n">subject_id</span><span class="p">,</span>
+              <span class="s2">&quot;--mov&quot;</span><span class="p">,</span>    <span class="n">nodif_brain</span><span class="p">,</span>
+              <span class="s2">&quot;--reg&quot;</span><span class="p">,</span>    <span class="n">dif2anat_dat</span><span class="p">,</span>
+              <span class="s2">&quot;--fslmat&quot;</span><span class="p">,</span> <span class="n">dif2anat_mat</span><span class="p">,</span>
+              <span class="s2">&quot;--dti&quot;</span><span class="p">,</span>
+              <span class="s2">&quot;--init-fsl&quot;</span><span class="p">,</span>
+              <span class="s2">&quot;--o&quot;</span><span class="p">,</span>      <span class="n">nodif_brain_reg</span><span class="p">]</span>
+    <span class="n">FSWrapper</span><span class="p">(</span><span class="n">cmd_1b</span><span class="p">,</span> <span class="n">subjects_dir</span><span class="o">=</span><span class="n">subjects_dir</span><span class="p">,</span> <span class="n">shfile</span><span class="o">=</span><span class="n">fs_sh</span><span class="p">,</span>
+              <span class="n">add_fsl_env</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">fsl_sh</span><span class="o">=</span><span class="n">fsl_sh</span><span class="p">)()</span>
+
+    <span class="c1"># Invert dif2anat transform</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">dif2anat_mat</span><span class="p">)</span>
+    <span class="n">m_inv</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+    <span class="n">anat2dif_mat</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;anat2dif.mat&quot;</span><span class="p">)</span>
+    <span class="n">numpy</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="n">anat2dif_mat</span><span class="p">,</span> <span class="n">m_inv</span><span class="p">)</span>
+
+    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="c1"># STEP 2 - Create the masks for Probtrackx2</span>
+
+    <span class="c1"># White matter mask</span>
+    <span class="n">aparc_aseg</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">subjects_dir</span><span class="p">,</span> <span class="n">subject_id</span><span class="p">,</span> <span class="s2">&quot;mri&quot;</span><span class="p">,</span>
+                              <span class="s2">&quot;aparc+aseg.mgz&quot;</span><span class="p">)</span>
+    <span class="n">wm_mask</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;wm_mask.nii.gz&quot;</span><span class="p">)</span>
+    <span class="n">mri_binarize</span><span class="p">(</span>
+        <span class="n">inputfile</span><span class="o">=</span><span class="n">aparc_aseg</span><span class="p">,</span>
+        <span class="n">outputfile</span><span class="o">=</span><span class="n">wm_mask</span><span class="p">,</span>
+        <span class="n">match</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">wm</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        <span class="n">inv</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">fsconfig</span><span class="o">=</span><span class="n">fs_sh</span><span class="p">)</span>
+
+    <span class="c1"># Stop mask is inverse of white matter mask</span>
+    <span class="n">stop_mask</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;inv_wm_mask.nii.gz&quot;</span><span class="p">)</span>
+    <span class="n">mri_binarize</span><span class="p">(</span>
+        <span class="n">inputfile</span><span class="o">=</span><span class="n">aparc_aseg</span><span class="p">,</span>
+        <span class="n">outputfile</span><span class="o">=</span><span class="n">stop_mask</span><span class="p">,</span>
+        <span class="n">match</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">wm</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        <span class="n">inv</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+        <span class="n">fsconfig</span><span class="o">=</span><span class="n">fs_sh</span><span class="p">)</span>
+
+    <span class="c1"># Create seed mask</span>
+    <span class="n">seed_mask</span> <span class="o">=</span> <span class="n">wm_mask</span>
+
+    <span class="c1"># Create target masks: the white surface</span>
+    <span class="n">white_surf</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;white.asc&quot;</span><span class="p">)</span>
+    <span class="n">cmd_2a</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;mris_convert&quot;</span><span class="p">,</span>
+              <span class="s2">&quot;--combinesurfs&quot;</span><span class="p">,</span>
+              <span class="n">lh_surf</span><span class="p">,</span>
+              <span class="n">rh_surf</span><span class="p">,</span>
+              <span class="n">white_surf</span><span class="p">]</span>
+    <span class="n">FSWrapper</span><span class="p">(</span><span class="n">cmd_2a</span><span class="p">,</span> <span class="n">subjects_dir</span><span class="o">=</span><span class="n">subjects_dir</span><span class="p">,</span> <span class="n">shfile</span><span class="o">=</span><span class="n">fs_sh</span><span class="p">)()</span>
+
+    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="c1"># STEP 7 - Run Probtrackx2</span>
+    <span class="n">probtrackx2</span><span class="p">(</span><span class="nb">dir</span><span class="o">=</span><span class="n">outdir</span><span class="p">,</span>
+                <span class="n">forcedir</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                <span class="n">seedref</span><span class="o">=</span><span class="n">t1_brain</span><span class="p">,</span>
+                <span class="n">xfm</span><span class="o">=</span><span class="n">anat2dif_mat</span><span class="p">,</span>
+                <span class="n">invxfm</span><span class="o">=</span><span class="n">dif2anat_mat</span><span class="p">,</span>
+                <span class="n">samples</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">bedpostx_dir</span><span class="p">,</span> <span class="s2">&quot;merged&quot;</span><span class="p">),</span>
+                <span class="n">mask</span><span class="o">=</span><span class="n">nodif_brain_mask</span><span class="p">,</span>
+                <span class="n">seed</span><span class="o">=</span><span class="n">seed_mask</span><span class="p">,</span>
+                <span class="n">omatrix3</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                <span class="n">target3</span><span class="o">=</span><span class="n">white_surf</span><span class="p">,</span>
+                <span class="n">stop</span><span class="o">=</span><span class="n">stop_mask</span><span class="p">,</span>
+                <span class="n">nsamples</span><span class="o">=</span><span class="n">nsamples</span><span class="p">,</span>
+                <span class="n">nsteps</span><span class="o">=</span><span class="n">nsteps</span><span class="p">,</span>
+                <span class="n">steplength</span><span class="o">=</span><span class="n">steplength</span><span class="p">,</span>
+                <span class="n">loopcheck</span><span class="o">=</span><span class="n">loopcheck</span><span class="p">,</span>
+                <span class="n">cthr</span><span class="o">=</span><span class="n">cthr</span><span class="p">,</span>
+                <span class="n">fibthresh</span><span class="o">=</span><span class="n">fibthresh</span><span class="p">,</span>
+                <span class="n">distthresh</span><span class="o">=</span><span class="n">distthresh</span><span class="p">,</span>
+                <span class="n">sampvox</span><span class="o">=</span><span class="n">sampvox</span><span class="p">,</span>
+                <span class="n">pd</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                <span class="n">randfib</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                <span class="n">shfile</span><span class="o">=</span><span class="n">fsl_sh</span><span class="p">)</span>
+    <span class="n">coords</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;coords_for_fdt_matrix3&quot;</span><span class="p">)</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;fdt_matrix3.dot&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">coords</span><span class="p">,</span> <span class="n">weights</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+
+    <div class="clearer">
+    </div>
+  </div>
+  
+</div>
+
+<div class="footer">
+    &copy; 2017, pyConnectome developers &lt;antoine.grigis@cea.fr&gt;.
+</div>
+  </body>
+</html>

@@ -1,0 +1,372 @@
+
+
+.. _sphx_glr_auto_gallery_pyconnectome_reduced_connectome.py:
+
+
+Pyconnectome Reduced Connectome
+===============================
+
+Example automatically generated from package script.
+
+
+
+.. code-block:: python
+
+
+
+    # System import
+    import os
+    import argparse
+    import json
+    from pprint import pprint
+    from datetime import datetime
+    import textwrap
+    from argparse import RawTextHelpFormatter
+
+    # Bredala module
+    try:
+        import bredala
+        bredala.USE_PROFILER = False
+        bredala.register("pyconnectome.connectomes.reduced",
+                         names=["mrtrix_connectomes"])
+    except:
+        pass
+
+    # PyFreeSurfer import
+    from pyfreesurfer import DEFAULT_FREESURFER_PATH
+    from pyfreesurfer.wrapper import FSWrapper
+
+    # Package import
+    from pyconnectome import __version__ as version
+    from pyconnectome import DEFAULT_FSL_PATH
+    from pyconnectome.wrapper import FSLWrapper
+    from pyconnectome.connectomes.reduced import mrtrix_connectomes
+
+
+    # Parameters to keep trace
+    __hopla__ = ["runtime", "inputs", "outputs"]
+
+
+    DOC = """
+    Compute the connectome of a given parcellation, like the FreeSurfer aparc+aseg
+    segmentation, using MRtrix.
+
+    Requirements:
+        - a tractogram in VTK, TXT or TRK format.
+        - parcellation: image of labeled regions, e.g. FreeSurfer aparc+aseg
+        - T1 aligned to diffusion: T1 can be kept in its native resolution as
+          long as it is registered to diffusion.
+
+    MRtrix command example on the HCP data:
+
+    python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_reduced_connectome \
+        -p /neurospin/hcp/ANALYSIS/3T_freesurfer/889579/T1w/889579/mri/aparc+aseg.mgz \
+        -f /i2bm/local/freesurfer/FreeSurferColorLUT.txt \
+        -c 'lausanne2008' \
+        -o /tmp/nsap/connectomes/mrtrix \
+        -d /tmp/nsap/connectomes/mrtrix/tmp \
+        -b /neurospin/hcp/ANALYSIS/3T_mrtrix/889579/nodif_brain.nii.gz \
+        -a /neurospin/hcp/ANALYSIS/3T_freesurfer/889579/T1w/889579/mri/brain.mgz \
+        -t /neurospin/hcp/ANALYSIS/3T_mrtrix/889579/10M.tck \
+        -X \
+        -W /neurospin/hcp/ANALYSIS/3T_mrtrix/889579/sift2_weights.txt \
+        -T mrtrix \
+        -D /neurospin/hcp/ANALYSIS/3T_mrtrix/889579/dif2anat.dat \
+        -R 1. \
+        -A 2.
+
+    MITK command example on the IMAGEN data:
+
+    python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_reduced_connectome \
+        -p /neurospin/imagen/BL/processed/freesurfer/000000022453/mri/aparc+aseg.mgz \
+        -f /i2bm/local/freesurfer/FreeSurferColorLUT.txt \
+        -c 'lausanne2008' \
+        -o /neurospin/nsap/cati/imagen/data/connectome/BL/000000022453 \
+        -d /tmp/nsap/connectomes/mitk/tmp \
+        -b /neurospin/imagen/BL/processed/dwi_preproc_wo_fieldmap/000000022453/nodif_brain.nii.gz \
+        -a /neurospin/imagen/BL/processed/freesurfer/000000022453/mri/brain.mgz \
+        -t /neurospin/nsap/cati/imagen/data/mitk/BL/000000022453/fibers.fib \
+        -T mitk \
+        -D /neurospin/nsap/cati/imagen/data/mitk/BL/000000022453/dif2anat.dat \
+        -R 2. \
+        -A 5.
+
+    Connecomist command example on the HCP data:
+
+    python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_reduced_connectome \
+        -p /neurospin/hcp/ANALYSIS/3T_freesurfer/889579/T1w/889579/mri/aparc+aseg.mgz \
+        -f /i2bm/local/freesurfer/FreeSurferColorLUT.txt \
+        -c 'lausanne2008' \
+        -o /tmp/nsap/connectomes/connectomist \
+        -d /tmp/nsap/connectomes/connectomist/tmp \
+        -b /neurospin/hcp/ANALYSIS/3T_mrtrix/889579/nodif_brain.nii.gz \
+        -a /neurospin/hcp/ANALYSIS/3T_freesurfer/889579/T1w/889579/mri/brain.mgz \
+        -t /neurospin/hcp/ANALYSIS/3T_connectomist/101006/tract/3000/bundles/interhemispheric/CorpusCallosum_Body.trk /neurospin/hcp/ANALYSIS/3T_connectomist/101006/tract/3000/bundles/interhemispheric/CorpusCallosum_Genu.trk \
+        -T connectomist \
+        -D /neurospin/hcp/ANALYSIS/3T_mrtrix/889579/dif2anat.dat \
+        -R 1. \
+        -A 2.
+
+    FSL command example on the HCP data:
+
+    python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_reduced_connectome \
+        -p /neurospin/hcp/ANALYSIS/3T_freesurfer/102008/T1w/102008/mri/aparc+aseg.mgz \
+        -f /i2bm/local/freesurfer/FreeSurferColorLUT.txt \
+        -c 'lausanne2008' \
+        -o /tmp/nsap/tractograms/fsl/nomask_connectome \
+        -d /tmp/nsap/tractograms/fsl/nomask_connectome/tmp \
+        -b /neurospin/hcp/ANALYSIS/3T_mrtrix/102008/nodif_brain.nii.gz \
+        -a /neurospin/hcp/ANALYSIS/3T_freesurfer/102008/T1w/102008/mri/brain.mgz \
+        -t /tmp/nsap/tractograms/fsl/nomask/0.1_0.15/saved_paths.txt /tmp/nsap/tractograms/fsl/nomask/0.15_0.2/saved_paths.txt /tmp/nsap/tractograms/fsl/nomask/0.2_0.25/saved_paths.txt /tmp/nsap/tractograms/fsl/nomask/0.25_0.3/saved_paths.txt /tmp/nsap/tractograms/fsl/nomask/0.3_0.35/saved_paths.txt /tmp/nsap/tractograms/fsl/nomask/0.35_0.4/saved_paths.txt /tmp/nsap/tractograms/fsl/nomask/0.4_0.45/saved_paths.txt /tmp/nsap/tractograms/fsl/nomask/0.45_0.5/saved_paths.txt /tmp/nsap/tractograms/fsl/nomask/0.5_0.55/saved_paths.txt /tmp/nsap/tractograms/fsl/nomask/0.55_0.6/saved_paths.txt /tmp/nsap/tractograms/fsl/nomask/0.6_0.65/saved_paths.txt \
+        -T fsl \
+        -D /neurospin/hcp/ANALYSIS/3T_mrtrix/102008/dif2anat.dat \
+        -R 1. \
+        -A 2.
+
+
+    Tracula command example on the Imagen data:
+
+    python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_reduced_connectome \
+        -p /neurospin/imagen/BL/processed/freesurfer/000000022453/mri/aparc+aseg.mgz \
+        -f /i2bm/local/freesurfer/FreeSurferColorLUT.txt \
+        -c 'lausanne2008' \
+        -o /neurospin/nsap/processed/imagen/data/connectome/BL/tracula/000000022453 \
+        -d /tmp/nsap/connectomes/tracula/tmp \
+        -b /neurospin/imagen/BL/processed/dwi_preproc_wo_fieldmap/000000022453/nodif_brain.nii.gz \
+        -a /neurospin/imagen/BL/processed/freesurfer/000000022453/mri/brain.mgz \
+        -t /neurospin/nsap/processed/imagen/data/tracula/BL/000000022453/dpath/fmajor_PP_avg33_mni_bbr/path.pd.trk /neurospin/nsap/processed/imagen/data/tracula/BL/000000022453/dpath/fminor_PP_avg33_mni_bbr/path.pd.trk \
+        -T tracula \
+        -D /neurospin/nsap/processed/imagen/data/mitk/BL/000000022453/dif2anat.dat \
+        -R 2. \
+        -A 5.
+    """
+
+
+    def is_file(filepath):
+        """ Check file's existence - argparse 'type' argument.
+        """
+        if not os.path.isfile(filepath):
+            raise argparse.ArgumentError("File does not exist: %s" % filepath)
+        return filepath
+
+
+    def get_cmd_line_args():
+        """
+        Create a command line argument parser and return a dict mapping
+        <argument name> -> <argument value>.
+        """
+        parser = argparse.ArgumentParser(
+            prog="python pyconnectome_reduced_connectome",
+            description=textwrap.dedent(DOC),
+            formatter_class=RawTextHelpFormatter)
+
+        # Required arguments
+        required = parser.add_argument_group("required arguments")
+        required.add_argument(
+            "-o", "--outdir",
+            required=True, metavar="<path>",
+            help="Directory where to output.")
+        required.add_argument(
+            "-d", "--tempdir",
+            required=True, metavar="<path>",
+            help="Where to write temporary directories e.g. /tmp.")
+        required.add_argument(
+            "-t", "--tractogram",
+            required=True, type=is_file, nargs="+", metavar="<path>",
+            help="The tractogram in VTK, TRK, TXT or TCK format. It is possible "
+                 "to provide a list of tractograms only for Connectomist.")
+        required.add_argument(
+            "-a", "--t1-brain",
+            required=True, type=is_file, metavar="<path>",
+            help="The anatomical image.")
+        required.add_argument(
+            "-b", "--nodif-brain",
+            required=True, type=is_file, metavar="<path>",
+            help="Diffusion brain-only volume to use to estimate "
+                 "the registration between diffusion and T1.")
+        required.add_argument(
+            "-p", "--t1-parc",
+            type=is_file, required=True, metavar="<path>",
+            help="Path to the parcellation that defines the nodes of the connec"
+                 "tome, e.g. aparc+aseg.mgz from FreeSurfer. It has to be in the "
+                 "FreeSurfer space (i.e. aligned with FreeSurfer 'brain.mgz').")
+        required.add_argument(
+            "-f", "--t1-parc-lut",
+            type=is_file, required=True, metavar="<path>",
+            help="Path to the Look Up Table for the passed parcellation in the "
+                 "FreeSurfer LUT format. If your T1 parcellation comes from "
+                 "FreeSurfer, this will most likely be "
+                 "<$FREESURFER_HOME>/FreeSurferColorLUT.txt.")
+        required.add_argument(
+            "-c", "--connectome-lut",
+            metavar="<path>",
+            help="Path to a Look Up Table in the FreeSurfer LUT format, listing "
+                 "the regions from the parcellation to use as nodes in the connec"
+                 "tome. The region names should match the ones used in the "
+                 "<t1_parc_lut> LUT and the integer labels should be the row/col "
+                 "positions in the connectome. Alternatively it can be set to "
+                 "'Lausanne2008' to use the predefined LUT for the Lausanne 2008 a"
+                 "tlas, which is based on the FreeSurfer aparc+aseg parcellation.")
+
+        # Optional arguments
+        parser.add_argument(
+            "-W", "--tractogram-weights",
+            type=is_file, metavar="<path>",
+            help="The weight associated to each fiber: one weight per line.")
+        parser.add_argument(
+            "-T", "--tractogram-type",
+            choices=("mrtrix", "mitk", "connectomist", "fsl", "tracula"),
+            metavar="<type>", default="mrtrix",
+            help="The software used to generate the tractogram. "
+                 "This parameter is used for format conversion purposes.")
+        parser.add_argument(
+            "-D", "--dif2anat-dat",
+            type=is_file, metavar="<path>",
+            help="The diffusion to T1 FreeSurfer registration '.dat' file.")
+        parser.add_argument(
+            "-M", "--dif2anat-mat",
+            type=is_file, metavar="<path>",
+            help="The diffusion to T1 FreeSurfer registration '.mat' file.")
+        parser.add_argument(
+            "-X", "--fix-freesurfer-subcortical",
+            action="store_true",
+            help="If the <t1_parc> is aparc+aseg or aparc.a2009s+aseg from "
+                 "FreeSurfer set this option to True, to recompute the "
+                 "subcortical segmentations of 5 structures that are uncorrectly "
+                 "segmented by FreeSurfer, using FSL FIRST")
+        parser.add_argument(
+            "-R", "--radial-search-dist",
+            type=float, metavar="<float>", default=2.,
+            help="Multiple connectomes are generated depending on "
+                 "the streamline-node association strategy. The "
+                 "radial search assigns the nearest "
+                 "node from the streamline endpoint within "
+                 "this radius (in mm).")
+        parser.add_argument(
+            "-A", "--forward-search-dist",
+            type=float, metavar="<float>", default=5.,
+            help="Multiple connectomes are generated depending "
+                 "on the streamline-node "
+                 "association strategy. The forward assignment "
+                 "projects the streamline forward from the "
+                 "endpoint to find a node, within this distance (in mm)")
+        parser.add_argument(
+            "-Q", "--no-snapshots",
+            action="store_false", dest="snapshots", default=True,
+            help="To not create snapshots of the results. "
+                 "Useful if matplotlib is not installed.")
+        parser.add_argument(
+            "-H", "--fs-sh",
+            type=is_file, metavar="<path>",
+            help="Bash script initializing FreeSurfer's environment.")
+        parser.add_argument(
+            "-F", "--fsl-sh",
+            type=is_file, metavar="<path>",
+            help="Bash script initializing FSL's environment.")
+        parser.add_argument(
+            "-v", "--verbose",
+            type=int, choices=[0, 1, 2], default=2,
+            help="Increase the verbosity level: 0 silent, [1, 2] verbose.")
+
+        # Create a dict of arguments to pass to the 'main' function
+        args = parser.parse_args()
+        kwargs = vars(args)
+        verbose = kwargs.pop("verbose")
+        if kwargs["fs_sh"] is None:
+            kwargs["fs_sh"] = DEFAULT_FREESURFER_PATH
+        if kwargs["fsl_sh"] is None:
+            kwargs["fsl_sh"] = DEFAULT_FSL_PATH
+
+        return kwargs, verbose
+
+
+
+Parse the command line.
+
+
+
+.. code-block:: python
+
+
+    inputs, verbose = get_cmd_line_args()
+    tool = "pyconnectome_reduced_connectome"
+    timestamp = datetime.now().isoformat()
+    tool_version = version
+    fsl_version = FSLWrapper([], shfile=inputs["fsl_sh"]).version
+    freesurfer_version = FSWrapper([], inputs["fs_sh"]).version
+    params = locals()
+    runtime = dict([(name, params[name])
+                   for name in ("tool", "tool_version", "fsl_version",
+                                "freesurfer_version", "timestamp")])
+    outputs = None
+    if verbose > 0:
+        pprint("[info] Starting connectome computation ...")
+        pprint("[info] Runtime:")
+        pprint(runtime)
+        pprint("[info] Inputs:")
+        pprint(inputs)
+
+
+
+Start the connectome computation.
+
+
+
+.. code-block:: python
+
+
+    connectome_endvox, connectome_radial, connectome_forward = mrtrix_connectomes(
+        **inputs)
+
+
+Update the outputs and save them and the inputs in a 'logs' directory.
+
+
+
+.. code-block:: python
+
+
+    logdir = os.path.join(inputs["outdir"], "logs")
+    if not os.path.isdir(logdir):
+        os.mkdir(logdir)
+    params = locals()
+    outputs = dict([(name, params[name])
+                   for name in ("connectome_endvox", "connectome_radial",
+                                "connectome_forward")])
+    for name, final_struct in [("inputs", inputs), ("outputs", outputs),
+                               ("runtime", runtime)]:
+        log_file = os.path.join(logdir, "{0}.json".format(name))
+        with open(log_file, "wt") as open_file:
+            json.dump(final_struct, open_file, sort_keys=True, check_circular=True,
+                      indent=4)
+    if verbose > 1:
+        pprint("[info] Outputs:")
+        pprint(outputs)
+
+**Total running time of the script:** ( 0 minutes  0.000 seconds)
+
+
+
+.. only :: html
+
+ .. container:: sphx-glr-footer
+
+
+  .. container:: sphx-glr-download
+
+     :download:`Download Python source code: pyconnectome_reduced_connectome.py <pyconnectome_reduced_connectome.py>`
+
+
+
+  .. container:: sphx-glr-download
+
+     :download:`Download Jupyter notebook: pyconnectome_reduced_connectome.ipynb <pyconnectome_reduced_connectome.ipynb>`
+
+
+.. only:: html
+
+ .. rst-class:: sphx-glr-signature
+
+    Gallery generated by Sphinx-Gallery
+
+

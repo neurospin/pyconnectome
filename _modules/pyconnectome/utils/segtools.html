@@ -1,0 +1,715 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+  
+    <title>PYCONNECTOME &mdash; pyConnectome</title>
+  <!-- htmltitle is before nature.css - we use this hack to load bootstrap first -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="../../../_static/css/bootstrap.min.css" media="screen" />
+
+    
+    <link rel="stylesheet" href="../../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/gallery.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="pyConnectome" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" />
+  
+   
+       <script type="text/javascript" src="../../../_static/sidebar.js"></script>
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="../../../_static/js/bootstrap.min.js" type="text/javascript"></script>
+
+  <script src="../../../_static/js/angular.min.js" type="text/javascript"></script>
+  <script type="text/javascript">
+    var app = angular.module("navApp", []);
+    app.controller('navCtrl', ['$scope', '$window', function($scope, $window) {
+      $scope.isActive = function (viewLocation) {
+        var rel = $window.location.pathname.split("/")
+        rel = rel[rel.length - 1]
+        rel = rel.split(".")[0]
+        var active = (viewLocation === rel);
+        return active;};
+    }]);
+  </script>
+
+  </head>
+  <body role="document"><div class="banner">
+  <div class="container-fluid banner-container">
+    <div class="row banner-inner">
+      <div class="col-xs-4">
+        <img alt="Logo" src="../../../_static/pyconnectome.png">
+      </div>
+      <div class="col-xs-8">
+            <p>Diffusion MRI connectome.</p>
+      </div>
+    </div>  
+  </div>
+</div><nav class="navbar navbar-default navbar-static-top">
+  <div class="container-fluid">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../../../index.html">
+        </a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse" ng-controller="navCtrl" ng-app="navApp">
+      <ul class="nav navbar-nav">
+        <li ng-class="{ active: isActive('index') }"><a href="../../../index.html">Home</a></li>
+        <li ng-class="{ active: isActive('installation') }"><a href="../../../generated/installation.html">Installation</a></li>
+        <li ng-class="{ active: isActive('gallery') }"><a href="../../../auto_gallery/gallery.html">Gallery</a></li>
+        <li ng-class="{ active: isActive('documentation') }"><a href="../../../generated/documentation.html">API documentation</a></li>
+        <!--<li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"> <span class="caret"></span></a>
+          <ul class="dropdown-menu">
+	        <li><a href="../../../generated/pyconnectome.html">Pyconnectome</a></li>
+<li><a href="../../../generated/pyconnectome.tractography.html">Pyconnectome.tractography</a></li>
+<li><a href="../../../generated/pyconnectome.metrics.html">Pyconnectome.metrics</a></li>
+<li><a href="../../../generated/pyconnectome.utils.html">Pyconnectome.utils</a></li>
+<li><a href="../../../generated/pyconnectome.models.html">Pyconnectome.models</a></li>
+<li><a href="../../../generated/pyconnectome.plotting.html">Pyconnectome.plotting</a></li>
+<li><a href="../../../generated/pyconnectome.connectomes.html">Pyconnectome.connectomes</a></li>
+          </ul>
+        </li>-->
+        <li><a href="https://github.com/AGrigis/pysphinxdoc">PYSPHINXDOC</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+<div class="content-wrapper">
+    <div class="sphinxsidebar">
+      <div class="sphinxsidebarwrapper">
+
+        <!-- info setup -->
+          <p class="doc-version">
+           This documentation is for pyconnectome <strong>version 1.0.0</strong>
+          </p>
+        <p class="citing">
+          If you use the software, please do not esitate to 
+          <a &mdash; <a href="https://github.com/neurospin/pyconnectome">
+          Report a Bug</a>.
+        </p>
+
+      <!-- toc tree -->
+      
+
+      </div>
+    </div>
+  
+
+  <div class="content">
+      
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pyconnectome.utils.segtools</h1><div class="highlight"><pre>
+<span></span><span class="c1">##########################################################################</span>
+<span class="c1"># NSAP - Copyright (C) CEA, 2013</span>
+<span class="c1"># Distributed under the terms of the CeCILL-B license, as published by</span>
+<span class="c1"># the CEA-CNRS-INRIA. Refer to the LICENSE file or to</span>
+<span class="c1"># http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html</span>
+<span class="c1"># for details.</span>
+<span class="c1">##########################################################################</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Segmentation utilities.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># System import</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">import</span> <span class="nn">nibabel</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+
+<span class="c1"># Package import</span>
+<span class="kn">from</span> <span class="nn">pyconnectome</span> <span class="kn">import</span> <span class="n">DEFAULT_FSL_PATH</span>
+<span class="kn">from</span> <span class="nn">pyconnectome.wrapper</span> <span class="kn">import</span> <span class="n">FSLWrapper</span>
+
+<span class="c1"># PyFreeSurfer import</span>
+<span class="kn">from</span> <span class="nn">pyfreesurfer.utils.filetools</span> <span class="kn">import</span> <span class="n">get_or_check_path_of_freesurfer_lut</span>
+
+
+<div class="viewcode-block" id="white_matter_interface"><a class="viewcode-back" href="../../../generated/pyconnectome.utils.segtools.html#pyconnectome.utils.segtools.white_matter_interface">[docs]</a><span class="k">def</span> <span class="nf">white_matter_interface</span><span class="p">(</span>
+        <span class="n">t1_brain_file</span><span class="p">,</span>
+        <span class="n">outdir</span><span class="p">,</span>
+        <span class="n">tempdir</span><span class="p">,</span>
+        <span class="n">fsl_sh</span><span class="o">=</span><span class="n">DEFAULT_FSL_PATH</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Generate a probabilist mask image appropriate for seeding streamlines</span>
+<span class="sd">    on the grey matter-white matter interface using MRtrix.</span>
+<span class="sd">    This mask deals with partial volume effects.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    t1_brain_file: str</span>
+<span class="sd">        the anatomical file used to generate the probabilist mask using MRtrix</span>
+<span class="sd">        and FSL FAST.</span>
+<span class="sd">    outdir: str</span>
+<span class="sd">        the destination folder.</span>
+<span class="sd">    tempdir: str</span>
+<span class="sd">        a temporary folder for MRtrix with sufficient space.</span>
+<span class="sd">    fsl_sh: str, default DEFAULT_FSL_PATH</span>
+<span class="sd">        the FSL configuration script.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    gmwmi_mask_file: str</span>
+<span class="sd">        the generated probabilist seed mask.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># 5 tissue types segmentation</span>
+    <span class="c1"># Generate the 5TT image based on a FSL FAST</span>
+    <span class="n">five_tissues_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;5TT.nii.gz&quot;</span><span class="p">)</span>
+    <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;5ttgen&quot;</span><span class="p">,</span> <span class="s2">&quot;fsl&quot;</span><span class="p">,</span> <span class="n">t1_brain_file</span><span class="p">,</span> <span class="n">five_tissues_file</span><span class="p">,</span> <span class="s2">&quot;-premasked&quot;</span><span class="p">,</span>
+           <span class="s2">&quot;-tempdir&quot;</span><span class="p">,</span> <span class="n">tempdir</span><span class="p">,</span> <span class="s2">&quot;-nocrop&quot;</span><span class="p">]</span>
+    <span class="n">FSLWrapper</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">,</span> <span class="n">shfile</span><span class="o">=</span><span class="n">fsl_sh</span><span class="p">)()</span>
+
+    <span class="c1"># Generate probabilist seed mask</span>
+    <span class="n">gmwmi_mask_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;gmwmi_mask.nii.gz&quot;</span><span class="p">)</span>
+    <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;5tt2gmwmi&quot;</span><span class="p">,</span> <span class="n">five_tissues_file</span><span class="p">,</span> <span class="n">gmwmi_mask_file</span><span class="p">]</span>
+    <span class="n">subprocess</span><span class="o">.</span><span class="n">check_call</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">gmwmi_mask_file</span></div>
+
+
+<div class="viewcode-block" id="fix_freesurfer_subcortical_parcellation"><a class="viewcode-back" href="../../../generated/pyconnectome.utils.segtools.html#pyconnectome.utils.segtools.fix_freesurfer_subcortical_parcellation">[docs]</a><span class="k">def</span> <span class="nf">fix_freesurfer_subcortical_parcellation</span><span class="p">(</span>
+        <span class="n">parc</span><span class="p">,</span>
+        <span class="n">t1_brain</span><span class="p">,</span>
+        <span class="n">lut</span><span class="p">,</span>
+        <span class="n">output</span><span class="p">,</span>
+        <span class="n">tempdir</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">nb_threads</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">fsl_sh</span><span class="o">=</span><span class="n">DEFAULT_FSL_PATH</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Use the MRtrix labelsgmfix command to correct the FreeSurfer</span>
+<span class="sd">    subcortical parcellation.</span>
+<span class="sd">    It uses FSL First to recompute 5 subcortical structures.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    parc: str</span>
+<span class="sd">        Path to the FreeSurfer parcellation, generally aparc+aseg or</span>
+<span class="sd">        aparc.a2009s+aseg.</span>
+<span class="sd">    t1_brain: str</span>
+<span class="sd">        Path to the T1 brain-only image on which recompute the segmentation.</span>
+<span class="sd">    lut: str</span>
+<span class="sd">        Path to the Look Up Table. If you haven&#39;t change the labels it should</span>
+<span class="sd">        be FreeSurfer LUT (FreeSurferColorLUT.txt in $FREESURFER_HOME dir).</span>
+<span class="sd">    output: str</span>
+<span class="sd">        Path to output fixed parcellation.</span>
+<span class="sd">    tempdir: str, default None</span>
+<span class="sd">        Directory that MRtrix will use as temporary directory.</span>
+<span class="sd">    nb_threads: int, default None</span>
+<span class="sd">        Number of threads that MRtrix is allowed to use.</span>
+<span class="sd">    fsl_sh: str, default DEFAULT_FSL_PATH</span>
+<span class="sd">        The FSL configuration script.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    output: str</span>
+<span class="sd">        Path to output fixed parcellation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;labelsgmfix&quot;</span><span class="p">,</span> <span class="n">parc</span><span class="p">,</span> <span class="n">t1_brain</span><span class="p">,</span> <span class="n">lut</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="s2">&quot;-premasked&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">tempdir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;-tempdir&quot;</span><span class="p">,</span> <span class="n">tempdir</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">nb_threads</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;-nthreads&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%i</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">nb_threads</span><span class="p">]</span>
+    <span class="n">fsl_process</span> <span class="o">=</span> <span class="n">FSLWrapper</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">,</span> <span class="n">shfile</span><span class="o">=</span><span class="n">fsl_sh</span><span class="p">)</span>
+    <span class="n">fsl_process</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">output</span></div>
+
+
+<div class="viewcode-block" id="roi_from_bbox"><a class="viewcode-back" href="../../../generated/pyconnectome.utils.segtools.html#pyconnectome.utils.segtools.roi_from_bbox">[docs]</a><span class="k">def</span> <span class="nf">roi_from_bbox</span><span class="p">(</span>
+        <span class="n">input_file</span><span class="p">,</span>
+        <span class="n">bbox</span><span class="p">,</span>
+        <span class="n">output_file</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Create a ROI image from a bounding box.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    input_file: str</span>
+<span class="sd">        the reference image where the bbox is defined.</span>
+<span class="sd">    bbox: 6-uplet</span>
+<span class="sd">        the corner of the bbox in voxel coordinates: xmin, xmax, ymin, ymax,</span>
+<span class="sd">        zmin, zmax.</span>
+<span class="sd">    output_file: str</span>
+<span class="sd">        the desired ROI image file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Load the reference image and generate a grid</span>
+    <span class="n">im</span> <span class="o">=</span> <span class="n">nibabel</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">input_file</span><span class="p">)</span>
+    <span class="n">xv</span><span class="p">,</span> <span class="n">yv</span><span class="p">,</span> <span class="n">zv</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span>
+        <span class="n">numpy</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">im</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">im</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+        <span class="n">numpy</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">im</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">im</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+        <span class="n">numpy</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">im</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">im</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+    <span class="n">xv</span> <span class="o">=</span> <span class="n">xv</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">yv</span> <span class="o">=</span> <span class="n">yv</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">zv</span> <span class="o">=</span> <span class="n">zv</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+
+    <span class="c1"># Intersect the grid with the bbox</span>
+    <span class="n">xa</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">bitwise_and</span><span class="p">(</span><span class="n">xv</span> <span class="o">&gt;=</span> <span class="n">bbox</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">xv</span> <span class="o">&lt;=</span> <span class="n">bbox</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">ya</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">bitwise_and</span><span class="p">(</span><span class="n">yv</span> <span class="o">&gt;=</span> <span class="n">bbox</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">yv</span> <span class="o">&lt;=</span> <span class="n">bbox</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+    <span class="n">za</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">bitwise_and</span><span class="p">(</span><span class="n">zv</span> <span class="o">&gt;=</span> <span class="n">bbox</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="n">zv</span> <span class="o">&lt;=</span> <span class="n">bbox</span><span class="p">[</span><span class="mi">5</span><span class="p">])</span>
+
+    <span class="c1"># Generate bbox indices</span>
+    <span class="n">indices</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">bitwise_and</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">bitwise_and</span><span class="p">(</span><span class="n">xa</span><span class="p">,</span> <span class="n">ya</span><span class="p">),</span> <span class="n">za</span><span class="p">)</span>
+
+    <span class="c1"># Generate/save ROI</span>
+    <span class="n">roi</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">im</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">roi</span><span class="p">[</span><span class="n">xv</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="n">yv</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="n">zv</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">roi_im</span> <span class="o">=</span> <span class="n">nibabel</span><span class="o">.</span><span class="n">Nifti1Image</span><span class="p">(</span><span class="n">roi</span><span class="p">,</span> <span class="n">affine</span><span class="o">=</span><span class="n">im</span><span class="o">.</span><span class="n">get_affine</span><span class="p">())</span>
+    <span class="n">nibabel</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">roi_im</span><span class="p">,</span> <span class="n">output_file</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="robustfov"><a class="viewcode-back" href="../../../generated/pyconnectome.utils.segtools.html#pyconnectome.utils.segtools.robustfov">[docs]</a><span class="k">def</span> <span class="nf">robustfov</span><span class="p">(</span>
+        <span class="n">input_file</span><span class="p">,</span>
+        <span class="n">output_file</span><span class="p">,</span>
+        <span class="n">brain_size</span><span class="o">=</span><span class="mi">170</span><span class="p">,</span>
+        <span class="n">matrix_file</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+        <span class="n">fsl_sh</span><span class="o">=</span><span class="n">DEFAULT_FSL_PATH</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Reduce FOV of image to remove lower head and neck.</span>
+<span class="sd">    It is based on FSL robustfov command.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    input_file: str</span>
+<span class="sd">        the file to be cropped.</span>
+<span class="sd">    output_file: str</span>
+<span class="sd">        the cropped file name.</span>
+<span class="sd">    brain_size: float (default 170)</span>
+<span class="sd">        the size of brain in z-dimension (in mm).</span>
+<span class="sd">    matrix_file: str (default None)</span>
+<span class="sd">        if set, write the transformation matrix.</span>
+<span class="sd">    fsl_sh: str, default DEFAULT_FSL_PATH</span>
+<span class="sd">        The FSL configuration script.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check input parameters</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">input_file</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;{0}&#39; is not a valid input file.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">input_file</span><span class="p">))</span>
+
+    <span class="c1"># Define the FSL command</span>
+    <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;robustfov&quot;</span><span class="p">,</span> <span class="s2">&quot;-b&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">brain_size</span><span class="p">)]</span>
+    <span class="k">if</span> <span class="n">matrix_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;-m&quot;</span><span class="p">,</span> <span class="n">matrix_file</span><span class="p">]</span>
+    <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;-i&quot;</span><span class="p">,</span> <span class="n">input_file</span><span class="p">,</span> <span class="s2">&quot;-r&quot;</span><span class="p">,</span> <span class="n">output_file</span><span class="p">]</span>
+
+    <span class="c1"># Call FSL robustfov</span>
+    <span class="n">fslprocess</span> <span class="o">=</span> <span class="n">FSLWrapper</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">shfile</span><span class="o">=</span><span class="n">fsl_sh</span><span class="p">)</span>
+    <span class="n">fslprocess</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="fast"><a class="viewcode-back" href="../../../generated/pyconnectome.utils.segtools.html#pyconnectome.utils.segtools.fast">[docs]</a><span class="k">def</span> <span class="nf">fast</span><span class="p">(</span><span class="n">input_file</span><span class="p">,</span> <span class="n">out_fileroot</span><span class="p">,</span> <span class="n">klass</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">im_type</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">segments</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+         <span class="n">bias_field</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">bias_corrected_im</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">probabilities</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+         <span class="n">shfile</span><span class="o">=</span><span class="n">DEFAULT_FSL_PATH</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; FAST (FMRIB&#39;s Automated Segmentation Tool) segments a 3D image of</span>
+<span class="sd">    the brain into different tissue types (Grey Matter, White Matter, CSF,</span>
+<span class="sd">    etc.), whilst also correcting for spatial intensity variations</span>
+<span class="sd">    (also known as bias field or RF inhomogeneities).</span>
+<span class="sd">    The underlying method is based on a hidden Markov random field model and</span>
+<span class="sd">    an associated Expectation-Maximization algorithm.</span>
+
+<span class="sd">    Usage: fast [options] file(s)</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    input_file: str (mandatory)</span>
+<span class="sd">        the image to be segmented.</span>
+<span class="sd">    out: str (mandatory)</span>
+<span class="sd">        output basename.</span>
+<span class="sd">    klass: int (optional, default 3)</span>
+<span class="sd">        number of tissue-type classes.</span>
+<span class="sd">    im_type: int (optional, default 1)</span>
+<span class="sd">        type of image 1=T1, 2=T2, 3=PD.</span>
+<span class="sd">    segments: bool (optional, default False)</span>
+<span class="sd">        outputs a separate binary image for each tissue type.</span>
+<span class="sd">    bias_field: bool (optional, default True)</span>
+<span class="sd">        output estimated bias field.</span>
+<span class="sd">    bias_corrected_im: bool (optional, default True)</span>
+<span class="sd">        output bias-corrected image.</span>
+<span class="sd">    probabilities: bool (optional, default False)</span>
+<span class="sd">        outputs individual probability maps.</span>
+<span class="sd">    shfile: str (optional, default local path)</span>
+<span class="sd">        the path to the FSL &#39;fsl.sh&#39; configuration file.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tpm: list of str</span>
+<span class="sd">        the generated tissue preobaility maps.</span>
+<span class="sd">    tsm: list of str</span>
+<span class="sd">        the generated tissue segmentation maps.</span>
+<span class="sd">    segmentation_file: str</span>
+<span class="sd">        the segmented tissues.</span>
+<span class="sd">    bias_file: str</span>
+<span class="sd">        the bias field.</span>
+<span class="sd">    biascorrected_file: str</span>
+<span class="sd">        the bias corrected input image.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check input parameters</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">input_file</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;{0}&#39; is not a valid input file.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">input_file</span><span class="p">))</span>
+
+    <span class="c1"># Define the FSL command</span>
+    <span class="n">bool_params</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;-g&quot;</span><span class="p">:</span> <span class="n">segments</span><span class="p">,</span>
+        <span class="s2">&quot;-b&quot;</span><span class="p">:</span> <span class="n">bias_field</span><span class="p">,</span>
+        <span class="s2">&quot;-B&quot;</span><span class="p">:</span> <span class="n">bias_corrected_im</span><span class="p">,</span>
+        <span class="s2">&quot;-p&quot;</span><span class="p">:</span> <span class="n">probabilities</span>
+    <span class="p">}</span>
+    <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;fast&quot;</span><span class="p">,</span> <span class="s2">&quot;-o&quot;</span><span class="p">,</span> <span class="n">out_fileroot</span><span class="p">,</span> <span class="s2">&quot;-n&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">klass</span><span class="p">),</span> <span class="s2">&quot;-t&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">im_type</span><span class="p">)]</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">bool_params</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">value</span><span class="p">:</span>
+            <span class="n">cmd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+    <span class="n">cmd</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">input_file</span><span class="p">)</span>
+
+    <span class="c1"># Call FSL fast</span>
+    <span class="n">fslprocess</span> <span class="o">=</span> <span class="n">FSLWrapper</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">shfile</span><span class="o">=</span><span class="n">shfile</span><span class="p">)</span>
+    <span class="n">fslprocess</span><span class="p">()</span>
+
+    <span class="c1"># Check the FSL environment variable</span>
+    <span class="k">if</span> <span class="s2">&quot;FSLOUTPUTTYPE&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fslprocess</span><span class="o">.</span><span class="n">environment</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;{0}&#39; variable not declared in FSL &quot;</span>
+                         <span class="s2">&quot;environ.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;FSLOUTPUTTYPE&quot;</span><span class="p">))</span>
+
+    <span class="c1"># Format outputs</span>
+    <span class="n">image_ext</span> <span class="o">=</span> <span class="n">fslprocess</span><span class="o">.</span><span class="n">output_ext</span><span class="p">[</span><span class="n">fslprocess</span><span class="o">.</span><span class="n">environment</span><span class="p">[</span><span class="s2">&quot;FSLOUTPUTTYPE&quot;</span><span class="p">]]</span>
+    <span class="n">segmentation_file</span> <span class="o">=</span> <span class="n">out_fileroot</span> <span class="o">+</span> <span class="s2">&quot;_seg&quot;</span> <span class="o">+</span> <span class="n">image_ext</span>
+    <span class="n">bias_file</span> <span class="o">=</span> <span class="n">out_fileroot</span> <span class="o">+</span> <span class="s2">&quot;_bias&quot;</span> <span class="o">+</span> <span class="n">image_ext</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">bias_file</span><span class="p">):</span>
+        <span class="n">bias_file</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">biascorrected_file</span> <span class="o">=</span> <span class="n">out_fileroot</span> <span class="o">+</span> <span class="s2">&quot;_restore&quot;</span> <span class="o">+</span> <span class="n">image_ext</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">biascorrected_file</span><span class="p">):</span>
+        <span class="n">biascorrected_file</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">tpm</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">out_fileroot</span> <span class="o">+</span> <span class="s2">&quot;_pve_*&quot;</span><span class="p">)</span>
+    <span class="n">tsm</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">out_fileroot</span> <span class="o">+</span> <span class="s2">&quot;_pve_*&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">tpm</span><span class="p">,</span> <span class="n">tsm</span><span class="p">,</span> <span class="n">segmentation_file</span><span class="p">,</span> <span class="n">bias_file</span><span class="p">,</span> <span class="n">biascorrected_file</span></div>
+
+
+<div class="viewcode-block" id="bet2"><a class="viewcode-back" href="../../../generated/pyconnectome.utils.segtools.html#pyconnectome.utils.segtools.bet2">[docs]</a><span class="k">def</span> <span class="nf">bet2</span><span class="p">(</span><span class="n">input_file</span><span class="p">,</span> <span class="n">output_fileroot</span><span class="p">,</span> <span class="n">outline</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+         <span class="n">skull</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">nooutput</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">g</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">smooth</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+         <span class="n">c</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">mesh</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">shfile</span><span class="o">=</span><span class="n">DEFAULT_FSL_PATH</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Wraps command bet2.</span>
+
+<span class="sd">    Deletes non-brain tissue from an image of the whole head. It can also</span>
+<span class="sd">    estimate the inner and outer skull surfaces, and outer scalp surface,</span>
+<span class="sd">    if you have good quality T1 and T2 input images.</span>
+
+<span class="sd">    The basic usage is:</span>
+<span class="sd">        bet2 &lt;input_fileroot&gt; &lt;output_fileroot&gt; [options]</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    input_file: (mandatory)</span>
+<span class="sd">        Input image.</span>
+<span class="sd">    output_fileroot: (mandatory)</span>
+<span class="sd">        Output directory.</span>
+<span class="sd">    outline: bool (optional, default False)</span>
+<span class="sd">        Generate brain surface outline overlaid onto original image.</span>
+<span class="sd">    mask: bool (optional, default False)</span>
+<span class="sd">        Generate binary brain mask.</span>
+<span class="sd">    skull: bool (optional, default False)</span>
+<span class="sd">        Generate approximate skull image.</span>
+<span class="sd">        (not as clean as what betsurf generates).</span>
+<span class="sd">    nooutput: bool (optional, default False)</span>
+<span class="sd">        Don&#39;t generate segmented brain image output.</span>
+<span class="sd">    f: float (optional, default 0.5)</span>
+<span class="sd">        Fractional intensity threshold (0-&gt;1).</span>
+<span class="sd">        Smaller values give larger brain outline estimates.</span>
+<span class="sd">    g: int (optional, default 0)</span>
+<span class="sd">        Vertical gradient in fractional intensity threshold (-1-&gt;1).</span>
+<span class="sd">        Positive values give larger brain outline at bottom, smaller at top.</span>
+<span class="sd">    radius: (optional)</span>
+<span class="sd">        Head radius (mm not voxels).</span>
+<span class="sd">        Initial surface sphere is set to half of this.</span>
+<span class="sd">    smooth : float (optional, default 1)</span>
+<span class="sd">        Smoothness factor.</span>
+<span class="sd">        Values smaller than 1 produce more detailed brain surface, values</span>
+<span class="sd">        larger than one produce smoother, less detailed surface.</span>
+<span class="sd">    c: (optional)</span>
+<span class="sd">        Centre-of-gravity (voxels not mm) of initial mesh surface (x, y, z).</span>
+<span class="sd">    threshold: bool (optional, default False)</span>
+<span class="sd">        Apply thresholding to segmented brain image and mask.</span>
+<span class="sd">    mesh: bool (optional, default False).</span>
+<span class="sd">        Generates brain surface as mesh in .vtk format.</span>
+<span class="sd">    shfile: (optional, default DEFAULT_FSL_PATH)</span>
+<span class="sd">        The FSL configuration batch.</span>
+
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    output: str</span>
+<span class="sd">        the extracted brain volume.</span>
+<span class="sd">    mask_file: str</span>
+<span class="sd">        the binary mask of the extracted brain volume.</span>
+<span class="sd">    mesh_file: str</span>
+<span class="sd">        the brain surface as a vtk mesh.</span>
+<span class="sd">    outline_file: str</span>
+<span class="sd">        the brain surface outline overlaid onto original image.</span>
+<span class="sd">    inskull_mask_file, inskull_mesh_file,</span>
+<span class="sd">    outskull_mask_file, outskull_mesh_file,</span>
+<span class="sd">    outskin_mask_file, outskin_mesh_file,</span>
+<span class="sd">    skull_mask_file: str</span>
+<span class="sd">        rough skull image.</span>
+<span class="sd">    shfile: str (optional, default local path)</span>
+<span class="sd">        the path to the FSL &#39;fsl.sh&#39; configuration file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check the input parameter</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">input_file</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;{0}&#39; is not a valid input file.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                         <span class="n">input_file</span><span class="p">))</span>
+
+    <span class="c1"># Check that the output directory exists</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">output_fileroot</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">output_fileroot</span><span class="p">)</span>
+    <span class="n">output_fileroot</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+        <span class="n">output_fileroot</span><span class="p">,</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">input_file</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;_brain&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Define the FSL command</span>
+    <span class="n">cmd</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;bet&quot;</span><span class="p">,</span>
+           <span class="n">input_file</span><span class="p">,</span>
+           <span class="n">output_fileroot</span><span class="p">,</span>
+           <span class="s2">&quot;-f&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">f</span><span class="p">),</span>
+           <span class="s2">&quot;-g&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">g</span><span class="p">),</span>
+           <span class="s2">&quot;-R&quot;</span><span class="p">]</span>
+
+    <span class="c1"># Set optional arguments</span>
+    <span class="k">if</span> <span class="n">outline</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;-o&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">mask</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;-m&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">skull</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;-s&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">nooutput</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;-n&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">mesh</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;-e&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">threshold</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;-t&quot;</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">c</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;-c&quot;</span><span class="p">,</span> <span class="n">c</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">radius</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;-r&quot;</span><span class="p">,</span> <span class="n">radius</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">smooth</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">cmd</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;-s&quot;</span><span class="p">,</span> <span class="n">smooth</span><span class="p">]</span>
+
+    <span class="c1"># Call bet2</span>
+    <span class="n">fslprocess</span> <span class="o">=</span> <span class="n">FSLWrapper</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="n">shfile</span><span class="o">=</span><span class="n">shfile</span><span class="p">)</span>
+    <span class="n">fslprocess</span><span class="p">()</span>
+
+    <span class="c1"># Check the FSL environment variable</span>
+    <span class="k">if</span> <span class="s2">&quot;FSLOUTPUTTYPE&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fslprocess</span><span class="o">.</span><span class="n">environment</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&#39;{0}&#39; variable not declared in FSL &quot;</span>
+                         <span class="s2">&quot;environ.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;FSLOUTPUTTYPE&quot;</span><span class="p">))</span>
+
+    <span class="c1"># Format outputs</span>
+    <span class="n">image_ext</span> <span class="o">=</span> <span class="n">fslprocess</span><span class="o">.</span><span class="n">output_ext</span><span class="p">[</span><span class="n">fslprocess</span><span class="o">.</span><span class="n">environment</span><span class="p">[</span><span class="s2">&quot;FSLOUTPUTTYPE&quot;</span><span class="p">]]</span>
+
+    <span class="c1"># Create format outputs</span>
+    <span class="k">if</span> <span class="n">outline</span><span class="p">:</span>
+        <span class="n">outline_file</span> <span class="o">=</span> <span class="n">output_fileroot</span> <span class="o">+</span> <span class="s2">&quot;_outline&quot;</span> <span class="o">+</span> <span class="n">image_ext</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">outline_file</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">if</span> <span class="n">mask</span><span class="p">:</span>
+        <span class="n">mask_file</span> <span class="o">=</span> <span class="n">output_fileroot</span> <span class="o">+</span> <span class="s2">&quot;_mask&quot;</span> <span class="o">+</span> <span class="n">image_ext</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">mask_file</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">if</span> <span class="n">skull</span><span class="p">:</span>
+        <span class="n">inskull_mask_file</span> <span class="o">=</span> <span class="n">output_fileroot</span> <span class="o">+</span> <span class="s2">&quot;_inskull_mask&quot;</span> <span class="o">+</span> <span class="n">image_ext</span>
+        <span class="n">inskull_mesh_file</span> <span class="o">=</span> <span class="n">output_fileroot</span> <span class="o">+</span> <span class="s2">&quot;_inskull_mesh&quot;</span> <span class="o">+</span> <span class="n">image_ext</span>
+        <span class="n">outskull_mask_file</span> <span class="o">=</span> <span class="n">output_fileroot</span> <span class="o">+</span> <span class="s2">&quot;_outskull_mask&quot;</span> <span class="o">+</span> <span class="n">image_ext</span>
+        <span class="n">outskull_mesh_file</span> <span class="o">=</span> <span class="n">output_fileroot</span> <span class="o">+</span> <span class="s2">&quot;_outskull_mesh&quot;</span> <span class="o">+</span> <span class="n">image_ext</span>
+        <span class="n">outskin_mask_file</span> <span class="o">=</span> <span class="n">output_fileroot</span> <span class="o">+</span> <span class="s2">&quot;_outskin_mask&quot;</span> <span class="o">+</span> <span class="n">image_ext</span>
+        <span class="n">outskin_mesh_file</span> <span class="o">=</span> <span class="n">output_fileroot</span> <span class="o">+</span> <span class="s2">&quot;_outskin_mesh&quot;</span> <span class="o">+</span> <span class="n">image_ext</span>
+        <span class="n">skull_mask_file</span> <span class="o">=</span> <span class="n">output_fileroot</span> <span class="o">+</span> <span class="s2">&quot;_skull_mask&quot;</span> <span class="o">+</span> <span class="n">image_ext</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">inskull_mask_file</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">inskull_mesh_file</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">outskull_mask_file</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">outskull_mesh_file</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">outskin_mask_file</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">outskin_mesh_file</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">skull_mask_file</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">if</span> <span class="n">nooutput</span><span class="p">:</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">output_fileroot</span> <span class="o">+=</span> <span class="n">image_ext</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">output_fileroot</span>
+
+    <span class="k">if</span> <span class="n">mesh</span><span class="p">:</span>
+        <span class="n">mesh_file</span> <span class="o">=</span> <span class="n">output_fileroot</span> <span class="o">+</span> <span class="s2">&quot;_mesh.vtk&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">mesh_file</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">mask_file</span><span class="p">,</span> <span class="n">mesh_file</span><span class="p">,</span> <span class="n">outline_file</span><span class="p">,</span> <span class="n">inskull_mask_file</span><span class="p">,</span>
+            <span class="n">inskull_mesh_file</span><span class="p">,</span> <span class="n">outskull_mask_file</span><span class="p">,</span> <span class="n">outskull_mesh_file</span><span class="p">,</span>
+            <span class="n">outskin_mask_file</span><span class="p">,</span> <span class="n">outskin_mesh_file</span><span class="p">,</span> <span class="n">skull_mask_file</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_region_names_of_lausanne_2008_atlas"><a class="viewcode-back" href="../../../generated/pyconnectome.utils.segtools.html#pyconnectome.utils.segtools.get_region_names_of_lausanne_2008_atlas">[docs]</a><span class="k">def</span> <span class="nf">get_region_names_of_lausanne_2008_atlas</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot; Get the ordered region names of the Lausanne 2008 atlas as in</span>
+<span class="sd">    standard papers.</span>
+
+<span class="sd">    It corresponds to the Desikan atlas in the cortex, without the corpus</span>
+<span class="sd">    callosum along with 7 subcortical regions.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    atlas_names: list of str</span>
+<span class="sd">        Ordered region names of the Lausanne 2008 atlas.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># All left cortical regions of the Desikan atlas except the corpus callosum</span>
+    <span class="n">lh_ctx_rois</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s1">&#39;ctx-lh-lateralorbitofrontal&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ctx-lh-parsorbitalis&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ctx-lh-frontalpole&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ctx-lh-medialorbitofrontal&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ctx-lh-parstriangularis&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ctx-lh-parsopercularis&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ctx-lh-rostralmiddlefrontal&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ctx-lh-superiorfrontal&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ctx-lh-caudalmiddlefrontal&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ctx-lh-precentral&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ctx-lh-paracentral&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ctx-lh-rostralanteriorcingulate&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ctx-lh-caudalanteriorcingulate&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ctx-lh-posteriorcingulate&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ctx-lh-isthmuscingulate&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ctx-lh-postcentral&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ctx-lh-supramarginal&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ctx-lh-superiorparietal&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ctx-lh-inferiorparietal&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ctx-lh-precuneus&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ctx-lh-cuneus&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ctx-lh-pericalcarine&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ctx-lh-lateraloccipital&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ctx-lh-lingual&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ctx-lh-fusiform&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ctx-lh-parahippocampal&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ctx-lh-entorhinal&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ctx-lh-temporalpole&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ctx-lh-inferiortemporal&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ctx-lh-middletemporal&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ctx-lh-bankssts&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ctx-lh-superiortemporal&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ctx-lh-transversetemporal&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ctx-lh-insula&#39;</span>
+    <span class="p">]</span>
+
+    <span class="c1"># Same for right hemisphere</span>
+    <span class="n">rh_ctx_rois</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;ctx-lh-&quot;</span><span class="p">,</span> <span class="s2">&quot;ctx-rh-&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">lh_ctx_rois</span><span class="p">]</span>
+
+    <span class="c1"># Ordered left subcortical regions of Lausanne 2008 scale 33 atlas</span>
+    <span class="n">lh_subctx_rois</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s1">&#39;Left-Thalamus-Proper&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Left-Caudate&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Left-Putamen&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Left-Pallidum&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Left-Accumbens-area&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Left-Hippocampus&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;Left-Amygdala&#39;</span><span class="p">,</span>
+    <span class="p">]</span>
+
+    <span class="c1"># Ordered right subcortical regions</span>
+    <span class="n">rh_subctx_rois</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;Left-&quot;</span><span class="p">,</span> <span class="s2">&quot;Right-&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">lh_subctx_rois</span><span class="p">]</span>
+
+    <span class="c1"># Non-hemispheric subcortical region</span>
+    <span class="n">axial_subctx_rois</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Brain-Stem&#39;</span><span class="p">]</span>
+
+    <span class="n">atlas_names</span> <span class="o">=</span> <span class="p">([</span><span class="s2">&quot;Unknown&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">lh_ctx_rois</span> <span class="o">+</span> <span class="n">lh_subctx_rois</span> <span class="o">+</span> <span class="n">rh_ctx_rois</span> <span class="o">+</span>
+                   <span class="n">rh_subctx_rois</span> <span class="o">+</span> <span class="n">axial_subctx_rois</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">atlas_names</span></div>
+
+
+<div class="viewcode-block" id="create_lausanne2008_lut"><a class="viewcode-back" href="../../../generated/pyconnectome.utils.segtools.html#pyconnectome.utils.segtools.create_lausanne2008_lut">[docs]</a><span class="k">def</span> <span class="nf">create_lausanne2008_lut</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="n">freesurfer_lut</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Create a Look Up Table for the Lausanne2008 atlas. It has the same</span>
+<span class="sd">    format as the FreeSurfer LUT (FreeSurferColorLUT.txt), but it lists only</span>
+<span class="sd">    the regions of the Lausanne2008 atlas and the integer labels are the</span>
+<span class="sd">    row/col positions of the regions in the connectome.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    outdir: str</span>
+<span class="sd">        Path to directory where to write &quot;Lausanne2008LUT.txt&quot;</span>
+<span class="sd">    freesurfer_lut: str, default None</span>
+<span class="sd">        Path to the FreeSurfer Look Up Table. If not passed, try to use</span>
+<span class="sd">        $FREESURFER_HOME/FreeSurferColorLUT.txt. If not found raise Exception.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Ordered ROIs (i.e. nodes of the connectome) of the Lausanne 2008 atlas</span>
+    <span class="n">roi_names</span> <span class="o">=</span> <span class="n">get_region_names_of_lausanne_2008_atlas</span><span class="p">()</span>
+
+    <span class="c1"># Path to the FreeSurfer LUT</span>
+    <span class="n">freesurfer_lut</span> <span class="o">=</span> <span class="n">get_or_check_path_of_freesurfer_lut</span><span class="p">(</span><span class="n">freesurfer_lut</span><span class="p">)</span>
+
+    <span class="c1"># Load table</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">loadtxt</span><span class="p">(</span><span class="n">freesurfer_lut</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
+
+    <span class="c1"># Keep rows that corresponds to regions of the atlas</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">table</span> <span class="k">if</span> <span class="n">r</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">roi_names</span><span class="p">)])</span>
+
+    <span class="c1"># Order rows (i.e. regions) of the LUT like Lausanne2008 atlas</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">r</span><span class="p">:</span> <span class="n">roi_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="mi">1</span><span class="p">])))</span>
+
+    <span class="c1"># Replace FreeSurfer label by row/col position in connectome</span>
+    <span class="n">table</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">table</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="c1"># Header lines</span>
+    <span class="n">header_1</span> <span class="o">=</span> <span class="s2">&quot;# Look up Table for Lausanne 2008 atlas</span><span class="se">\n</span><span class="s2">&quot;</span>
+    <span class="n">header_2</span> <span class="o">=</span> <span class="s2">&quot;#&lt;Label&gt; &lt;Label Name&gt; &lt;R&gt; &lt;G&gt; &lt;B&gt; &lt;A&gt;</span><span class="se">\n</span><span class="s2">&quot;</span>
+
+    <span class="c1"># Save as .txt file</span>
+    <span class="n">lausanne2008_lut</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outdir</span><span class="p">,</span> <span class="s2">&quot;Lausanne2008LUT.txt&quot;</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">lausanne2008_lut</span><span class="p">,</span> <span class="s2">&quot;wt&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">header_1</span><span class="p">)</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">header_2</span><span class="p">)</span>
+        <span class="c1"># Maintain the indentation</span>
+        <span class="n">line_format</span> <span class="o">=</span> <span class="s2">&quot;{0: &lt;8} {1: &lt;50} {2: &lt;4} {3: &lt;4} {4: &lt;4} {5: &lt;4}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">line_format</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">*</span><span class="n">row</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">lausanne2008_lut</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+
+    <div class="clearer">
+    </div>
+  </div>
+  
+</div>
+
+<div class="footer">
+    &copy; 2017, pyConnectome developers &lt;antoine.grigis@cea.fr&gt;.
+</div>
+  </body>
+</html>

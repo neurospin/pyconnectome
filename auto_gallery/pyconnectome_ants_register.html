@@ -1,0 +1,532 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+  
+    <title>PYCONNECTOME &mdash; pyConnectome</title>
+  <!-- htmltitle is before nature.css - we use this hack to load bootstrap first -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="../_static/css/bootstrap.min.css" media="screen" />
+
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/gallery.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="pyConnectome" href="../index.html" />
+  
+   
+       <script type="text/javascript" src="../_static/sidebar.js"></script>
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="../_static/js/bootstrap.min.js" type="text/javascript"></script>
+
+  <script src="../_static/js/angular.min.js" type="text/javascript"></script>
+  <script type="text/javascript">
+    var app = angular.module("navApp", []);
+    app.controller('navCtrl', ['$scope', '$window', function($scope, $window) {
+      $scope.isActive = function (viewLocation) {
+        var rel = $window.location.pathname.split("/")
+        rel = rel[rel.length - 1]
+        rel = rel.split(".")[0]
+        var active = (viewLocation === rel);
+        return active;};
+    }]);
+  </script>
+
+  </head>
+  <body role="document"><div class="banner">
+  <div class="container-fluid banner-container">
+    <div class="row banner-inner">
+      <div class="col-xs-4">
+        <img alt="Logo" src="../_static/pyconnectome.png">
+      </div>
+      <div class="col-xs-8">
+            <p>Diffusion MRI connectome.</p>
+      </div>
+    </div>  
+  </div>
+</div><nav class="navbar navbar-default navbar-static-top">
+  <div class="container-fluid">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.html">
+        </a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse" ng-controller="navCtrl" ng-app="navApp">
+      <ul class="nav navbar-nav">
+        <li ng-class="{ active: isActive('index') }"><a href="../index.html">Home</a></li>
+        <li ng-class="{ active: isActive('installation') }"><a href="../generated/installation.html">Installation</a></li>
+        <li ng-class="{ active: isActive('gallery') }"><a href="gallery.html">Gallery</a></li>
+        <li ng-class="{ active: isActive('documentation') }"><a href="../generated/documentation.html">API documentation</a></li>
+        <!--<li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"> <span class="caret"></span></a>
+          <ul class="dropdown-menu">
+	        <li><a href="../generated/pyconnectome.html">Pyconnectome</a></li>
+<li><a href="../generated/pyconnectome.tractography.html">Pyconnectome.tractography</a></li>
+<li><a href="../generated/pyconnectome.metrics.html">Pyconnectome.metrics</a></li>
+<li><a href="../generated/pyconnectome.utils.html">Pyconnectome.utils</a></li>
+<li><a href="../generated/pyconnectome.models.html">Pyconnectome.models</a></li>
+<li><a href="../generated/pyconnectome.plotting.html">Pyconnectome.plotting</a></li>
+<li><a href="../generated/pyconnectome.connectomes.html">Pyconnectome.connectomes</a></li>
+          </ul>
+        </li>-->
+        <li><a href="https://github.com/AGrigis/pysphinxdoc">PYSPHINXDOC</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+<div class="content-wrapper">
+    <div class="sphinxsidebar">
+      <div class="sphinxsidebarwrapper">
+
+        <!-- info setup -->
+          <p class="doc-version">
+           This documentation is for pyconnectome <strong>version 1.0.0</strong>
+          </p>
+        <p class="citing">
+          If you use the software, please do not esitate to 
+          <a &mdash; <a href="https://github.com/neurospin/pyconnectome">
+          Report a Bug</a>.
+        </p>
+
+      <!-- toc tree -->
+      <ul>
+<li><a class="reference internal" href="#">Pyconnectome Ants Register</a></li>
+</ul>
+
+
+      </div>
+    </div>
+  
+
+  <div class="content">
+      
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="pyconnectome-ants-register">
+<span id="sphx-glr-auto-gallery-pyconnectome-ants-register-py"></span><h1>Pyconnectome Ants Register<a class="headerlink" href="#pyconnectome-ants-register" title="Permalink to this headline">¶</a></h1>
+<p>Example automatically generated from package script.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># System import</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pprint</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">import</span> <span class="nn">textwrap</span>
+<span class="kn">from</span> <span class="nn">argparse</span> <span class="kn">import</span> <span class="n">RawTextHelpFormatter</span>
+
+<span class="c1"># Bredala module</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">bredala</span>
+    <span class="n">bredala</span><span class="o">.</span><span class="n">USE_PROFILER</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="c1">#bredala.register(&quot;pyconnectome.tractography.filtering&quot;,</span>
+    <span class="c1">#                 names=[&quot;life&quot;])</span>
+<span class="k">except</span><span class="p">:</span>
+    <span class="k">pass</span>
+
+<span class="c1"># Package import</span>
+<span class="kn">from</span> <span class="nn">pyconnectome</span> <span class="kn">import</span> <span class="n">__version__</span> <span class="k">as</span> <span class="n">version</span>
+
+
+<span class="c1"># Parameters to keep trace</span>
+<span class="n">__hopla__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;runtime&quot;</span><span class="p">,</span> <span class="s2">&quot;inputs&quot;</span><span class="p">,</span> <span class="s2">&quot;outputs&quot;</span><span class="p">]</span>
+
+
+<span class="n">DOC</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">Registration with ANTS</span>
+<span class="s2">----------------------</span>
+
+<span class="s2">Can perform an Affine or Affine+NL registration with ANTS.</span>
+
+<span class="s2">Command example on the SENIOR data - monomodal:</span>
+
+<span class="s2">python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_ants_register </span><span class="se">\</span>
+<span class="s2">    -b /usr/lib/ants </span><span class="se">\</span>
+<span class="s2">    -o /volatile/nsap/senior/ants </span><span class="se">\</span>
+<span class="s2">    -i /neurospin/senior/nsap/data/V0/nifti/nc140436/000004_3DT1/3DT1.nii.gz </span><span class="se">\</span>
+<span class="s2">    -r /neurospin/nsap/processed/senior_t2star/data/fbrain/senior/ants/T_template0.nii.gz </span><span class="se">\</span>
+<span class="s2">    -w 1 </span><span class="se">\</span>
+<span class="s2">    -D 3 </span><span class="se">\</span>
+<span class="s2">    -G 0.1 </span><span class="se">\</span>
+<span class="s2">    -J 6 </span><span class="se">\</span>
+<span class="s2">    -N </span><span class="se">\</span>
+<span class="s2">    -v 2</span>
+
+<span class="s2">Command example on the SENIOR data - multimodal:</span>
+
+<span class="s2">python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_ants_register </span><span class="se">\</span>
+<span class="s2">    -b /usr/lib/ants </span><span class="se">\</span>
+<span class="s2">    -o /volatile/nsap/senior/ants </span><span class="se">\</span>
+<span class="s2">    -i /neurospin/senior/nsap/data/V0/nifti/nc140436/000004_3DT1/3DT1.nii.gz /neurospin/senior/nsap/data/V0/nifti/nc140436/000004_3DT1/3DT1.nii.gz </span><span class="se">\</span>
+<span class="s2">    -r /neurospin/nsap/processed/senior_t2star/data/fbrain/senior/ants/T_template0.nii.gz /neurospin/nsap/processed/senior_t2star/data/fbrain/senior/ants/T_template0.nii.gz </span><span class="se">\</span>
+<span class="s2">    -w 0.5 0.2 </span><span class="se">\</span>
+<span class="s2">    -D 3 </span><span class="se">\</span>
+<span class="s2">    -G 0.2 </span><span class="se">\</span>
+<span class="s2">    -J 6 </span><span class="se">\</span>
+<span class="s2">    -N </span><span class="se">\</span>
+<span class="s2">    -v 2</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+
+<span class="k">def</span> <span class="nf">is_file</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Check file&#39;s existence - argparse &#39;type&#39; argument.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentError</span><span class="p">(</span><span class="s2">&quot;File does not exist: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">filepath</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">filepath</span>
+
+<span class="k">def</span> <span class="nf">is_directory</span><span class="p">(</span><span class="n">dirarg</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Type for argparse - checks that directory exists.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">dirarg</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentError</span><span class="p">(</span>
+            <span class="s2">&quot;The directory &#39;{0}&#39; does not exist!&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dirarg</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">dirarg</span>
+
+
+<span class="k">def</span> <span class="nf">get_cmd_line_args</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a command line argument parser and return a dict mapping</span>
+<span class="sd">    &lt;argument name&gt; -&gt; &lt;argument value&gt;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span>
+        <span class="n">prog</span><span class="o">=</span><span class="s2">&quot;python pyconnectome_ants_template&quot;</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="n">textwrap</span><span class="o">.</span><span class="n">dedent</span><span class="p">(</span><span class="n">DOC</span><span class="p">),</span>
+        <span class="n">formatter_class</span><span class="o">=</span><span class="n">RawTextHelpFormatter</span><span class="p">)</span>
+
+    <span class="c1"># Required arguments</span>
+    <span class="n">required</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="s2">&quot;required arguments&quot;</span><span class="p">)</span>
+    <span class="n">required</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-o&quot;</span><span class="p">,</span> <span class="s2">&quot;--outdir&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">is_directory</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;&lt;path&gt;&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Directory where to output.&quot;</span><span class="p">)</span>
+    <span class="n">required</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-b&quot;</span><span class="p">,</span> <span class="s2">&quot;--binaries&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">is_directory</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;&lt;path&gt;&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path to the ANTS binaries.&quot;</span><span class="p">)</span>
+    <span class="n">required</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-i&quot;</span><span class="p">,</span> <span class="s2">&quot;--images&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">is_file</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;&lt;path&gt;&quot;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;+&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path to the input images. One can specify more than one file &quot;</span>
+             <span class="s2">&quot;for for multi-modal registration (e.g. t1 and t2)..&quot;</span><span class="p">)</span>
+    <span class="n">required</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-r&quot;</span><span class="p">,</span> <span class="s2">&quot;--references&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">is_file</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;&lt;path&gt;&quot;</span><span class="p">,</span>  <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;+&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path to the reference images. One can specify more than one &quot;</span>
+             <span class="s2">&quot;file for for multi-modal registration (e.g. t1 and t2)..&quot;</span><span class="p">)</span>
+    <span class="n">required</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-w&quot;</span><span class="p">,</span> <span class="s2">&quot;--weights&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;+&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Modality weights used in the similarity metric.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Optional arguments</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-B&quot;</span><span class="p">,</span> <span class="s2">&quot;--nobfc&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;If set no bias field correction is performed.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-D&quot;</span><span class="p">,</span> <span class="s2">&quot;--dimensions&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="n">default</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;The images dimensions.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-N&quot;</span><span class="p">,</span> <span class="s2">&quot;--dononlinear&quot;</span><span class="p">,</span>
+        <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;if set, use the SyN routine to align the subject brain to the &quot;</span>
+             <span class="s2">&quot;template with a non linear transformation.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-G&quot;</span><span class="p">,</span> <span class="s2">&quot;--gradient-step&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Smaller in magnitude results in more cautious steps. Use &quot;</span>
+             <span class="s2">&quot;smaller steps to refine template details. 0.25 is an upper &quot;</span>
+             <span class="s2">&quot;(aggressive) limit for this parameter.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-J&quot;</span><span class="p">,</span> <span class="s2">&quot;--nbthread&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Number of cpu cores to use locally.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;-v&quot;</span><span class="p">,</span> <span class="s2">&quot;--verbose&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">default</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Increase the verbosity level: 0 silent, [1, 2] verbose.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Create a dict of arguments to pass to the &#39;main&#39; function</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+    <span class="n">verbose</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;verbose&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">kwargs</span><span class="p">,</span> <span class="n">verbose</span>
+</pre></div>
+</div>
+<p>Parse the command line.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">inputs</span><span class="p">,</span> <span class="n">verbose</span> <span class="o">=</span> <span class="n">get_cmd_line_args</span><span class="p">()</span>
+<span class="n">tool</span> <span class="o">=</span> <span class="s2">&quot;pyconnectome_ants_registration&quot;</span>
+<span class="n">timestamp</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+<span class="n">tool_version</span> <span class="o">=</span> <span class="n">version</span>
+<span class="n">params</span> <span class="o">=</span> <span class="nb">locals</span><span class="p">()</span>
+<span class="n">runtime</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">([(</span><span class="n">name</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
+               <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;tool&quot;</span><span class="p">,</span> <span class="s2">&quot;tool_version&quot;</span><span class="p">,</span> <span class="s2">&quot;timestamp&quot;</span><span class="p">)])</span>
+<span class="n">outputs</span> <span class="o">=</span> <span class="bp">None</span>
+<span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="n">pprint</span><span class="p">(</span><span class="s2">&quot;[info] Starting ANTS registration...&quot;</span><span class="p">)</span>
+    <span class="n">pprint</span><span class="p">(</span><span class="s2">&quot;[info] Runtime:&quot;</span><span class="p">)</span>
+    <span class="n">pprint</span><span class="p">(</span><span class="n">runtime</span><span class="p">)</span>
+    <span class="n">pprint</span><span class="p">(</span><span class="s2">&quot;[info] Inputs:&quot;</span><span class="p">)</span>
+    <span class="n">pprint</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Start registration.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+
+
+<span class="k">def</span> <span class="nf">to_ants_list</span><span class="p">(</span><span class="n">l</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Transform a Python list to an ANTS list.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    l: list</span>
+<span class="sd">        a Python list.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    a: str</span>
+<span class="sd">        an &#39;x&#39; separated ANTS list.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ll</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">l</span><span class="p">]</span>
+    <span class="k">return</span> <span class="s2">&quot;x&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ll</span><span class="p">)</span>
+
+
+<span class="c1"># Check inputs</span>
+<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;images&quot;</span><span class="p">])</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]):</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Number of modalities mismatched in inputs.&quot;</span><span class="p">)</span>
+<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;images&quot;</span><span class="p">])</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;references&quot;</span><span class="p">]):</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Number of references mismatched number of inputs.&quot;</span><span class="p">)</span>
+
+
+<span class="c1"># Define parameters</span>
+<span class="n">nb_modalities</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;images&quot;</span><span class="p">])</span>
+<span class="n">transforms</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Affine&quot;</span><span class="p">,</span> <span class="s2">&quot;SyN&quot;</span><span class="p">]</span>
+<span class="n">radius_or_number_of_bins</span> <span class="o">=</span> <span class="p">[</span><span class="mi">32</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span>
+<span class="n">sampling_percentage</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.25</span><span class="p">,</span> <span class="bp">None</span><span class="p">]</span>
+<span class="n">sampling_strategy</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Regular&quot;</span><span class="p">,</span> <span class="bp">None</span><span class="p">]</span>
+<span class="n">convergence_threshold</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.e-6</span><span class="p">,</span> <span class="mf">1.e-9</span><span class="p">]</span>
+<span class="n">convergence_window_size</span> <span class="o">=</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">]</span>
+<span class="n">number_of_iterations</span> <span class="o">=</span> <span class="p">[[</span><span class="mi">1000</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="mi">250</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">70</span><span class="p">,</span> <span class="mi">20</span><span class="p">]]</span>
+<span class="n">transform_parameters</span> <span class="o">=</span> <span class="p">[(</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;gradient_step&quot;</span><span class="p">],</span> <span class="p">),</span>
+                        <span class="p">(</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;gradient_step&quot;</span><span class="p">],</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)]</span>
+<span class="n">shrink_factors</span> <span class="o">=</span> <span class="p">[[</span><span class="mi">6</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]]</span>
+<span class="n">smoothing_sigmas</span> <span class="o">=</span> <span class="p">[[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]]</span>
+<span class="n">use_histogram_matching</span> <span class="o">=</span> <span class="p">[</span><span class="bp">True</span><span class="p">,</span> <span class="bp">True</span><span class="p">]</span>
+<span class="n">metric_weight</span> <span class="o">=</span> <span class="p">[</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">],</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;weights&quot;</span><span class="p">]]</span>
+<span class="n">baseoutput</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;outdir&quot;</span><span class="p">],</span> <span class="s2">&quot;ants_&quot;</span><span class="p">)</span>
+
+
+<span class="c1"># Do bias field corrections</span>
+<span class="c1"># -x: mask image</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;nobfc&quot;</span><span class="p">]:</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;Starting bias field corrections...&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nb_modalities</span><span class="p">):</span>
+        <span class="n">biascorrectedfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;outdir&quot;</span><span class="p">],</span> <span class="s2">&quot;ants_BFC.nii.gz&quot;</span><span class="p">)</span>
+        <span class="n">cmd0</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;N4BiasFieldCorrection&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;-d&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;dimensions&quot;</span><span class="p">]),</span>
+            <span class="s2">&quot;-b&quot;</span><span class="p">,</span> <span class="s2">&quot;[200]&quot;</span><span class="p">,</span>  <span class="c1"># b-spline fitting parameters as the isotropic sizing of the mesh elements</span>
+            <span class="s2">&quot;-c&quot;</span><span class="p">,</span> <span class="s2">&quot;[50x50x40x30, 0.00000001]&quot;</span><span class="p">,</span>  <span class="c1"># convergence as number of iterations at each resolution and convergence threshold</span>
+            <span class="s2">&quot;-i&quot;</span><span class="p">,</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;images&quot;</span><span class="p">][</span><span class="n">index</span><span class="p">],</span>
+            <span class="s2">&quot;-o&quot;</span><span class="p">,</span> <span class="n">biascorrectedfile</span><span class="p">,</span>
+            <span class="s2">&quot;-r&quot;</span><span class="p">,</span> <span class="s2">&quot;0&quot;</span><span class="p">,</span>  <span class="c1"># no intensity resacling</span>
+            <span class="s2">&quot;-s&quot;</span><span class="p">,</span> <span class="s2">&quot;2&quot;</span><span class="p">,</span>  <span class="c1"># shrink factor</span>
+            <span class="s2">&quot;-v&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span> <span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;0&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">20</span><span class="p">)</span>
+            <span class="k">print</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cmd0</span><span class="p">))</span>
+            <span class="k">print</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">20</span><span class="p">)</span>
+        <span class="n">environment</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span>
+        <span class="n">environment</span><span class="p">[</span><span class="s2">&quot;ANTSPATH&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;binaries&quot;</span><span class="p">]</span>
+        <span class="n">environment</span><span class="p">[</span><span class="s2">&quot;PATH&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="s2">&quot;:&quot;</span> <span class="o">+</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;binaries&quot;</span><span class="p">]</span>
+        <span class="n">process</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="n">cmd0</span><span class="p">,</span>
+                                   <span class="n">env</span><span class="o">=</span><span class="n">environment</span><span class="p">,</span>
+                                   <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span>
+                                   <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">)</span>
+        <span class="n">stdout</span><span class="p">,</span> <span class="n">stderr</span> <span class="o">=</span> <span class="n">process</span><span class="o">.</span><span class="n">communicate</span><span class="p">()</span>
+        <span class="n">exitcode</span> <span class="o">=</span> <span class="n">process</span><span class="o">.</span><span class="n">returncode</span>
+        <span class="k">if</span> <span class="n">exitcode</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Command &#39;{0}&#39; failed:: {1}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cmd0</span><span class="p">),</span> <span class="n">stderr</span> <span class="o">+</span> <span class="n">stdout</span><span class="p">))</span>
+        <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;images&quot;</span><span class="p">][</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">biascorrectedfile</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;Done.&quot;</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">cmd0</span> <span class="o">=</span> <span class="bp">None</span>
+
+
+<span class="c1"># Basic registration options</span>
+<span class="k">print</span><span class="p">(</span><span class="s2">&quot;Starting registration...&quot;</span><span class="p">)</span>
+<span class="n">cmd1</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;antsRegistration&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;-d&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;dimensions&quot;</span><span class="p">]),</span>
+    <span class="s2">&quot;--float&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;--verbose&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span> <span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;0&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;-u&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;-n&quot;</span><span class="p">,</span> <span class="s2">&quot;Linear&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;-w&quot;</span><span class="p">,</span> <span class="s2">&quot;[0.005,0.995]&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;-z&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;-r&quot;</span><span class="p">,</span> <span class="s2">&quot;[{0},{1},1]&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;references&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;images&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]),</span>
+    <span class="s2">&quot;-o&quot;</span><span class="p">,</span> <span class="n">baseoutput</span><span class="p">]</span>
+<span class="c1"># Affine options</span>
+<span class="n">cmd1</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;-t&quot;</span><span class="p">,</span> <span class="s2">&quot;Affine[{0}]&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;gradient_step&quot;</span><span class="p">])]</span>
+<span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nb_modalities</span><span class="p">):</span>
+    <span class="n">cmd1</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;-m&quot;</span><span class="p">,</span> <span class="s2">&quot;MI[{0},{1},{2},{3},{4},{5}]&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;references&quot;</span><span class="p">][</span><span class="n">index</span><span class="p">],</span>
+        <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;images&quot;</span><span class="p">][</span><span class="n">index</span><span class="p">],</span>
+        <span class="n">metric_weight</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">index</span><span class="p">],</span>
+        <span class="n">radius_or_number_of_bins</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+        <span class="n">sampling_strategy</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+        <span class="n">sampling_percentage</span><span class="p">[</span><span class="mi">0</span><span class="p">])]</span>
+<span class="n">cmd1</span> <span class="o">+=</span> <span class="p">[</span>
+    <span class="s2">&quot;-c&quot;</span><span class="p">,</span> <span class="s2">&quot;[{0},{1},{2}]&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="n">to_ants_list</span><span class="p">(</span><span class="n">number_of_iterations</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+        <span class="n">convergence_threshold</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+        <span class="n">convergence_window_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+    <span class="s2">&quot;-f&quot;</span><span class="p">,</span> <span class="n">to_ants_list</span><span class="p">(</span><span class="n">shrink_factors</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+    <span class="s2">&quot;-s&quot;</span><span class="p">,</span> <span class="n">to_ants_list</span><span class="p">(</span><span class="n">smoothing_sigmas</span><span class="p">[</span><span class="mi">0</span><span class="p">])]</span>
+<span class="c1"># NL options</span>
+<span class="k">if</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;dononlinear&quot;</span><span class="p">]:</span>
+    <span class="n">cmd1</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;-t&quot;</span><span class="p">,</span> <span class="s2">&quot;SyN[{0},3,0]&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;gradient_step&quot;</span><span class="p">])]</span>
+    <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nb_modalities</span><span class="p">):</span>
+        <span class="n">cmd1</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">&quot;-m&quot;</span><span class="p">,</span> <span class="s2">&quot;CC[{0},{1},{2},{3}]&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;references&quot;</span><span class="p">][</span><span class="n">index</span><span class="p">],</span>
+            <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;images&quot;</span><span class="p">][</span><span class="n">index</span><span class="p">],</span>
+            <span class="n">metric_weight</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">index</span><span class="p">],</span>
+            <span class="n">radius_or_number_of_bins</span><span class="p">[</span><span class="mi">1</span><span class="p">])]</span>
+    <span class="n">cmd1</span> <span class="o">+=</span> <span class="p">[</span>
+        <span class="s2">&quot;-c&quot;</span><span class="p">,</span> <span class="s2">&quot;[{0},{1},{2}]&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">to_ants_list</span><span class="p">(</span><span class="n">number_of_iterations</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+            <span class="n">convergence_threshold</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+            <span class="n">convergence_window_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+        <span class="s2">&quot;-f&quot;</span><span class="p">,</span> <span class="n">to_ants_list</span><span class="p">(</span><span class="n">shrink_factors</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+        <span class="s2">&quot;-s&quot;</span><span class="p">,</span> <span class="n">to_ants_list</span><span class="p">(</span><span class="n">smoothing_sigmas</span><span class="p">[</span><span class="mi">1</span><span class="p">])]</span>
+<span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">20</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cmd1</span><span class="p">))</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">20</span><span class="p">)</span>
+<span class="n">environment</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span>
+<span class="n">environment</span><span class="p">[</span><span class="s2">&quot;ANTSPATH&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;binaries&quot;</span><span class="p">]</span>
+<span class="n">environment</span><span class="p">[</span><span class="s2">&quot;PATH&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="s2">&quot;:&quot;</span> <span class="o">+</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;binaries&quot;</span><span class="p">]</span>
+<span class="n">process</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="n">cmd1</span><span class="p">,</span>
+                           <span class="n">env</span><span class="o">=</span><span class="n">environment</span><span class="p">,</span>
+                           <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span>
+                           <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">)</span>
+<span class="n">stdout</span><span class="p">,</span> <span class="n">stderr</span> <span class="o">=</span> <span class="n">process</span><span class="o">.</span><span class="n">communicate</span><span class="p">()</span>
+<span class="n">exitcode</span> <span class="o">=</span> <span class="n">process</span><span class="o">.</span><span class="n">returncode</span>
+<span class="k">if</span> <span class="n">exitcode</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Command &#39;{0}&#39; failed:: {1}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cmd1</span><span class="p">),</span> <span class="n">stderr</span> <span class="o">+</span> <span class="n">stdout</span><span class="p">))</span>
+<span class="n">affinefile</span> <span class="o">=</span> <span class="n">baseoutput</span> <span class="o">+</span> <span class="s2">&quot;0GenericAffine.mat&quot;</span>
+<span class="n">fieldfile</span> <span class="o">=</span> <span class="n">baseoutput</span> <span class="o">+</span> <span class="s2">&quot;1Warp.nii.gz&quot;</span>
+<span class="k">print</span><span class="p">(</span><span class="s2">&quot;Done.&quot;</span><span class="p">)</span>
+
+
+<span class="c1"># Apply deformation</span>
+<span class="k">print</span><span class="p">(</span><span class="s2">&quot;Apply deformation...&quot;</span><span class="p">)</span>
+<span class="n">warpedfiles</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nb_modalities</span><span class="p">):</span>
+    <span class="n">outfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;outdir&quot;</span><span class="p">],</span> <span class="s2">&quot;ants_2WarpToTemplate.nii.gz&quot;</span><span class="p">)</span>
+    <span class="n">cmd2</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">&quot;antsApplyTransforms&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;-d&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;dimensions&quot;</span><span class="p">]),</span>
+        <span class="s2">&quot;--float&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;--verbose&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span> <span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;0&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;-i&quot;</span><span class="p">,</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;images&quot;</span><span class="p">][</span><span class="n">index</span><span class="p">],</span>
+        <span class="s2">&quot;-o&quot;</span><span class="p">,</span> <span class="n">outfile</span><span class="p">,</span>
+        <span class="s2">&quot;-r&quot;</span><span class="p">,</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;references&quot;</span><span class="p">][</span><span class="n">index</span><span class="p">],</span>
+        <span class="s2">&quot;-t&quot;</span><span class="p">,</span> <span class="n">fieldfile</span><span class="p">,</span>
+        <span class="s2">&quot;-t&quot;</span><span class="p">,</span> <span class="n">affinefile</span><span class="p">,</span>
+        <span class="s2">&quot;-n&quot;</span><span class="p">,</span> <span class="s2">&quot;BSpline&quot;</span><span class="p">]</span>
+<span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">20</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cmd2</span><span class="p">))</span>
+    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">20</span><span class="p">)</span>
+<span class="n">environment</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span>
+<span class="n">environment</span><span class="p">[</span><span class="s2">&quot;ANTSPATH&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;binaries&quot;</span><span class="p">]</span>
+<span class="n">environment</span><span class="p">[</span><span class="s2">&quot;PATH&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="s2">&quot;:&quot;</span> <span class="o">+</span> <span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;binaries&quot;</span><span class="p">]</span>
+<span class="n">process</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="n">cmd2</span><span class="p">,</span>
+                           <span class="n">env</span><span class="o">=</span><span class="n">environment</span><span class="p">,</span>
+                           <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span>
+                           <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">)</span>
+<span class="n">stdout</span><span class="p">,</span> <span class="n">stderr</span> <span class="o">=</span> <span class="n">process</span><span class="o">.</span><span class="n">communicate</span><span class="p">()</span>
+<span class="n">exitcode</span> <span class="o">=</span> <span class="n">process</span><span class="o">.</span><span class="n">returncode</span>
+<span class="k">if</span> <span class="n">exitcode</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Command &#39;{0}&#39; failed:: {1}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cmd2</span><span class="p">),</span> <span class="n">stderr</span> <span class="o">+</span> <span class="n">stdout</span><span class="p">))</span>
+<span class="k">print</span><span class="p">(</span><span class="s2">&quot;Done.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Update the outputs and save them and the inputs in a &#8216;logs&#8217; directory.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">logdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">inputs</span><span class="p">[</span><span class="s2">&quot;outdir&quot;</span><span class="p">],</span> <span class="s2">&quot;logs&quot;</span><span class="p">)</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">logdir</span><span class="p">):</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">logdir</span><span class="p">)</span>
+<span class="n">params</span> <span class="o">=</span> <span class="nb">locals</span><span class="p">()</span>
+<span class="n">outputs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">([(</span><span class="n">name</span><span class="p">,</span> <span class="n">params</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
+               <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;cmd0&quot;</span><span class="p">,</span> <span class="s2">&quot;cmd1&quot;</span><span class="p">,</span> <span class="s2">&quot;cmd2&quot;</span><span class="p">,</span> <span class="s2">&quot;affinefile&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;fieldfile&quot;</span><span class="p">)])</span>
+<span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">final_struct</span> <span class="ow">in</span> <span class="p">[(</span><span class="s2">&quot;inputs&quot;</span><span class="p">,</span> <span class="n">inputs</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;outputs&quot;</span><span class="p">,</span> <span class="n">outputs</span><span class="p">),</span>
+                           <span class="p">(</span><span class="s2">&quot;runtime&quot;</span><span class="p">,</span> <span class="n">runtime</span><span class="p">)]:</span>
+    <span class="n">log_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">logdir</span><span class="p">,</span> <span class="s2">&quot;{0}.json&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">log_file</span><span class="p">,</span> <span class="s2">&quot;wt&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">open_file</span><span class="p">:</span>
+        <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">final_struct</span><span class="p">,</span> <span class="n">open_file</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">check_circular</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                  <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+    <span class="n">pprint</span><span class="p">(</span><span class="s2">&quot;[info] Outputs:&quot;</span><span class="p">)</span>
+    <span class="n">pprint</span><span class="p">(</span><span class="n">outputs</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><strong>Total running time of the script:</strong> ( 0 minutes  0.000 seconds)</p>
+<div class="sphx-glr-footer container">
+<div class="sphx-glr-download container">
+<a class="reference download internal" href="../_downloads/pyconnectome_ants_register.py" download=""><code class="xref download docutils literal"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">pyconnectome_ants_register.py</span></code></a></div>
+<div class="sphx-glr-download container">
+<a class="reference download internal" href="../_downloads/pyconnectome_ants_register.ipynb" download=""><code class="xref download docutils literal"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">pyconnectome_ants_register.ipynb</span></code></a></div>
+</div>
+<p class="sphx-glr-signature">Gallery generated by Sphinx-Gallery</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+
+    <div class="clearer">
+    </div>
+  </div>
+  
+</div>
+
+<div class="footer">
+    &copy; 2017, pyConnectome developers &lt;antoine.grigis@cea.fr&gt;.
+</div>
+  </body>
+</html>

@@ -1,0 +1,241 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+  
+    <title>PYCONNECTOME &mdash; pyConnectome</title>
+  <!-- htmltitle is before nature.css - we use this hack to load bootstrap first -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="../../_static/css/bootstrap.min.css" media="screen" />
+
+    
+    <link rel="stylesheet" href="../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/gallery.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="pyConnectome" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+  
+   
+       <script type="text/javascript" src="../../_static/sidebar.js"></script>
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="../../_static/js/bootstrap.min.js" type="text/javascript"></script>
+
+  <script src="../../_static/js/angular.min.js" type="text/javascript"></script>
+  <script type="text/javascript">
+    var app = angular.module("navApp", []);
+    app.controller('navCtrl', ['$scope', '$window', function($scope, $window) {
+      $scope.isActive = function (viewLocation) {
+        var rel = $window.location.pathname.split("/")
+        rel = rel[rel.length - 1]
+        rel = rel.split(".")[0]
+        var active = (viewLocation === rel);
+        return active;};
+    }]);
+  </script>
+
+  </head>
+  <body role="document"><div class="banner">
+  <div class="container-fluid banner-container">
+    <div class="row banner-inner">
+      <div class="col-xs-4">
+        <img alt="Logo" src="../../_static/pyconnectome.png">
+      </div>
+      <div class="col-xs-8">
+            <p>Diffusion MRI connectome.</p>
+      </div>
+    </div>  
+  </div>
+</div><nav class="navbar navbar-default navbar-static-top">
+  <div class="container-fluid">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../../index.html">
+        </a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse" ng-controller="navCtrl" ng-app="navApp">
+      <ul class="nav navbar-nav">
+        <li ng-class="{ active: isActive('index') }"><a href="../../index.html">Home</a></li>
+        <li ng-class="{ active: isActive('installation') }"><a href="../../generated/installation.html">Installation</a></li>
+        <li ng-class="{ active: isActive('gallery') }"><a href="../../auto_gallery/gallery.html">Gallery</a></li>
+        <li ng-class="{ active: isActive('documentation') }"><a href="../../generated/documentation.html">API documentation</a></li>
+        <!--<li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"> <span class="caret"></span></a>
+          <ul class="dropdown-menu">
+	        <li><a href="../../generated/pyconnectome.html">Pyconnectome</a></li>
+<li><a href="../../generated/pyconnectome.tractography.html">Pyconnectome.tractography</a></li>
+<li><a href="../../generated/pyconnectome.metrics.html">Pyconnectome.metrics</a></li>
+<li><a href="../../generated/pyconnectome.utils.html">Pyconnectome.utils</a></li>
+<li><a href="../../generated/pyconnectome.models.html">Pyconnectome.models</a></li>
+<li><a href="../../generated/pyconnectome.plotting.html">Pyconnectome.plotting</a></li>
+<li><a href="../../generated/pyconnectome.connectomes.html">Pyconnectome.connectomes</a></li>
+          </ul>
+        </li>-->
+        <li><a href="https://github.com/AGrigis/pysphinxdoc">PYSPHINXDOC</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+<div class="content-wrapper">
+    <div class="sphinxsidebar">
+      <div class="sphinxsidebarwrapper">
+
+        <!-- info setup -->
+          <p class="doc-version">
+           This documentation is for pyconnectome <strong>version 1.0.0</strong>
+          </p>
+        <p class="citing">
+          If you use the software, please do not esitate to 
+          <a &mdash; <a href="https://github.com/neurospin/pyconnectome">
+          Report a Bug</a>.
+        </p>
+
+      <!-- toc tree -->
+      
+
+      </div>
+    </div>
+  
+
+  <div class="content">
+      
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pyconnectome.configuration</h1><div class="highlight"><pre>
+<span></span><span class="c1">##########################################################################</span>
+<span class="c1"># NSAp - Copyright (C) CEA, 2013</span>
+<span class="c1"># Distributed under the terms of the CeCILL-B license, as published by</span>
+<span class="c1"># the CEA-CNRS-INRIA. Refer to the LICENSE file or to</span>
+<span class="c1"># http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html</span>
+<span class="c1"># for details.</span>
+<span class="c1">##########################################################################</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Module that provides tools to configure external softwares.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="c1"># System import</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">subprocess</span>
+
+
+<div class="viewcode-block" id="environment"><a class="viewcode-back" href="../../generated/pyconnectome.configuration.html#pyconnectome.configuration.environment">[docs]</a><span class="k">def</span> <span class="nf">environment</span><span class="p">(</span><span class="n">sh_file</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="p">{}):</span>
+    <span class="sd">&quot;&quot;&quot; Function that return a dictionary containing the environment</span>
+<span class="sd">    needed by a program (for instance FSL or FreeSurfer).</span>
+
+<span class="sd">    In the configuration file, the variable are expected to be defined</span>
+<span class="sd">    as &#39;VARIABLE_NAME=value&#39;.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sh_file: str (mandatory)</span>
+<span class="sd">        The path to the sh script used to set up the environment.</span>
+<span class="sd">    env: dict (optional, default empty)</span>
+<span class="sd">        The default environment used to parse the configuration sh file.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    environment: dict</span>
+<span class="sd">        A dict containing the program configuration.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Use sh commands and a string instead of a list since</span>
+    <span class="c1"># we&#39;re using shell=True</span>
+    <span class="c1"># Pass empty environment to get only the prgram variables</span>
+    <span class="n">command</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;bash&quot;</span><span class="p">,</span> <span class="s2">&quot;-c&quot;</span><span class="p">,</span> <span class="s2">&quot;. &#39;{0}&#39; ; /usr/bin/printenv&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sh_file</span><span class="p">)]</span>
+    <span class="n">process</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="n">env</span><span class="p">,</span>
+                               <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">)</span>
+    <span class="n">stdout</span><span class="p">,</span> <span class="n">stderr</span> <span class="o">=</span> <span class="n">process</span><span class="o">.</span><span class="n">communicate</span><span class="p">()</span>
+    <span class="n">stdout</span> <span class="o">=</span> <span class="n">stdout</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf8&quot;</span><span class="p">)</span>
+    <span class="n">stderr</span> <span class="o">=</span> <span class="n">stderr</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf8&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">process</span><span class="o">.</span><span class="n">returncode</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span>
+            <span class="s2">&quot;Could not parse &#39;sh_file&#39; {0}. Maybe you should check if all &quot;</span>
+            <span class="s2">&quot;the dependencies are installed&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">stderr</span><span class="p">))</span>
+
+    <span class="c1"># Parse the output : each line should be of the form</span>
+    <span class="c1"># &#39;VARIABLE_NAME=value&#39;</span>
+    <span class="n">environment</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">stdout</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">linesep</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;export&quot;</span><span class="p">):</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;export &quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&#39;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;^(\w+)=(\S*)$&quot;</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+            <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">groups</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="o">!=</span> <span class="s2">&quot;PWD&quot;</span><span class="p">:</span>
+                <span class="n">environment</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">return</span> <span class="n">environment</span></div>
+
+
+<div class="viewcode-block" id="concat_environment"><a class="viewcode-back" href="../../generated/pyconnectome.configuration.html#pyconnectome.configuration.concat_environment">[docs]</a><span class="k">def</span> <span class="nf">concat_environment</span><span class="p">(</span><span class="n">env1</span><span class="p">,</span> <span class="n">env2</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Concatenate two environments.</span>
+
+<span class="sd">    1 - Check duplicated keys and concatenate their values.</span>
+<span class="sd">    2 - Update the concatenated environment.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    env1: dict (mandatory)</span>
+<span class="sd">        First environment.</span>
+<span class="sd">    env2: dict (mandatory)</span>
+<span class="sd">        Second environment.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    concat_env: dict</span>
+<span class="sd">        Updated environment where the duplicated keys values are concatenated</span>
+<span class="sd">        with &#39;:&#39;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">concat_env</span> <span class="o">=</span> <span class="n">env1</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">env2</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">concat_env</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">value</span> <span class="o">!=</span> <span class="n">concat_env</span><span class="p">[</span><span class="n">key</span><span class="p">]:</span>
+                <span class="n">concat_env</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">+=</span> <span class="s2">&quot;:&quot;</span> <span class="o">+</span> <span class="n">env2</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">concat_env</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">env2</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">concat_env</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+
+    <div class="clearer">
+    </div>
+  </div>
+  
+</div>
+
+<div class="footer">
+    &copy; 2017, pyConnectome developers &lt;antoine.grigis@cea.fr&gt;.
+</div>
+  </body>
+</html>

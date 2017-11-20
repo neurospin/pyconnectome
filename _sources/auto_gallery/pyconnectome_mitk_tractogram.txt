@@ -1,0 +1,298 @@
+
+
+.. _sphx_glr_auto_gallery_pyconnectome_mitk_tractogram.py:
+
+
+Pyconnectome Mitk Tractogram
+============================
+
+Example automatically generated from package script.
+
+
+
+.. code-block:: python
+
+
+
+    # System import
+    import os
+    import argparse
+    import json
+    from pprint import pprint
+    from datetime import datetime
+    import textwrap
+    from argparse import RawTextHelpFormatter
+
+    # Bredala module
+    try:
+        import bredala
+        bredala.USE_PROFILER = False
+        bredala.register("pyconnectome.tractography.globalo",
+                         names=["mitk_gibbs_tractogram"])
+    except:
+        pass
+
+    # PyFreeSurfer import
+    from pyfreesurfer import DEFAULT_FREESURFER_PATH
+    from pyfreesurfer.wrapper import FSWrapper
+
+    # Package import
+    from pyconnectome import __version__ as version
+    from pyconnectome import DEFAULT_FSL_PATH
+    from pyconnectome.wrapper import FSLWrapper
+    from pyconnectome.tractography.globalo import mitk_gibbs_tractogram
+
+
+    # Parameters to keep trace
+    __hopla__ = ["runtime", "inputs", "outputs"]
+
+
+    DOC = """
+    Compute the tractogram of a given diffusion set using MITK Gibbs Tracking.
+
+    Example of command for IMAGEN:
+
+    python ~/git/pyconnectome/pyconnectome/scripts/pyconnectome_mitk_tractogram \
+        -o /tmp/nsap/tractograms/mitk \
+        -s 000000022453 \
+        -i /neurospin/imagen/BL/processed/dwi_preproc_wo_fieldmap/000000022453/dwi.nii.gz \
+        -b /neurospin/imagen/BL/processed/dwi_preproc_wo_fieldmap/000000022453/dwi.bval \
+        -r /neurospin/imagen/BL/processed/dwi_preproc_wo_fieldmap/000000022453/dwi.bvec \
+        -n /neurospin/imagen/BL/processed/dwi_preproc_wo_fieldmap/000000022453/nodif_brain.nii.gz \
+        -B /neurospin/imagen/BL/processed/dwi_preproc_wo_fieldmap/000000022453/nodif_brain_mask.nii.gz \
+        -M /neurospin/imagen/BL/processed/freesurfer \
+        -O 4 \
+        -R 0.06 \
+        -G 0.001 \
+        -D /tmp/nsap/tractograms/mitk/tmp \
+        -N 1000000 \
+        -v 2
+
+    You may need to export the MITK binaries:
+
+    export PATH=$PATH:/neurospin/nsap/local/MITK/MITK-dmri-install
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/neurospin/nsap/local/Qt5.7.0/5.7/gcc_64/lib
+    export QT_PLUGIN_PATH=/neurospin/nsap/local/Qt5.7.0/5.7/gcc_64/plugins
+    """
+
+
+    def is_file(filepath):
+        """ Check file's existence - argparse 'type' argument.
+        """
+        if not os.path.isfile(filepath):
+            raise argparse.ArgumentError("File does not exist: %s" % filepath)
+        return filepath
+
+
+    def get_cmd_line_args():
+        """
+        Create a command line argument parser and return a dict mapping
+        <argument name> -> <argument value>.
+        """
+        parser = argparse.ArgumentParser(
+            prog="pyconnectome_mitk_tractogram",
+            description=textwrap.dedent(DOC),
+            formatter_class=RawTextHelpFormatter)
+
+        # Required arguments
+        required = parser.add_argument_group("required arguments")
+        required.add_argument(
+            "-o", "--outdir",
+            required=True, metavar="<path>",
+            help="Directory where to output.")
+        required.add_argument(
+            "-s", "--subject-id",
+            required=True, metavar="<id>",
+            help="Subject identifier.")
+        required.add_argument(
+            "-i", "--dwi",
+            type=is_file, required=True, metavar="<path>",
+            help="Path to the diffusion data.")
+        required.add_argument(
+            "-b", "--bvals",
+            type=is_file, required=True, metavar="<path>",
+            help="Path to the bvalue list.")
+        required.add_argument(
+            "-r", "--bvecs",
+            type=is_file, required=True, metavar="<path>",
+            help="Path to the list of diffusion-sensitized directions.")
+
+        # Optional arguments
+        parser.add_argument(
+            "-B", "--nodif-brain",
+            type=is_file, metavar="<path>",
+            help="Diffusion brain-only Nifti volume with bvalue ~ 0. If not "
+                 "passed, it is generated automatically by averaging all the b0 "
+                 "volumes of the DWI.")
+        parser.add_argument(
+            "-M", "--nodif-brain-mask",
+            type=is_file, metavar="<path>",
+            help="Path to the Nifti brain binary mask in diffusion. If not "
+                 "passed, it is created with MRtrix 'dwi2mask'.")
+        parser.add_argument(
+            "-S", "--subjects-dir",
+            metavar="<path>",
+            help="FreeSurfer subjects directory. To set or bypass the "
+                 "$SUBJECTS_DIR environment variable.")
+        parser.add_argument(
+            "-O", "--sh-order",
+            type=int, metavar="<int>", default=4,
+            help="Qball reconstruction spherical harmonics order.")
+        parser.add_argument(
+            "-R", "--reg-factor",
+            type=float, metavar="<float>", default=0.006,
+            help="Qball reconstruction regularization factor.")
+        parser.add_argument(
+            "-N", "--nb-iterations",
+            type=int, metavar="<int>", default=int(5e8),
+            help="Gibbs tracking number of iterations.")
+        parser.add_argument(
+            "-L", "--particle-length",
+            type=float, default=0.0, metavar="<float>",
+            help="Gibbs tracking particle length, selected automatically if 0.")
+        parser.add_argument(
+            "-W", "--particle-width",
+            type=float, default=0.0, metavar="<float>",
+            help="Gibbs tracking particle width, selected automatically if 0.")
+        parser.add_argument(
+            "-G", "--particle-weight",
+            type=float, default=0.0, metavar="<float>",
+            help="Gibbs tracking particle weight, selected automatically if 0.")
+        parser.add_argument(
+            "-T", "--start-temperature",
+            type=float, default=0.1, metavar="<float>",
+            help="Gibbs tracking start temperature.")
+        parser.add_argument(
+            "-U", "--end-temperature",
+            type=float, default=0.001, metavar="<float>",
+            help="Gibbs tracking end temperature.")
+        parser.add_argument(
+            "-Y", "--inex-energy-balance",
+            type=float, default=0.0, metavar="<float>",
+            help="Gibbs tracking weighting between in/ext energies.")
+        parser.add_argument(
+            "-I", "--min-fiber-length",
+            type=int, default=20, metavar="<int>",
+            help="Minimum fiber length in mm. Fibers that are shorter are "
+                 "discarded.")
+        parser.add_argument(
+            "-C", "--curvature-threshold",
+            type=int, default=45, metavar="<int>",
+            help="Maximum fiber curvature in degrees.")
+        parser.add_argument(
+            "-D", "--tempdir",
+            metavar="<path>",
+            help="Where to write temporary directories e.g. /tmp.")
+        parser.add_argument(
+            "-H", "--fs-sh",
+            type=is_file, metavar="<path>",
+            help="Bash script initializing FreeSurfer's environment.")
+        parser.add_argument(
+            "-F", "--fsl-sh",
+            type=is_file, metavar="<path>",
+            help="Bash script initializing FSL's environment.")
+        parser.add_argument(
+            "-v", "--verbose",
+            type=int, choices=[0, 1, 2], default=2,
+            help="Increase the verbosity level: 0 silent, [1, 2] verbose.")
+
+        # Create a dict of arguments to pass to the 'main' function
+        args = parser.parse_args()
+        kwargs = vars(args)
+        verbose = kwargs.pop("verbose")
+        if kwargs["fs_sh"] is None:
+            kwargs["fs_sh"] = DEFAULT_FREESURFER_PATH
+        if kwargs["fsl_sh"] is None:
+            kwargs["fsl_sh"] = DEFAULT_FSL_PATH
+
+        return kwargs, verbose
+
+
+
+Parse the command line.
+
+
+
+.. code-block:: python
+
+
+    inputs, verbose = get_cmd_line_args()
+    tool = "pyconnectome_mitk_tractogram"
+    timestamp = datetime.now().isoformat()
+    tool_version = version
+    fsl_version = FSLWrapper([], shfile=inputs["fsl_sh"]).version
+    freesurfer_version = FSWrapper([], inputs["fs_sh"]).version
+    params = locals()
+    runtime = dict([(name, params[name])
+                   for name in ("tool", "tool_version", "fsl_version",
+                                "freesurfer_version", "timestamp")])
+    outputs = None
+    if verbose > 0:
+        pprint("[info] Starting MITK tractogram ...")
+        pprint("[info] Runtime:")
+        pprint(runtime)
+        pprint("[info] Inputs:")
+        pprint(inputs)
+
+
+
+Start the tractogram computation.
+
+
+
+.. code-block:: python
+
+
+    mitk_tractogram = mitk_gibbs_tractogram(**inputs)
+
+
+
+Update the outputs and save them and the inputs in a 'logs' directory.
+
+
+
+.. code-block:: python
+
+
+    logdir = os.path.join(inputs["outdir"], "logs")
+    if not os.path.isdir(logdir):
+        os.mkdir(logdir)
+    params = locals()
+    outputs = dict([(name, params[name]) for name in ("mitk_tractogram", )])
+    for name, final_struct in [("inputs", inputs), ("outputs", outputs),
+                               ("runtime", runtime)]:
+        log_file = os.path.join(logdir, "{0}.json".format(name))
+        with open(log_file, "wt") as open_file:
+            json.dump(final_struct, open_file, sort_keys=True, check_circular=True,
+                      indent=4)
+    if verbose > 1:
+        pprint("[info] Outputs:")
+        pprint(outputs)
+
+**Total running time of the script:** ( 0 minutes  0.000 seconds)
+
+
+
+.. only :: html
+
+ .. container:: sphx-glr-footer
+
+
+  .. container:: sphx-glr-download
+
+     :download:`Download Python source code: pyconnectome_mitk_tractogram.py <pyconnectome_mitk_tractogram.py>`
+
+
+
+  .. container:: sphx-glr-download
+
+     :download:`Download Jupyter notebook: pyconnectome_mitk_tractogram.ipynb <pyconnectome_mitk_tractogram.ipynb>`
+
+
+.. only:: html
+
+ .. rst-class:: sphx-glr-signature
+
+    Gallery generated by Sphinx-Gallery
+
+

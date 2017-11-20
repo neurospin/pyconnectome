@@ -1,0 +1,39 @@
+.. AUTO-GENERATED FILE -- DO NOT EDIT!
+
+:orphan:
+
+API documentation of *pyconnectome.tractography*
+=================================================
+
+
+Tractography algorithms.
+
+
+.. raw:: html
+
+    <br/>    <!-- Block section -->
+    <table border='1' class='docutils' style='width:100%'>
+    <colgroup><col width='25%'/><col width='75%'/></colgroup>
+    <tbody valign='top'>
+    <tr class='row-odd'>
+    <td><a class='reference internal' href='pyconnectome.tractography.probabilist.html'><em>pyconnectome.tractography.probabilist</em></a></td>
+    <td>
+        <p>Probabilistic tractography using FSL or MRtrix.</p>
+    </td>
+    </tr>
+    <tr class='row-even'>
+    <td><a class='reference internal' href='pyconnectome.tractography.filtering.html'><em>pyconnectome.tractography.filtering</em></a></td>
+    <td>
+        <p>Common tools to filter tractograms.</p>
+    </td>
+    </tr>
+    <tr class='row-odd'>
+    <td><a class='reference internal' href='pyconnectome.tractography.globalo.html'><em>pyconnectome.tractography.globalo</em></a></td>
+    <td>
+        <p>Compute global tractography using MRtrix or MITK Gibbs Tracking.</p>
+    </td>
+    </tr>
+    </tbody>
+
+
+    </table>

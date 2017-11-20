@@ -1,0 +1,57 @@
+.. AUTO-GENERATED FILE -- DO NOT EDIT!
+
+:orphan:
+
+API documentation of *pyconnectome.plotting*
+=============================================
+
+
+Utility plottings functions.
+
+
+.. raw:: html
+
+    <br/>    <!-- Block section -->
+    <table border='1' class='docutils' style='width:100%'>
+    <colgroup><col width='25%'/><col width='75%'/></colgroup>
+    <tbody valign='top'>
+    <tr class='row-odd'>
+    <td><a class='reference internal' href='pyconnectome.plotting.animate.html'><em>pyconnectome.plotting.animate</em></a></td>
+    <td>
+        <p>Modules that provides tools to generate movies.</p>
+    </td>
+    </tr>
+    <tr class='row-even'>
+    <td><a class='reference internal' href='pyconnectome.plotting.network.html'><em>pyconnectome.plotting.network</em></a></td>
+    <td>
+        <p>Modules that provides tools to display networks.</p>
+    </td>
+    </tr>
+    <tr class='row-odd'>
+    <td><a class='reference internal' href='pyconnectome.plotting.scenes.html'><em>pyconnectome.plotting.scenes</em></a></td>
+    <td>
+        <p>Modules that provides predefined 3D rendering scenes.</p>
+    </td>
+    </tr>
+    <tr class='row-even'>
+    <td><a class='reference internal' href='pyconnectome.plotting.tractography.html'><em>pyconnectome.plotting.tractography</em></a></td>
+    <td>
+        <p>Modules that provides tractography renderings.</p>
+    </td>
+    </tr>
+    <tr class='row-odd'>
+    <td><a class='reference internal' href='pyconnectome.plotting.colors.html'><em>pyconnectome.plotting.colors</em></a></td>
+    <td>
+        <p>Modules that defines custom colors.</p>
+    </td>
+    </tr>
+    <tr class='row-even'>
+    <td><a class='reference internal' href='pyconnectome.plotting.pvtk.html'><em>pyconnectome.plotting.pvtk</em></a></td>
+    <td>
+        <p>Modules that provides tools to create 3D rendering using VTK.</p>
+    </td>
+    </tr>
+    </tbody>
+
+
+    </table>
