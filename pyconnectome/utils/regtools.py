@@ -195,7 +195,7 @@ def mcflirt(in_file, out_fileroot, cost="normcorr", bins=256, dof=6,
 def flirt(in_file, ref_file, omat=None, out=None, init=None, cost="corratio",
           usesqform=False, displayinit=False, anglerep="euler", bins=256,
           interp="trilinear", dof=12, applyxfm=False, applyisoxfm=None,
-          verbose=0, shfile=DEFAULT_FSL_PATH):
+          nosearch=False, verbose=0, shfile=DEFAULT_FSL_PATH):
     """ Wraps command flirt.
 
     The basic usage is:
@@ -239,6 +239,8 @@ def flirt(in_file, ref_file, omat=None, out=None, init=None, cost="corratio",
         resampling.
     verbose: int (optional)
         0 is least and default.
+    nosearch: bool (optional, default False)
+        if set perform no search to initializa the optimization.
     shfile: str (optional, default DEFAULT_FSL_PATH)
         The FSL configuration batch.
 
@@ -260,6 +262,7 @@ def flirt(in_file, ref_file, omat=None, out=None, init=None, cost="corratio",
            "-in", in_file,
            "-ref", ref_file,
            "-cost", cost,
+           "-searchcost", cost,
            "-anglerep", anglerep,
            "-bins", str(bins),
            "-interp", interp,
@@ -273,6 +276,8 @@ def flirt(in_file, ref_file, omat=None, out=None, init=None, cost="corratio",
         cmd += ["-displayinit"]
     if applyxfm:
         cmd += ["-applyxfm"]
+    if nosearch:
+        cmd += ["-nosearch"]
 
     if init is not None:
         cmd += ["-init", init]
