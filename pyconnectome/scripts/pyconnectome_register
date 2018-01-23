@@ -238,6 +238,12 @@ def get_cmd_line_args():
                  "labeldiff", "bbr"),
         help="the affine cost function type.")
     parser.add_argument(
+        "-L", "--interp",
+        default="spline",
+        choices=("spline", "nearestneighbour", "trilinear"),
+        help="the interpolation used when applying the deformation to extra "
+             "files.")
+    parser.add_argument(
         "-N", "--dononlinear", 
         action="store_true",
         help="if set, use the FNIRT routine to align the subject brain to the "
@@ -589,7 +595,7 @@ if inputs["extrafiles"] is not None:
                 out=path_mni_file,
                 init=affine_omat,
                 applyxfm=True,
-                interp="spline",
+                interp=inputs["interp"],
                 verbose=verbose,
                 shfile=inputs["fsl_sh"])
             extramnifiles.append(path_mni_file)              
