@@ -122,6 +122,10 @@ def get_cmd_line_args():
 
     # Optional arguments
     parser.add_argument(
+        "-C", "--cross-modality",
+        action="store_true", default=False,
+        help="If set perform a cross modality registration.")
+    parser.add_argument(
         "-B", "--nobfc",
         action="store_true", default=False,
         help="If set no bias field correction is performed.")
@@ -215,12 +219,11 @@ sampling_percentage = [0.25, None]
 sampling_strategy = ["Regular", None]
 convergence_threshold = [1.e-6, 1.e-9]
 convergence_window_size = [10, 10]
-number_of_iterations = [[1000, 500, 250, 0], [100, 100, 70, 20]]
+number_of_iterations = [[1000, 500, 250, 100], [100, 100, 70, 20]]
 transform_parameters = [(inputs["gradient_step"], ),
                         (inputs["gradient_step"], 3.0, 0.0)]
-shrink_factors = [[6, 4, 2, 1], [8, 4, 2, 1]]
-smoothing_sigmas = [[4, 2, 1, 0], [3, 2, 1, 0]]
-use_histogram_matching = [True, True]
+shrink_factors = [[6, 4, 2, 1], [6, 4, 2, 1]]
+smoothing_sigmas = [[4, 2, 1, 0], [4, 2, 1, 0]]
 metric_weight = [inputs["weights"], inputs["weights"]]
 baseoutput = os.path.join(inputs["outdir"], "ants_")
 
@@ -265,12 +268,16 @@ else:
 
 # Basic registration options
 print("Starting registration...")
+if inputs["cross_modality"]:
+    use_histogram_matching = "0"
+else:
+    use_histogram_matching = "1"
 cmd1 = [
     "antsRegistration",
     "-d", str(inputs["dimensions"]),
     "--float", "1",
     "--verbose", "1" if verbose > 0 else "0",
-    "-u", "1",
+    "-u", use_histogram_matching,
     "-n", "Linear",
     "-w", "[0.005,0.995]",
     "-z", "1",
