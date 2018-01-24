@@ -24,6 +24,99 @@ from pyconnectome.wrapper import FSLWrapper
 # Third party
 import numpy
 import nibabel
+import nibabel.gifti.giftiio as gio
+from pyfreesurfer.utils.surftools import TriSurface
+
+
+def load_folds(folds_file, graph_file=None):
+    """ Load morphologist folds and associated labels.
+
+    Parameters
+    ----------
+    folds_file: str( mandatory)
+        the folds '.gii' file.
+    graph_file: str (optional, default None)
+        the path to a morphologist '.arg' graph file.
+
+    Returns
+    -------
+    folds: dict with TriSurface
+        all the loaded folds. The fold names are stored in the metadata.
+    """
+    # Load the labels
+    if graph_file is not None:
+        labels = parse_graph(graph_file)
+    else:
+        labels = {}
+
+    # Load folds
+    image = gio.read(folds_file)
+    nb_of_surfs = len(image.darrays)
+    if nb_of_surfs % 2 != 0:
+        raise ValueError("Need an odd number of arrays (vertices, triangles).")
+    folds = {}
+    for vertindex in range(0, nb_of_surfs, 2):
+        vectices = image.darrays[vertindex].data
+        triangles = image.darrays[vertindex + 1].data
+        labelindex = image.darrays[vertindex].get_metadata()["Timestep"]
+        if labelindex != image.darrays[vertindex + 1].get_metadata()[
+                "Timestep"]:
+            raise ValueError("Gifti arrays '{0}' and '{1}' do not share the "
+                             "same label.".format(vertindex, vertindex + 1))
+        labelindex = int(labelindex)
+        if labelindex in labels:
+            label = labels[labelindex]
+        else:
+            label = "NC"
+        metadata = {"fold_name": label}
+        surf = TriSurface(vectices, triangles, labels=None, metadata=metadata)
+        folds[labelindex] = surf
+
+    return folds
+
+
+def parse_graph(graph_file):
+    """ Parse a Morphologist graph file to get the fold labels.
+
+    Parameters
+    ----------
+    graph_file: str (mandatory)
+        the path to a morphologist '.arg' graph file.
+
+    Returns
+    -------
+    labels: dict
+        a mapping between a mesh id and its label.
+    """
+    # Read all the lines in the graph file
+    with open(graph_file) as open_file:
+        lines = open_file.readlines()
+
+    # Search labels
+    infold = False
+    meshid = None
+    label = None
+    labels = {}
+    for line in lines:
+
+        # Locate fold items
+        if line.startswith("*BEGIN NODE fold"):
+            infold = True
+            continue
+        if infold and line.startswith("*END"):
+            if meshid in labels:
+                raise ValueError("'{0}' mesh id already found.".format(meshid))
+            labels[meshid] = label
+            infold = False
+            continue
+
+        # In fold item detect the mesh id and the associated label
+        if infold and line.startswith("label"):
+            label = line.replace("label", "").strip()
+        if infold and line.startswith("Tmtktri_label"):
+            meshid = int(line.replace("Tmtktri_label", "").strip())
+
+    return labels
 
 
 def merge_fibers(tractograms, tempdir=None):

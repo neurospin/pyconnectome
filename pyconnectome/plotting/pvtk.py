@@ -606,7 +606,7 @@ def surface(points, triangles, labels, ctab=None, opacity=1, set_lut=True,
 
     # Create the mapper
     mapper = vtk.vtkPolyDataMapper()
-    mapper.SetInputConnection(decimate.GetOutput())
+    mapper.SetInputConnection(decimate.GetOutputPort())
     if set_lut:
         mapper.SetLookupTable(lut)
         mapper.SetColorModeToMapScalars()
