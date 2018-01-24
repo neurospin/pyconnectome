@@ -1,0 +1,69 @@
+#!/usr/bin/env python
+##########################################################################
+# NSAp - Copyright (C) CEA, 2018
+# Distributed under the terms of the CeCILL-B license, as published by
+# the CEA-CNRS-INRIA. Refer to the LICENSE file or to
+# http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html
+# for details.
+##########################################################################
+
+# System import
+from __future__ import print_function
+import argparse
+import os
+import shutil
+from datetime import datetime
+import json
+from pprint import pprint
+import textwrap
+from argparse import RawTextHelpFormatter
+
+# Bredala import
+try:
+    import bredala
+    bredala.USE_PROFILER = False
+    bredala.register("pyconnectome.models.tensor",
+                     names=["dtifit"])
+except:
+    pass
+
+# Package import
+from pyconnectome.models.tensor import dtifit
+
+
+# Parameters to keep trace
+__hopla__ = ["runtime", "inputs", "outputs"]
+
+
+# Script documentation
+DOC = """
+Parse the command line.
+
+Example on HCP data:
+
+python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_scalars \
+    -d /neurospin/hcp/ANALYSIS/3T_connectomist/101006/preproc/3000/dwi.nii.gz \
+    -be /neurospin/hcp/ANALYSIS/3T_connectomist/101006/preproc/3000/bvecs \
+    -ba /neurospin/hcp/ANALYSIS/3T_connectomist/101006/preproc/3000/bvals \
+    -m /neurospin/hcp/PROCESSED/3T_diffusion_preproc/101006/T1w/Diffusion/nodif_brain_mask.nii.gz \
+    -o /neurospin/nsap/processed/hcp_sillons/data
+"""
+
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "-d", "--data", dest="data", help="diffusion weighted image data file.")
+parser.add_argument(
+    "-be", "--bvecs", dest="bvecs", help="b vectors file")
+parser.add_argument(
+    "-ba", "--bvals", dest="bvals", help="v values file")
+parser.add_argument(
+    "-m", "--mask", dest="mask", help="binarized volume in diffusion space \
+	 containing ones inside the brain and zeros outside the brain.")
+parser.add_argument(
+    "-o", "--out", dest="out", help="User specifies a basename that will be \
+	used to name the outputs of dtifit.")
+
+args = parser.parse_args()
+
+dtifit(args.data, args.bvecs, args.bvals, args.mask, args.out, wls=True,
+	   save_tensor=True)
