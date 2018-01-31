@@ -84,16 +84,25 @@ def sphere_integration(t1_file, folds, scalars, seg_file=None, radius=2,
     ----------
     t1_file: str
         the reference anatomical file.
+
     folds: dict with TriSurface
         all the loaded folds. The fold names are stored in the metadata.
         Vertices are in NIFTI voxel space.
 
     scalars: list of str
         a list of scalar map that will be intersected with the vertices.
+
     seg_file: str, default None
         the white/grey matter segmentation file.
+
     radius: float, default 2
         the sphere radius defines in the scalar space and expressed in voxel.
+
+    wm_label: int, default 200
+        the label for the white matter in the segmentation mask
+
+    gm_label : int, default 200
+        the label for the grey matter in the segmentation mask
 
     Returns
     -------
@@ -158,7 +167,6 @@ def sphere_integration(t1_file, folds, scalars, seg_file=None, radius=2,
                     # Initialize mean and median values
                     wm_mean, gm_mean = None, None
                     wm_median, gm_median = None, None
-                    wm_points, gm_points = None, None
                     if name in measures[labelindex][key]:
                         raise ValueError("All the scalar map must have "
                                          "different names.")
