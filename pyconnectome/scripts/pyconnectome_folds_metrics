@@ -53,8 +53,8 @@ Requirements:
     - scalar image files (e.g FA image file) (required).
     - subject id (required).
     - morphologist graph files (.arg) for left and right hemisphere (required).
-    - folds' ids on which to extract features for each hemisphere  : 
-      if no fold is specified features are extracted on every folds, 
+    - folds' ids on which to extract features for each hemisphere  :
+      if no fold is specified features are extracted on every folds,
       if -1 is specified no fold is extracted (optional).
     - white/grey matter segmentation files for left and right hemisphere
       (optional).
@@ -215,14 +215,15 @@ elif inputs["rightfolds"][0] != -1:
 
 if foldsL_:
     measuresL = sphere_integration(inputs["t1"], foldsL_, inputs["scalarfile"],
-                                   m_file=inputs["wgmfile"][0], radius=2)
+                                   seg_file=inputs["wgmfile"][0], radius=2)
 if foldsR_:
     measuresR = sphere_integration(inputs["t1"], foldsR_, inputs["scalarfile"],
-                                   m_file=inputs["wgmfile"][1], radius=2)
+                                   seg_file=inputs["wgmfile"][1], radius=2)
 
 """
 Save output in json and csv files
 """
+outputs = []
 
 # Write JSON output
 if foldsL_:
@@ -231,18 +232,21 @@ if foldsL_:
                             inputs["subject"]))
     with open(out_file, 'w') as outfile:
         json.dump(measuresL, outfile)
+    outputs.append(out_file)
 if foldsR_:
     out_file = os.path.join(inputs["outdir"],
                             "Rh_{0}_folds_measure.json".format(
                             inputs["subject"]))
     with open(out_file, 'w') as outfile:
         json.dump(measuresR, outfile)
+    outputs.append(out_file)
 
 # Write csv output
 if foldsL_:
     out_file = os.path.join(inputs["outdir"],
                             "Lh_{0}_folds_measure.csv".format(
                             inputs["subject"]))
+    outputs.append(out_file)
     with open(out_file, 'w') as f:
         random_fold = measuresL.keys()[0]
         random_point = measuresL[random_fold].keys()[0]
@@ -261,7 +265,8 @@ if foldsL_:
                 for feat in features:
                     for value in measuresL[fold][point][feat].keys():
                         line = "{0};{1}".format(line,
-                               measuresL[fold][point][feat][value])
+                                                measuresL[fold][point]
+                                                         [feat][value])
                 f.write(line)
                 f.write("\n")
 
@@ -269,6 +274,7 @@ if foldsR_:
     out_file = os.path.join(inputs["outdir"],
                             "Rh_{0}_folds_measure.csv".format(
                             inputs["subject"]))
+    outputs.append(out_file)
     with open(out_file, 'w') as f:
         random_fold = measuresR.keys()[0]
         random_point = measuresR[random_fold].keys()[0]
@@ -287,6 +293,24 @@ if foldsR_:
                 for feat in features:
                     for value in measuresR[fold][point][feat].keys():
                         line = "{0};{1}".format(line,
-                                measuresR[fold][point][feat][value])
+                                                measuresR[fold][point]
+                                                         [feat][value])
                 f.write(line)
                 f.write("\n")
+"""
+Update the outputs and save them and the inputs in a 'logs' directory.
+"""
+
+logdir = os.path.join(inputs["outdir"], "logs")
+if not os.path.isdir(logdir):
+    os.mkdir(logdir)
+params = locals()
+for name, final_struct in [("inputs", inputs), ("outputs", outputs),
+                           ("runtime", runtime)]:
+    log_file = os.path.join(logdir, "{0}.json".format(name))
+    with open(log_file, "wt") as open_file:
+        json.dump(final_struct, open_file, sort_keys=True, check_circular=True,
+                  indent=4)
+if verbose > 1:
+    print("[final]")
+    pprint(outputs)
