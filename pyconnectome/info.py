@@ -74,7 +74,8 @@ PROVIDES = ["pyconnectome"]
 REQUIRES = [
     "numpy>=1.6.1",
     "scipy>=0.9.0",
-    "nibabel>=1.1.0"
+    "nibabel>=1.1.0",
+    "dipy>=0.13.0"
 ]
 EXTRA_REQUIRES = {}
 SCRIPTS = [
