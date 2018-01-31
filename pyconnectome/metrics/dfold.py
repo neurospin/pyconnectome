@@ -75,8 +75,7 @@ def convert_folds(folds_file, graph_file, t1_file):
     return folds
 
 
-def sphere_integration(t1_file, folds, scalars, wm_file=None, gm_file=None,
-                       radius=2):
+def sphere_integration(t1_file, folds, scalars, m_file=None, radius=2):
     """ Compute some measures attached to vertices using a sphere integration
     strategy.
 
@@ -109,44 +108,30 @@ def sphere_integration(t1_file, folds, scalars, wm_file=None, gm_file=None,
     # Load the images
     t1im = nibabel.load(t1_file)
     t1affine = t1im.affine
-    wmim, gmim = None, None
     wm_mean, gm_mean = None, None
     wm_median, gm_median = None, None
     points_in_wm, points_in_gm = None, None
 
-    if wm_file is not None:
-        # if not numpy.allclose(wmim.darrays[0].coordsys.xform, t1affine):
-        #    raise ValueError("The white matter image must be in the same "
-        #                     "space than the anatomical image.")
-        wmim = nibabel.load(wm_file)
-        vertices_wm = wmim.darrays[0].data
-        triangles_wm = wmim.darrays[1].data
-        wm_surf = TriSurface(vertices_wm, triangles_wm)
-        wmim_mask = wm_surf.voxelize(t1im.shape)
-        condition = (wmim_mask > 0)
-        # Indexes to voxel in white matter volume (voxel space)
+    if m_file is not None:
+        mim = nibabel.load(m_file)
+        if not numpy.allclose(mim.affine, t1affine, 3):
+            raise ValueError("The white/grey matter image must be in the same "
+                             "space than the anatomical image.")
+        condition = (mim.get_data() == 200)
         points_in_wm = numpy.argwhere(condition)
+        if points_in_wm.shape[0] == 0:
+            points_in_wm = None
 
-    if gm_file is not None:
-        gmim = nibabel.load(gm_file)
-        # if not numpy.allclose(gmim.affine, t1affine):
-        #    raise ValueError("The gray matter image must be in the same "
-        #                     "space than the anatomical image.")
-        gmim = nibabel.load(gm_file)
-        vertices_gm = gmim.darrays[0].data
-        triangles_gm = gmim.darrays[1].data
-        gm_surf = TriSurface(vertices_gm, triangles_gm)
-        gmim_mask = gm_surf.voxelize(t1im.shape)
-        condition = (gmim_mask > 0)
-        # Indexes to voxel in grey matter volume
+        condition = (mim.get_data() == 100)
         points_in_gm = numpy.argwhere(condition)
+        if points_in_gm.shape[0] == 0:
+            points_in_gm = None
 
     scalarims = {}
     scalaraffine = None
     for path in scalars:
         name = os.path.basename(path).split(".")[0]
         scalarims[name] = nibabel.load(path)
-
         if scalaraffine is None:
             scalaraffine = scalarims[name].affine
         elif not numpy.allclose(scalarims[name].affine, scalaraffine):
@@ -176,26 +161,26 @@ def sphere_integration(t1_file, folds, scalars, wm_file=None, gm_file=None,
                                          "different names.")
                     int_points = inside_sphere_points(
                         center=vertex, radius=radius, shape=image.shape)
-                    wm_points = inside_matter(int_points, points_in_wm)
-                    gm_points = inside_matter(int_points, points_in_gm)
-                    if wm_points is not None:
-                        wm_mean = (numpy.mean(image.get_data()[wm_points])
-                                   .item())
-                        wm_median = (numpy.median(image.get_data()[wm_points])
-                                     .item())
-                    if gm_points is not None:
-                        gm_mean = (numpy.mean(image.get_data()[gm_points])
-                                   .item())
-                        gm_median = (numpy.median(image.get_data()[gm_points])
-                                     .item())
+                    wm_points = points_intersection(int_points, points_in_wm)
+                    gm_points = points_intersection(int_points, points_in_gm)
+                    if wm_points is not None and len(wm_points) != 0:
+                        wm_mean = float(numpy.mean(image.get_data()
+                                        [wm_points]))
+                        wm_median = float(numpy.median(image.get_data()
+                                          [wm_points]))
+                    if gm_points is not None and len(gm_points) != 0:
+                        gm_mean = float(numpy.mean(image.get_data()
+                                        [gm_points]))
+                        gm_median = float(numpy.median(image.get_data()
+                                          [gm_points]))
 
                     measures[labelindex][key][name] = {
-                        "global_mean": numpy.mean(image.get_data()
-                                                  [int_points]).item(),
+                        "global_mean": float(numpy.mean(image.get_data()
+                                             [int_points])),
                         "wm_mean": wm_mean,
                         "gm_mean": gm_mean,
-                        "global_median": numpy.median(image.get_data()
-                                                      [int_points]).item(),                     
+                        "global_median": float(numpy.median(image.get_data()
+                                               [int_points])),
                         "wm_median": wm_median,
                         "gm_median": gm_median
                     }
@@ -204,41 +189,29 @@ def sphere_integration(t1_file, folds, scalars, wm_file=None, gm_file=None,
     return measures
 
 
-def inside_matter(int_points, points_in_m):
-    """ Return all the points within the sphere (int_points) and the matter
-    (white or grey according to matter_type)
+def points_intersection(points1, points2):
+    """ Return the intersection of two arrays of points
 
     Parameters
     ----------
-    int_points: array, shape (n,3)
-       array of points in the sphere.
-    points_in_m: array, shape (m,3)
-       array of points in matter.
+    points1 : array, shape (n,3)
+       first array of points.
+    points2 : array, shape (m,3)
+       second array of points.
 
     Returns
     -------
     xyz : array, shape (N,3)
-       array representing x,y,z of the N points inside the sphere and in
-       matter.
+       the array of the intersecting points
     """
-    if points_in_m is None:
+    if points1 is None or points2 is None:
         return None
 
-    points = []
-
-    for pint in range(int_points.shape[0]):
-        point = int_points[pint]
-        for pm in range(points_in_m.shape[0]):
-            if (point[0] == points_in_m[pm, 0] and
-                point[1] == points_in_m[pm, 1] and
-                    point[2] == points_in_m[pm, 2]):
-                points.append(point)
-                break
-
-    if len(points) == 0:
-        return None
-    else:
-        return numpy.array(points)
+    points1_set = set([tuple(point) for point in points1.tolist()])
+    points2_set = set([tuple(point) for point in points2.tolist()])
+    intersection = points1_set.intersection(points2_set)
+    intersection = numpy.array([list(point) for point in intersection])
+    return intersection
 
 
 def inside_sphere_points(center, radius, shape):
