@@ -9,6 +9,7 @@
 # System import
 from __future__ import print_function
 import os
+import numpy
 import nibabel.gifti.giftiio as gio
 
 # Package import
@@ -72,9 +73,10 @@ class LabelsOnPick(object):
                 self.textactor.SetPosition(point[:2])
 
 
-def display_folds(folds_file, labels, weights, white_file=None,
-                  interactive=True, snap=False, animate=False, outdir=None,
-                  name="folds", actor_ang=(0., 0., 0.)):
+def display_folds(folds_file, labels, weights, white_file=None, pits_file=None,
+                  dist_indices=None, interactive=True, snap=False,
+                  animate=False, outdir=None, name="folds",
+                  actor_ang=(0., 0., 0.)):
     """ Display the folds computed by morphologist.
 
     The scene supports one feature activated via the keystroke:
@@ -92,6 +94,11 @@ def display_folds(folds_file, labels, weights, white_file=None,
         a mapping between a mesh label and its wheight in [0, 1].
     white_file: str (optional, default None)
         if specified the white surface will be displayed.
+    pits_file: str (optional, default None)
+        if specified the PITS locations (need the white mesh).
+    dist_indices: array (N, 2)
+        a list of two white matter mesh vertex indices from which we compute
+        a geodesic path.
     interactive: bool (optional, default True)
         if True display the renderer.
     snap: bool (optional, default False)
@@ -137,12 +144,43 @@ def display_folds(folds_file, labels, weights, white_file=None,
         if nb_of_surfs != 2:
             raise ValueError("'{0}' does not a contain a valid white "
                              "mesh.".format(white_file))
-        vectices = image.darrays[0].data
+        vertices = image.darrays[0].data
         triangles = image.darrays[1].data
-        surf = TriSurface(vectices, triangles, labels=None)
-        actor = pvtk.surface(surf.vertices, surf.triangles, surf.labels,
-                             opacity=1, set_lut=False)
+        wm_surf = TriSurface(vertices, triangles, labels=None)
+        actor = pvtk.surface(wm_surf.vertices, wm_surf.triangles,
+                             wm_surf.labels, opacity=0.7, set_lut=False)
         actor.label = "white"
+        actor.RotateX(actor_ang[0])
+        actor.RotateY(actor_ang[1])
+        actor.RotateZ(actor_ang[2])
+        pvtk.add(ren, actor)
+
+    # Add the PITS if specified
+    if pits_file is not None and white_file is not None:
+        image = gio.read(pits_file)
+        nb_of_surfs = len(image.darrays)
+        if nb_of_surfs != 1:
+            raise ValueError("'{0}' does not a contain a valid pits "
+                             "texture.".format(pits_file))
+        pits_texture = image.darrays[0].data
+        pits_locations = wm_surf.vertices[numpy.where(pits_texture == 1)]
+        actor = pvtk.dots(pits_locations, color=(1, 0, 0), psize=20, opacity=1)
+        actor.label = "pits"
+        actor.RotateX(actor_ang[0])
+        actor.RotateY(actor_ang[1])
+        actor.RotateZ(actor_ang[2])
+        pvtk.add(ren, actor)
+
+    # Geodesic path
+    if dist_indices is not None and white_file is not None:
+        all_path = []
+        for ind1, ind2 in dist_indices:
+            all_path.append(
+                wm_surf.geodesic_distance(vertices[ind1], vertices[ind2]))
+        actor = pvtk.tubes(all_path, (0, 1, 0), opacity=1, linewidth=1,
+                           tube_sides=8, lod=True, lod_points=10 ** 4,
+                           lod_points_size=5)
+        actor.label = "geodesic"
         actor.RotateX(actor_ang[0])
         actor.RotateY(actor_ang[1])
         actor.RotateZ(actor_ang[2])
@@ -154,7 +192,7 @@ def display_folds(folds_file, labels, weights, white_file=None,
                           is_visible=False)
         pvtk.add(ren, actor)
         obs = LabelsOnPick(actor, static_position=True,
-                           to_keep_actors=["white"])
+                           to_keep_actors=["white", "pits", "geodesic"])
         pvtk.show(ren, title="morphologist folds", observers=[obs])
 
     # Create a snap

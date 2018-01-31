@@ -11,17 +11,138 @@ Extract diffusion metrics along the human folds.
 """
 
 # System import
+from __future__ import print_function
 import os
+import json
 import numpy
-import nibabel
 
 # Package import
 from pyconnectome.utils.filetools import load_folds
 
 # Third party import
+import nibabel
 import progressbar
+from sklearn.cluster import MeanShift
+from scipy.spatial.distance import cdist
 from pyfreesurfer.utils.surftools import TriSurface
 from pyfreesurfer.utils.surftools import apply_affine_on_mesh
+
+
+def intersect_folds_with_tractogram(tractogram_file, folds_file, graph_file,
+                                    t1_file, nodiff_file, outdir, tol=3,
+                                    verbose=0):
+    """ Get the streamlines near the requested folds.
+
+    Parameters
+    ----------
+    tractogram_file: str
+        the path to the tractogram.
+    folds_file: str
+        the folds '.gii' file.
+    graph_file: str (optional, default None)
+        the path to a morphologist '.arg' graph file.
+    t1_file: str
+        the t1 NIFTI file.
+    nodiff_file: str
+        the no diffusion NIFTI file.
+    outdir: str
+        the destination folder.
+    tol: float
+        Distance (in the units of the streamlines, here voxel) between the
+        end points coordinate in the streamline and the center of any voxel in
+        the ROI.
+    verbose: int, default 0
+        control the verbosity level.
+
+    Returns
+    -------
+    bundles_file: str
+        a list of bundles associated with each fold.
+    """
+    # Load anatomical image
+    if verbose > 0:
+        print("[info] Loading images...")
+    t1_image = nibabel.load(t1_file)
+    nodiff_image = nibabel.load(nodiff_file)
+
+    # Get the folds in image voxel coordinates
+    if verbose > 0:
+        print("[info] Loading folds...")
+    folds = convert_folds(folds_file, graph_file, t1_file)
+
+    # Load & downsample & check alignment of the tractogram using voxel
+    # coordinates
+    if verbose > 0:
+        print("[info] Loading tractogram...")
+    tracks = nibabel.streamlines.load(tractogram_file)
+    streamlines = numpy.concatenate(
+        [arr[[0, -1]] for arr in tracks.streamlines])
+    vox_streamlines = apply_affine_on_mesh(
+        streamlines, numpy.linalg.inv(nodiff_image.affine)).astype(int)
+    connection_map = numpy.zeros(nodiff_image.shape, dtype=int)
+    connection_map[vox_streamlines.T.tolist()] = 1
+    connection_map_file = os.path.join(outdir, "connection_map.nii.gz")
+    connection_map_image = nibabel.Nifti1Image(
+        connection_map, nodiff_image.affine)
+    connection_map_image.to_filename(connection_map_file)
+    if verbose > 0:
+        print("[info] Number of tracks: {0}".format(len(streamlines) / 2))
+
+    # Put the folds in the diffusion space using voxel coordinates
+    if verbose > 0:
+        print("[info] Putting folds in diffusion space...")
+    affine = numpy.dot(numpy.linalg.inv(nodiff_image.affine), t1_image.affine)
+    vox_folds = None
+    for labelindex, surf in folds.items():
+        surf.vertices = apply_affine_on_mesh(surf.vertices, affine)
+        if vox_folds is None:
+            vox_folds = surf.vertices
+        else:
+            vox_folds = numpy.concatenate((vox_folds, surf.vertices))
+    folds_map = numpy.zeros(nodiff_image.shape, dtype=int)
+    folds_map[vox_folds.T.tolist()] = 1
+    folds_map_file = os.path.join(outdir, "folds_map.nii.gz")
+    folds_map_image = nibabel.Nifti1Image(folds_map, nodiff_image.affine)
+    folds_map_image.to_filename(folds_map_file)
+
+    # Get all the folds associated fibers
+    if verbose > 0:
+        print("[info] Filter tractogram using requested folds...")
+    bundles = {}
+    with progressbar.ProgressBar(max_value=len(folds),
+                                 redirect_stdout=True) as bar:
+        cnt = 0
+        for labelindex, surf in folds.items():
+
+            # Downsample fold vertices
+            ms = MeanShift(bandwidth=tol / 2, bin_seeding=True)
+            ms.fit(surf.vertices)
+            cluster_centers = ms.cluster_centers_
+
+            # Select fibers
+            bundles[str(labelindex)] = []
+            dist = cdist(vox_streamlines[::2], cluster_centers, "euclidean")
+            fibers_indices = numpy.argwhere(
+                numpy.min(dist, -1) <= tol).squeeze().tolist()
+            if not isinstance(fibers_indices, list):
+                fibers_indices = [fibers_indices]
+            bundles[str(labelindex)].extend(fibers_indices)
+            dist = cdist(vox_streamlines[1::2], cluster_centers, "euclidean")
+            fibers_indices = numpy.argwhere(
+                numpy.min(dist, -1) <= tol).squeeze().tolist()
+            if not isinstance(fibers_indices, list):
+                fibers_indices = [fibers_indices]
+            bundles[str(labelindex)].extend(fibers_indices)
+            bundles[str(labelindex)] = list(set(bundles[str(labelindex)]))
+            bar.update(cnt)
+            cnt += 1
+
+    # Save the bundles result
+    bundles_file = os.path.join(outdir, "bundles.json")
+    with open(bundles_file, "wt") as open_file:
+        json.dump(bundles, open_file, indent=4)
+
+    return bundles_file
 
 
 def convert_folds(folds_file, graph_file, t1_file):
@@ -194,3 +315,24 @@ def inside_sphere_points(center, radius, shape):
 
     # Compute shpere intersection
     return xyz[numpy.sqrt(numpy.sum((xyz - center)**2, axis=1)) <= radius]
+
+
+def inside_sphere_locations(xyz, center, radius):
+    """ Return the locations of a track that intersects with a sphere of a
+    specified center and radius.
+
+    Parameters
+    ----------
+    xyz: array, shape (N,3)
+       representing x,y,z of the N points of the track
+    center: array, shape (3,)
+       center of the sphere
+    radius: float
+       radius of the sphere
+
+    Returns
+    -------
+    locations : list (M, )
+       the matched locations.
+    """
+    return (numpy.sqrt(numpy.sum((xyz - center)**2, axis=1)) <= radius)
