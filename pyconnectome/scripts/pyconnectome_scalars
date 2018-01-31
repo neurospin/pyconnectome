@@ -9,13 +9,13 @@
 
 # System import
 from __future__ import print_function
-import argparse
 import os
-import shutil
-from datetime import datetime
 import json
-from pprint import pprint
+import shutil
+import argparse
 import textwrap
+from pprint import pprint
+from datetime import datetime
 from argparse import RawTextHelpFormatter
 
 # Bredala import
@@ -23,12 +23,26 @@ try:
     import bredala
     bredala.USE_PROFILER = False
     bredala.register("pyconnectome.models.tensor",
-                     names=["dtifit"])
+                     names=["dtifit", "dkifit"])
+    bredala.register("pyconnectome.models.shore",
+                     names=["shorefit"])
+    bredala.register("pyconnectome.models.shm",
+                     names=["qballfit"])
 except:
     pass
 
+
 # Package import
+from pyconnectome import __version__ as version
+from pyconnectome import DEFAULT_FSL_PATH
+from pyconnectome.wrapper import FSLWrapper
+from pyconnectome.models.shm import qballfit
 from pyconnectome.models.tensor import dtifit
+from pyconnectome.models.tensor import dkifit
+from pyconnectome.models.shore import shorefit
+
+# Third party import
+import dipy
 
 
 # Parameters to keep trace
@@ -42,28 +56,220 @@ Parse the command line.
 Example on HCP data:
 
 python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_scalars \
-    -d /neurospin/hcp/ANALYSIS/3T_connectomist/101006/preproc/3000/dwi.nii.gz \
-    -be /neurospin/hcp/ANALYSIS/3T_connectomist/101006/preproc/3000/bvecs \
-    -ba /neurospin/hcp/ANALYSIS/3T_connectomist/101006/preproc/3000/bvals \
+    -i /neurospin/hcp/ANALYSIS/3T_connectomist/101006/preproc/3000/dwi.nii.gz \
+    -r /neurospin/hcp/ANALYSIS/3T_connectomist/101006/preproc/3000/bvecs \
+    -b /neurospin/hcp/ANALYSIS/3T_connectomist/101006/preproc/3000/bvals \
     -m /neurospin/hcp/PROCESSED/3T_diffusion_preproc/101006/T1w/Diffusion/nodif_brain_mask.nii.gz \
-    -o /neurospin/nsap/processed/hcp_sillons/data
+    -o /neurospin/nsap/processed/hcp_sillons/data \
+    -Q \
+    -O 4
+
+python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_scalars \
+    -i /neurospin/hcp/PROCESSED/3T_diffusion_preproc/101006/T1w/Diffusion/data.nii.gz \
+    -r /neurospin/hcp/PROCESSED/3T_diffusion_preproc/101006/T1w/Diffusion/bvecs \
+    -b /neurospin/hcp/PROCESSED/3T_diffusion_preproc/101006/T1w/Diffusion/bvals \
+    -m /neurospin/hcp/PROCESSED/3T_diffusion_preproc/101006/T1w/Diffusion/nodif_brain_mask.nii.gz \
+    -o /neurospin/nsap/processed/hcp_sillons/data \
+    -K
 """
 
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    "-d", "--data", dest="data", help="diffusion weighted image data file.")
-parser.add_argument(
-    "-be", "--bvecs", dest="bvecs", help="b vectors file")
-parser.add_argument(
-    "-ba", "--bvals", dest="bvals", help="v values file")
-parser.add_argument(
-    "-m", "--mask", dest="mask", help="binarized volume in diffusion space \
-	 containing ones inside the brain and zeros outside the brain.")
-parser.add_argument(
-    "-o", "--out", dest="out", help="User specifies a basename that will be \
-	used to name the outputs of dtifit.")
+def is_file(filearg):
+    """ Type for argparse - checks that file exists but does not open.
+    """
+    if not os.path.isfile(filearg):
+        raise argparse.ArgumentError(
+            "The file '{0}' does not exist!".format(filearg))
+    return filearg
 
-args = parser.parse_args()
 
-dtifit(args.data, args.bvecs, args.bvals, args.mask, args.out, wls=True,
-	   save_tensor=True)
+def is_directory(dirarg):
+    """ Type for argparse - checks that directory exists.
+    """
+    if not os.path.isdir(dirarg):
+        raise argparse.ArgumentError(
+            "The directory '{0}' does not exist!".format(dirarg))
+    return dirarg
+
+
+def get_cmd_line_args():
+    """
+    Create a command line argument parser and return a dict mapping
+    <argument name> -> <argument value>.
+    """
+    parser = argparse.ArgumentParser(
+        prog="python pyconnectome_scalars",
+        description=textwrap.dedent(DOC),
+        formatter_class=RawTextHelpFormatter)
+
+    # Required arguments
+    required = parser.add_argument_group("required arguments")
+    required.add_argument(
+        "-o", "--outdir",
+        type=is_directory, required=True, metavar="<path>",
+        help="Directory where to output.")
+    required.add_argument(
+        "-i", "--dwi",
+        type=is_file, required=True, metavar="<path>",
+        help="Path to the diffusion data.")
+    required.add_argument(
+        "-b", "--bvals",
+        type=is_file, required=True, metavar="<path>",
+        help="Path to the bvalue list.")
+    required.add_argument(
+        "-r", "--bvecs",
+        type=is_file, required=True, metavar="<path>",
+        help="Path to the list of diffusion-sensitized directions.")
+    required.add_argument(
+        "-m", "--mask",
+        help="Brain mask that is applied to the estimated coefficients.")
+
+    # Optional arguments
+    parser.add_argument(
+        "-v", "--verbose",
+        type=int, choices=[0, 1, 2], default=2,
+        help="Increase the verbosity level: 0 silent, [1, 2] verbose.")
+    parser.add_argument(
+        "-S", "--shore",
+        action="store_true",
+        help="If set estimate the shore derived scalars.")
+    parser.add_argument(
+        "-O", "--sh-order",
+        type=int, choices=[2, 4, 8], default=4,
+        help="The Shperical Harmonics order.")
+    parser.add_argument(
+        "-Q", "--qball",
+        action="store_true",
+        help="If set estimate the Q-Ball Constant Solid Angle derived "
+             "scalars.")
+    parser.add_argument(
+        "-K", "--dki",
+        action="store_true",
+        help="If set estimate the Diffusion Kurtosis Imaging derived scalars.")
+    parser.add_argument(
+        "-T", "--tensor",
+        action="store_true",
+        help="If set estimate the tensor (DTI) derived scalars.")
+    parser.add_argument(
+        "-F", "--fsl-sh",
+        type=is_file, metavar="<path>",
+        help="Bash script initializing FSL's environment.")
+
+    # Create a dict of arguments to pass to the 'main' function
+    args = parser.parse_args()
+    kwargs = vars(args)
+    verbose = kwargs.pop("verbose")
+    if kwargs["fsl_sh"] is None:
+        kwargs["fsl_sh"] = DEFAULT_FSL_PATH
+
+    return kwargs, verbose
+
+
+# Deal with dipy/nibabel temporary when using multiprocessing
+from pyconnectome.utils.filetools import monkeypatch
+from nibabel.tmpdirs import TemporaryDirectory
+from tempfile import template, mkdtemp
+@monkeypatch(TemporaryDirectory)
+def __init__(self, suffix="", prefix=template, dir=None):
+    dir = inputs["outdir"]
+    self.name = mkdtemp(suffix, prefix, dir)
+    self._closed = False
+
+
+"""
+Parse the command line.
+"""
+inputs, verbose = get_cmd_line_args()
+params = locals()
+runtime = {
+    "tool": "pyconnectome_scalars",
+    "tool_version": version,
+    "timestamp": datetime.now().isoformat()
+}
+if inputs["tensor"]:
+    runtime["fsl_version"] = FSLWrapper([], shfile=inputs["fsl_sh"]).version
+if inputs["shore"] or inputs["qball"] or inputs["dki"]:
+    runtime["dipy_version"] = dipy.__version__
+outputs = None
+if verbose > 0:
+    pprint("[info] Starting diffusion scalars evaluation...")
+    pprint("[info] Runtime:")
+    pprint(runtime)
+    pprint("[info] Inputs:")
+    pprint(inputs)
+
+
+"""
+Compute the requested scalars.
+"""
+out_files = []
+if inputs["tensor"]:
+    (v1_file, v2_file, v3_file, l1_file, l2_file, l3_file, md_file,
+     fa_file, s0_file, tensor_file, m0_file) = dtifit(
+        data=inputs["dwi"],
+        bvecs=inputs["bvecs"],
+        bvals=inputs["bvals"],
+        mask=inputs["mask"],
+        out=inputs["outdir"],
+        wls=True,
+	    save_tensor=True,
+        fslconfig=inputs["fsl_sh"])
+    out_files.extend([
+        "v1_file", "v2_file", "v3_file", "l1_file", "l2_file", "l3_file",
+        "md_file", "fa_file", "s0_file", "tensor_file", "m0_file"])
+if inputs["shore"]:
+    coeffs_file, rtop_signal_file, rtop_pdf_file, msd_file = shorefit(
+        dwi_file=inputs["dwi"],
+        bvec_file=inputs["bvecs"],
+        bval_file=inputs["bvals"],
+        mask_file=inputs["mask"],
+        out=inputs["outdir"],
+        radial_order=6,
+        zeta=700,
+        lambdan=1e-8,
+        lambdal=1e-8)
+    out_files.extend(["coeffs_file", "rtop_signal_file", "rtop_pdf_file",
+                      "msd_file"])
+if inputs["dki"]:
+    (dkikt_file, dkifa_file, dkimd_file, dkiad_file, dkird_file, dkicl_file,
+     dkicp_file, dkics_file, dkimk_file, dkiak_file, dkirk_file,
+     dkimask_file, dkiawf_file, dkitortuosity_file) = dkifit(
+        dwi_file=inputs["dwi"],
+        bvec_file=inputs["bvecs"],
+        bval_file=inputs["bvals"],
+        mask_file=inputs["mask"],
+        out=inputs["outdir"],
+        min_kurtosis=-1,
+        max_kurtosis=3,
+        micro=True)
+    out_files.extend([
+        "dkikt_file", "dkifa_file", "dkimd_file", "dkiad_file", "dkird_file",
+        "dkicl_file", "dkicp_file", "dkics_file", "dkimk_file", "dkiak_file",
+        "dkirk_file", "dkimask_file", "dkiawf_file", "dkitortuosity_file"])
+if inputs["qball"]:
+    gfa_file, qa_file, shc_file, odf_file = qballfit(
+        dwi_file=inputs["dwi"],
+        bvec_file=inputs["bvecs"],
+        bval_file=inputs["bvals"],
+        mask_file=inputs["mask"],
+        out=inputs["outdir"],
+        order=inputs["sh_order"])
+    out_files.extend(["gfa_file", "qa_file", "shc_file", "odf_file"])
+
+
+"""
+Update the outputs and save them and the inputs in a 'logs' directory.
+"""
+logdir = os.path.join(inputs["outdir"], "logs")
+if not os.path.isdir(logdir):
+    os.mkdir(logdir)
+params = locals()
+outputs = dict([(name, params[name]) for name in out_files])
+for name, final_struct in [("inputs", inputs), ("outputs", outputs),
+                           ("runtime", runtime)]:
+    log_file = os.path.join(logdir, "{0}.json".format(name))
+    with open(log_file, "wt") as open_file:
+        json.dump(final_struct, open_file, sort_keys=True, check_circular=True,
+                  indent=4)
+if verbose > 1:
+    print("[info] Outputs:")
+    pprint(outputs)
