@@ -75,7 +75,8 @@ def convert_folds(folds_file, graph_file, t1_file):
     return folds
 
 
-def sphere_integration(t1_file, folds, scalars, m_file=None, radius=2):
+def sphere_integration(t1_file, folds, scalars, seg_file=None, radius=2,
+                       wm_label=200, gm_label=100):
     """ Compute some measures attached to vertices using a sphere integration
     strategy.
 
@@ -89,10 +90,8 @@ def sphere_integration(t1_file, folds, scalars, m_file=None, radius=2):
 
     scalars: list of str
         a list of scalar map that will be intersected with the vertices.
-    wm_file: str, default None
-        the white matter scalar map.
-    gm_file: str, default None
-        the gray matter scalar map.
+    seg_file: str, default None
+        the white/grey matter segmentation file.
     radius: float, default 2
         the sphere radius defines in the scalar space and expressed in voxel.
 
@@ -105,28 +104,28 @@ def sphere_integration(t1_file, folds, scalars, m_file=None, radius=2):
     if len(scalars) == 0:
         raise ValueError("At least one scalar map is expected.")
 
-    # Load the images
+    # Load the anatomical image
     t1im = nibabel.load(t1_file)
     t1affine = t1im.affine
-    wm_mean, gm_mean = None, None
-    wm_median, gm_median = None, None
-    points_in_wm, points_in_gm = None, None
 
-    if m_file is not None:
-        mim = nibabel.load(m_file)
-        if not numpy.allclose(mim.affine, t1affine, 3):
+    # Load segmentation file and extract wm/gm coordinates
+    if seg_file is not None:
+        segim = nibabel.load(seg_file)
+        if not numpy.allclose(segim.affine, t1affine, 3):
             raise ValueError("The white/grey matter image must be in the same "
                              "space than the anatomical image.")
-        condition = (mim.get_data() == 200)
+        condition = (segim.get_data() == wm_label)
         points_in_wm = numpy.argwhere(condition)
+
+        # Check if there is any point in white/grey matter
         if points_in_wm.shape[0] == 0:
             points_in_wm = None
-
-        condition = (mim.get_data() == 100)
+        condition = (segim.get_data() == gm_label)
         points_in_gm = numpy.argwhere(condition)
         if points_in_gm.shape[0] == 0:
             points_in_gm = None
 
+    # Load all scalars' image files and check they are all in the same space
     scalarims = {}
     scalaraffine = None
     for path in scalars:
@@ -156,6 +155,10 @@ def sphere_integration(t1_file, folds, scalars, m_file=None, radius=2):
                 key = repr(vertex.tolist())
                 measures[labelindex][key] = {}
                 for name, image in scalarims.items():
+                    # Initialize mean and median values
+                    wm_mean, gm_mean = None, None
+                    wm_median, gm_median = None, None
+                    wm_points, gm_points = None, None
                     if name in measures[labelindex][key]:
                         raise ValueError("All the scalar map must have "
                                          "different names.")
