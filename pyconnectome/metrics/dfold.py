@@ -196,8 +196,8 @@ def convert_folds(folds_file, graph_file, t1_file):
     return folds
 
 
-def sphere_integration(t1_file, folds, scalars, wm_file=None, gm_file=None,
-                       radius=2):
+def sphere_integration(t1_file, folds, scalars, seg_file=None, radius=2,
+                       wm_label=200, gm_label=100):
     """ Compute some measures attached to vertices using a sphere integration
     strategy.
 
@@ -208,15 +208,16 @@ def sphere_integration(t1_file, folds, scalars, wm_file=None, gm_file=None,
     folds: dict with TriSurface
         all the loaded folds. The fold names are stored in the metadata.
         Vertices are in NIFTI voxel space.
-
     scalars: list of str
         a list of scalar map that will be intersected with the vertices.
-    wm_file: str, default None
-        the white matter scalar map.
-    gm_file: str, default None
-        the gray matter scalar map.
+    seg_file: str, default None
+        the white/grey matter segmentation file.
     radius: float, default 2
         the sphere radius defines in the scalar space and expressed in voxel.
+    wm_label: int, default 200
+        the label for the white matter in the segmentation mask
+    gm_label : int, default 200
+        the label for the grey matter in the segmentation mask
 
     Returns
     -------
@@ -227,20 +228,28 @@ def sphere_integration(t1_file, folds, scalars, wm_file=None, gm_file=None,
     if len(scalars) == 0:
         raise ValueError("At least one scalar map is expected.")
 
-    # Load the images
+    # Load the anatomical image
     t1im = nibabel.load(t1_file)
     t1affine = t1im.affine
-    wmim, gmim = None, None
-    if wm_file is not None:
-        wmim = nibabel.load(wm_file)
-        if not numpy.allclose(wmim.affine, t1affine):
-            raise ValueError("The white matter image must be in the same "
+
+    # Load segmentation file and extract wm/gm coordinates
+    if seg_file is not None:
+        segim = nibabel.load(seg_file)
+        if not numpy.allclose(segim.affine, t1affine, 3):
+            raise ValueError("The white/grey matter image must be in the same "
                              "space than the anatomical image.")
-    if gm_file is not None:
-        gmim = nibabel.load(gm_file)
-        if not numpy.allclose(gmim.affine, t1affine):
-            raise ValueError("The gray matter image must be in the same "
-                             "space than the anatomical image.")
+        condition = (segim.get_data() == wm_label)
+        points_in_wm = numpy.argwhere(condition)
+
+        # Check if there is any point in white/grey matter
+        if points_in_wm.shape[0] == 0:
+            points_in_wm = None
+        condition = (segim.get_data() == gm_label)
+        points_in_gm = numpy.argwhere(condition)
+        if points_in_gm.shape[0] == 0:
+            points_in_gm = None
+
+    # Load all scalars' image files and check they are all in the same space
     scalarims = {}
     scalaraffine = None
     for path in scalars:
@@ -270,17 +279,65 @@ def sphere_integration(t1_file, folds, scalars, wm_file=None, gm_file=None,
                 key = repr(vertex.tolist())
                 measures[labelindex][key] = {}
                 for name, image in scalarims.items():
+                    # Initialize mean and median values
+                    wm_mean, gm_mean = None, None
+                    wm_median, gm_median = None, None
                     if name in measures[labelindex][key]:
                         raise ValueError("All the scalar map must have "
                                          "different names.")
                     int_points = inside_sphere_points(
                         center=vertex, radius=radius, shape=image.shape)
+                    wm_points = points_intersection(int_points, points_in_wm)
+                    gm_points = points_intersection(int_points, points_in_gm)
+                    if wm_points is not None and len(wm_points) != 0:
+                        wm_mean = float(numpy.mean(image.get_data()
+                                        [wm_points]))
+                        wm_median = float(numpy.median(image.get_data()
+                                          [wm_points]))
+                    if gm_points is not None and len(gm_points) != 0:
+                        gm_mean = float(numpy.mean(image.get_data()
+                                        [gm_points]))
+                        gm_median = float(numpy.median(image.get_data()
+                                          [gm_points]))
+
                     measures[labelindex][key][name] = {
-                        "global_mean": numpy.mean(image.get_data()[int_points])
+                        "global_mean": float(numpy.mean(image.get_data()
+                                             [int_points])),
+                        "wm_mean": wm_mean,
+                        "gm_mean": gm_mean,
+                        "global_median": float(numpy.median(image.get_data()
+                                               [int_points])),
+                        "wm_median": wm_median,
+                        "gm_median": gm_median
                     }
                 bar.update(cnt)
 
     return measures
+
+
+def points_intersection(points1, points2):
+    """ Return the intersection of two arrays of points
+
+    Parameters
+    ----------
+    points1 : array, shape (n,3)
+       first array of points.
+    points2 : array, shape (m,3)
+       second array of points.
+
+    Returns
+    -------
+    xyz : array, shape (N,3)
+       the array of the intersecting points
+    """
+    if points1 is None or points2 is None:
+        return None
+
+    points1_set = set([tuple(point) for point in points1.tolist()])
+    points2_set = set([tuple(point) for point in points2.tolist()])
+    intersection = points1_set.intersection(points2_set)
+    intersection = numpy.array([list(point) for point in intersection])
+    return intersection
 
 
 def inside_sphere_points(center, radius, shape):
