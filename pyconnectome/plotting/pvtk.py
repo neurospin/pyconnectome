@@ -370,7 +370,7 @@ def line(lines, colors, lut=None, opacity=1, linewidth=1):
 
     # Create the line mapper
     mapper = vtk.vtkPolyDataMapper()
-    mapper.SetInput(polydata)
+    mapper.SetInputData(polydata)
     mapper.SetLookupTable(lut)
     mapper.SetColorModeToMapScalars()
     mapper.SetScalarRange(0.0, 1.0)
@@ -578,14 +578,14 @@ def surface(points, triangles, labels, ctab=None, opacity=1, set_lut=True,
     # Make a lookup table using vtkColorSeries
     lut = vtk.vtkLookupTable()
     if ctab is not None:
-        nb_of_labels = len(ctab)
+        nb_of_labels = ctab[4].max()
         lut.SetNumberOfColors(nb_of_labels)
         lut.Build()
         for cnt, lut_element in enumerate(ctab):
             lut.SetTableValue(
-                cnt, lut_element[0] / 255., lut_element[1] / 255.,
+                lut_element[4], lut_element[0] / 255., lut_element[1] / 255.,
                 lut_element[2] / 255., lut_element[3] / 255.)
-        lut.SetNanColor(1, 0, 0, 1)
+        lut.SetNanColor(0, 0, 0, 1)
     # This creates a blue to red lut.
     else:
         nb_of_labels = 255

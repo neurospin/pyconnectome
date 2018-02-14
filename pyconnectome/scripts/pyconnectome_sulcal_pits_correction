@@ -1,0 +1,323 @@
+#!/usr/bin/env python
+##########################################################################
+# NSAp - Copyright (C) CEA, 2018
+# Distributed under the terms of the CeCILL-B license, as published by
+# the CEA-CNRS-INRIA. Refer to the LICENSE file or to
+# http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html
+# for details.
+##########################################################################
+
+# System import
+from __future__ import print_function
+import os
+import sys
+import json
+import glob
+import shutil
+import argparse
+import textwrap
+import subprocess
+from pprint import pprint
+from datetime import datetime
+from argparse import RawTextHelpFormatter
+
+# Bredala import
+try:
+    import bredala
+    bredala.USE_PROFILER = False
+except:
+    pass
+
+# Package import
+from pyconnectome import __version__ as version
+
+# Third party import
+import numpy
+import nibabel.gifti.giftiio as gio
+from pyfreesurfer.utils.surftools import TriSurface
+
+
+# Parameters to keep trace
+__hopla__ = ["runtime", "inputs", "outputs"]
+
+
+# Script documentation
+DOC = """
+Project the group parcellation to the subject native space and correct the pits
+locations.
+
+References
+----------
+Code for Genetic Influence on the Sulcal Pits: On the Origin of the First
+Cortical Folds, Cerebral Cortex, 2017, https://doi.org/10.1093/cercor/bhx098
+
+Example on HCP data:
+
+python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_sulcal_pits_correction \
+    -o /neurospin/nsap/processed/hcp_sillons/data/pits \
+    -d $HOME/git/sulcal_pits_analysis/build_pits_database \
+    -s 136227 \
+    -D \
+    -v 2
+"""
+
+def is_file(filearg):
+    """ Type for argparse - checks that file exists but does not open.
+    """
+    if not os.path.isfile(filearg):
+        raise argparse.ArgumentError(
+            "The file '{0}' does not exist!".format(filearg))
+    return filearg
+
+
+def is_directory(dirarg):
+    """ Type for argparse - checks that directory exists.
+    """
+    if not os.path.isdir(dirarg):
+        raise argparse.ArgumentError(
+            "The directory '{0}' does not exist!".format(dirarg))
+    return dirarg
+
+
+def get_cmd_line_args():
+    """
+    Create a command line argument parser and return a dict mapping
+    <argument name> -> <argument value>.
+    """
+    parser = argparse.ArgumentParser(
+        prog="python pyconnectome_sulcal_pits_correction",
+        description=textwrap.dedent(DOC),
+        formatter_class=RawTextHelpFormatter)
+
+    # Required arguments
+    required = parser.add_argument_group("required arguments")
+    required.add_argument(
+        "-o", "--outdir",
+        type=is_directory, required=True, metavar="PATH",
+        help="Directory where to output that is also were the individual pits "
+             "analysis were run.")
+    required.add_argument(
+        "-d", "--source-dir",
+        type=is_directory, required=True, metavar="PATH",
+        help="Directory where the sulcal pits analysis scripts are located.")
+    required.add_argument(
+        "-s", "--subjectid",
+        required=True,
+        help="the subject identifier.")
+
+    # Optional arguments
+    parser.add_argument(
+        "-v", "--verbose",
+        type=int, choices=[0, 1, 2], default=2,
+        help="Increase the verbosity level: 0 silent, [1, 2] verbose.")
+    parser.add_argument(
+        "-D", "--deepest",
+        action="store_true",
+        help="During the PITS filtering, force taking the deepest point. This "
+             "could be the best option, because sometimes pits are misplaced.")
+
+    # Create a dict of arguments to pass to the 'main' function
+    args = parser.parse_args()
+    kwargs = vars(args)
+    verbose = kwargs.pop("verbose")
+
+    return kwargs, verbose
+
+
+"""
+Parse the command line.
+"""
+inputs, verbose = get_cmd_line_args()
+runtime = {
+    "tool": "pyconnectome_sulcal_pits_correction",
+    "tool_version": version,
+    "timestamp": datetime.now().isoformat()
+}
+outputs = None
+out_files = []
+if verbose > 0:
+    pprint("[info] Starting sulcal pits correction...")
+    pprint("[info] Runtime:")
+    pprint(runtime)
+    pprint("[info] Inputs:")
+    pprint(inputs)
+
+
+"""
+Project the group parcellation to the subject native space.
+"""
+# Welcome message
+if verbose > 0:
+    print("Project the group parcellation to the subject native space...")
+# Run command
+env = os.environ
+env["PATH"] = env["PATH"] + ":" + inputs["source_dir"]
+sids = sorted([dirname for dirname in os.listdir(inputs["outdir"])
+               if dirname not in ("fsaveragesym", "pits_density_sym_lh",
+                                  "pits_density_sym_rh")])
+index = sids.index(inputs["subjectid"])
+cmd = ["project_clusters_to_native.py", "-a", str(index), "-j", "1"]
+if verbose > 1:
+    print("Executing: {0}".format(cmd))
+subprocess.check_call(cmd, cwd=inputs["outdir"], env=env)
+
+
+"""
+The previous step uses an interpolation on labels. Fix it.
+"""
+# Locate input patterns
+analysis_dir = os.path.join(inputs["outdir"], inputs["subjectid"], "t1mri",
+                            "BL", "default_analysis", "segmentation", "mesh",
+                            "surface_analysis")
+cluster_pattern = os.path.join(
+    analysis_dir, inputs["subjectid"] + "_{0}_clusters_sym_{1}.gii")
+white_pattern = os.path.join(
+    os.path.dirname(analysis_dir), inputs["subjectid"] + "_{0}white.gii")
+out_cluster_pattern = os.path.join(
+    analysis_dir, inputs["subjectid"] + "_{0}_clusters_sym_{1}_int.gii")
+
+# Deal with each configuration
+for native_hemi in ("L", "R"):
+    for template_hemi in ("lh", "rh"):
+
+        # Get the cluster labels
+        cluster_files = glob.glob(
+            cluster_pattern.format(native_hemi, template_hemi))
+        if len(cluster_files) != 1:
+            raise ValueError("Expect one cluster for {0}({1},{2}).".format(
+                cluster_pattern, native_hemi, template_hemi))
+        cluster_im = gio.read(cluster_files[0])
+        cluster_data = cluster_im.darrays[0].data
+
+        # Load the reference white mesh
+        white_file = white_pattern.format(native_hemi)
+        image = gio.read(white_file)
+        nb_of_surfs = len(image.darrays)
+        if nb_of_surfs != 2:
+            raise ValueError("'{0}' does not a contain a valid white "
+                             "mesh.".format(white_file))
+        vertices = image.darrays[0].data
+        triangles = image.darrays[1].data
+        surf = TriSurface(vertices, triangles, labels=cluster_data)
+
+        # Detect floating labels
+        floating_indices = list(numpy.where(
+            numpy.not_equal(numpy.mod(surf.labels, 1), 0))[0])
+        neighboors_map = {}
+        for index in floating_indices:
+            cluster_triangles = surf.triangles[
+                numpy.where(numpy.isin(surf.triangles, index))[0]]
+            cluster_indices = cluster_triangles[
+                numpy.where(numpy.isin(cluster_triangles, index, invert=True))]
+            neighboors_indices = list(set(cluster_indices))
+            neighboors_map[index] = neighboors_indices
+
+        # Correct floating labels
+        while len(floating_indices) != 0:
+            to_remove = []
+            for index in floating_indices:
+                neighboors_labels = surf.labels[neighboors_map[index]]
+                valid_neighboors_indices = numpy.where(
+                    numpy.equal(numpy.mod(neighboors_labels, 1), 0))[0]
+                if len(valid_neighboors_indices) == 0:
+                    continue
+                valid_neighboors_labels = neighboors_labels[
+                    valid_neighboors_indices]
+                values, counts = numpy.unique(
+                    valid_neighboors_labels, return_counts=True)
+                new_label = values[numpy.argmax(counts)]
+                surf.labels[index] = new_label
+                to_remove.append(index)
+            for index in to_remove:
+                floating_indices.remove(index)
+
+        # Save result
+        cluster_file = out_cluster_pattern.format(native_hemi, template_hemi)
+        cluster_im.darrays[0].data = surf.labels
+        gio.write(cluster_im, cluster_file)
+
+
+"""
+Compute group pits density.
+"""
+# Welcome message
+if verbose > 0:
+    print("Correct PITS locations...")
+# Build dictionary containing vertex position of the pits for each individual
+# Use the template left hemisphere clustering results only.
+# Rules: 1. one pit per areal 2. the depest one.
+out_pits_files = {}
+for native_hemi in ["L", "R"]:
+    if verbose > 1:
+        print("Processing hemisphere '{0}'...".format(native_hemi))
+
+    # Read texture data
+    pits_file = os.path.join(analysis_dir, "{0}_{1}white_pits.gii".format(
+        inputs["subjectid"], native_hemi))
+    clusters_file = os.path.join(
+        analysis_dir, "{0}_{1}_clusters_sym_lh.gii".format(
+            inputs["subjectid"], native_hemi))
+    dpf_file = os.path.join(analysis_dir, "{0}_{1}white_DPF.gii".format(
+        inputs["subjectid"], native_hemi))
+    for path in (pits_file, clusters_file, dpf_file):
+        if not os.path.isfile(path):
+            raise ValueError("'{0}' does not exists.".format(path))
+    pits_im = gio.read(pits_file)
+    pits_data = pits_im.darrays[0].data
+    clusters_data = numpy.round(
+        gio.read(clusters_file).darrays[0].data).astype(int)
+    dpf_data = gio.read(dpf_file).darrays[0].data
+
+    # Filter pits
+    for cluster_id in numpy.unique(clusters_data):
+        if verbose > 1:
+            print("Processing cluster '{0}'...".format(cluster_id))
+            
+        indices = numpy.where(cluster_id == clusters_data)[0]
+        pits_indices = numpy.nonzero(pits_data[indices])[0]
+        # > if no pit in areal: take the deepest point
+        # > this could be the best option, because sometimes pits are misplaced
+        if inputs["deepest"] or len(pits_indices) == 0:
+            pits_location = indices[numpy.argmax(dpf_data[indices])]
+        # > if only one pit: select it
+        elif len(pits_indices) == 1:
+            pits_location = indices[pits_indices[0]]
+        # > if several pits:take the deepest
+        else:
+            max_depth_index = numpy.argmax(dpf_data[indices[pits_indices]])
+            pits_location = indices[pits_indices[max_depth_index]]
+        if verbose > 1:
+            print("  - pits indices: {0}".format(indices[pits_indices]))
+            print("  - final pit location: {0}".format(pits_location))
+        # > update texture
+        pits_data[indices] = 0
+        pits_data[pits_location] = 1
+
+    # Save pits testure data
+    pits_im.darrays[0].data = pits_data
+    corrected_pits_file = os.path.join(
+        analysis_dir, "{0}_{1}white_pits_corrected.gii".format(
+            inputs["subjectid"], native_hemi))
+    gio.write(pits_im, corrected_pits_file)
+    out_pits_files[native_hemi] = corrected_pits_file
+
+
+"""
+Update the outputs and save them and the inputs in a 'logs' directory.
+"""
+logdir = os.path.join(inputs["outdir"], inputs["subjectid"], "logs")
+if not os.path.isdir(logdir):
+    os.mkdir(logdir)
+params = locals()
+outputs = {
+    "corrected_pits_files": out_pits_files}
+for name, final_struct in [
+        ("inputs_correct", inputs), ("outputs_correct", outputs),
+        ("runtime_correct", runtime)]:
+    log_file = os.path.join(logdir, "{0}.json".format(name))
+    with open(log_file, "wt") as open_file:
+        json.dump(final_struct, open_file, sort_keys=True, check_circular=True,
+                  indent=4)
+if verbose > 0:
+    print("[info] Outputs:")
+    pprint(outputs)

@@ -1,0 +1,308 @@
+#!/usr/bin/env python
+##########################################################################
+# NSAp - Copyright (C) CEA, 2018
+# Distributed under the terms of the CeCILL-B license, as published by
+# the CEA-CNRS-INRIA. Refer to the LICENSE file or to
+# http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html
+# for details.
+##########################################################################
+
+# System import
+from __future__ import print_function
+import os
+import sys
+import json
+import shutil
+import argparse
+import textwrap
+import subprocess
+from pprint import pprint
+from datetime import datetime
+from argparse import RawTextHelpFormatter
+
+# Bredala import
+try:
+    import bredala
+    bredala.USE_PROFILER = False
+except:
+    pass
+
+
+# Package import
+from pyconnectome import __version__ as version
+
+# Third party import
+from pyfreesurfer import __version__ as pyfreesurfer_version
+from pyfreesurfer.wrapper import FSWrapper
+from pyfreesurfer import DEFAULT_FREESURFER_PATH
+from pyfreesurfer import DEFAULT_TEMPLATE_SYM_PATH
+
+
+# Parameters to keep trace
+__hopla__ = ["runtime", "inputs", "outputs"]
+
+
+# Script documentation
+DOC = """
+Compute pits on a symetric left/right template.
+
+References
+----------
+Code for Genetic Influence on the Sulcal Pits: On the Origin of the First
+Cortical Folds, Cerebral Cortex, 2017, https://doi.org/10.1093/cercor/bhx098
+
+Example on HCP data:
+
+python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_sulcal_pits_analysis \
+    -o /neurospin/nsap/processed/hcp_sillons/data/pits \
+    -d $HOME/git/sulcal_pits_analysis/build_pits_database \
+    -f /neurospin/hcp/ANALYSIS/3T_freesurfer/136227/T1w \
+    -s 136227 \
+    -e /neurospin/hcp/ANALYSIS/3T_freesurfer_extras \
+    -v 2
+"""
+
+def is_file(filearg):
+    """ Type for argparse - checks that file exists but does not open.
+    """
+    if not os.path.isfile(filearg):
+        raise argparse.ArgumentError(
+            "The file '{0}' does not exist!".format(filearg))
+    return filearg
+
+
+def is_directory(dirarg):
+    """ Type for argparse - checks that directory exists.
+    """
+    if not os.path.isdir(dirarg):
+        raise argparse.ArgumentError(
+            "The directory '{0}' does not exist!".format(dirarg))
+    return dirarg
+
+
+def get_cmd_line_args():
+    """
+    Create a command line argument parser and return a dict mapping
+    <argument name> -> <argument value>.
+    """
+    parser = argparse.ArgumentParser(
+        prog="python pyconnectome_sulcal_pits_analysis",
+        description=textwrap.dedent(DOC),
+        formatter_class=RawTextHelpFormatter)
+
+    # Required arguments
+    required = parser.add_argument_group("required arguments")
+    required.add_argument(
+        "-o", "--outdir",
+        type=is_directory, required=True, metavar="PATH",
+        help="Directory where to output.")
+    required.add_argument(
+        "-d", "--source-dir",
+        type=is_directory, required=True, metavar="PATH",
+        help="Directory where the sulcal pits analysis scripts are located.")
+    required.add_argument(
+        "-f", "--fsdir",
+        required=True, metavar="PATH", type=is_directory,
+        help="the FreeSurfer processing home directory.")
+    required.add_argument(
+        "-e", "--fsextra",
+        required=True, metavar="PATH", type=is_directory,
+        help="the FreeSurfer xhemi result directory.")
+    required.add_argument(
+        "-s", "--subjectid",
+        required=True,
+        help="the subject identifier.")
+
+    # Optional arguments
+    parser.add_argument(
+        "-v", "--verbose",
+        type=int, choices=[0, 1, 2], default=2,
+        help="Increase the verbosity level: 0 silent, [1, 2] verbose.")
+    parser.add_argument(
+        "-T", "--templatesym",
+        metavar="PATH", type=is_directory,
+        help=("path to the 'fsaverage_sym' template."))
+    parser.add_argument(
+        "-F", "--freesurfer-sh",
+        type=is_file, metavar="<path>",
+        help="Bash script initializing FreeSurfer's environment.")
+
+    # Create a dict of arguments to pass to the 'main' function
+    args = parser.parse_args()
+    kwargs = vars(args)
+    verbose = kwargs.pop("verbose")
+    if kwargs["freesurfer_sh"] is None:
+        kwargs["freesurfer_sh"] = DEFAULT_FREESURFER_PATH
+    if kwargs["templatesym"] is None:
+        kwargs["templatesym"] = DEFAULT_TEMPLATE_SYM_PATH
+
+    return kwargs, verbose
+
+
+"""
+Parse the command line.
+"""
+inputs, verbose = get_cmd_line_args()
+runtime = {
+    "tool": "pyconnectome_sulcal_pits_analysis",
+    "tool_version": version,
+    "pyfreesurfer_version": pyfreesurfer_version,
+    "timestamp": datetime.now().isoformat(),
+    "freesurfer_version": FSWrapper([], inputs["freesurfer_sh"]).version
+}
+outputs = None
+if verbose > 0:
+    pprint("[info] Starting sulcal pits analysis...")
+    pprint("[info] Runtime:")
+    pprint(runtime)
+    pprint("[info] Inputs:")
+    pprint(inputs)
+
+
+"""
+Organize the file from Freesurfer output and convert them to gii.
+"""
+# Welcome message
+if verbose > 0:
+    print("Organize & convert files...")
+# Create folders
+out_subj_dir = os.path.join(inputs["outdir"], inputs["subjectid"],
+                            inputs["subjectid"])
+mesh_dir = os.path.join(out_subj_dir, "t1mri", "BL", "default_analysis",
+                        "segmentation", "mesh")
+analysis_dir = os.path.join(mesh_dir, "surface_analysis")
+label_dir = os.path.join(out_subj_dir, "label")
+sym_dir = os.path.join(out_subj_dir, "fsaverage_sym")
+for path in [mesh_dir, label_dir, sym_dir, analysis_dir]:
+    if not os.path.isdir(path):
+        os.makedirs(path)
+# Convert mesh
+subj_dir = os.path.join(inputs["fsdir"], inputs["subjectid"])
+for hemi in ["lh", "rh"]:
+    white_mgz = os.path.join(subj_dir, "surf", "{0}.white".format(hemi))
+    white_gii = os.path.join(mesh_dir, "{0}_{1}white.gii".format(
+        inputs["subjectid"], hemi[0].upper()))
+    cmd = ["mris_convert", white_mgz, white_gii]
+    converter = FSWrapper(cmd, shfile=inputs["freesurfer_sh"])
+    converter()
+# Copy labels
+for hemi in ["lh", "rh"]:
+    label_in = os.path.join(subj_dir, "label", "{0}.cortex.label".format(hemi))
+    label_out = os.path.join(label_dir, "{0}.cortex.label".format(hemi))
+    shutil.copy2(label_in, label_out)
+# Convert symetric sphere reg
+for native_hemi in ["L", "R"]:
+    other_hemi = "R" if native_hemi == "L" else "L"
+    sym_sphere = os.path.join(
+        inputs["fsextra"], inputs["subjectid"], "convert",
+        "{0}h_surfreg".format(other_hemi.lower()), "xhemi", "surf",
+        "{0}h.fsaverage_sym.sphere.reg".format(other_hemi.lower()))
+    sym_sphere_gii = os.path.join(
+        analysis_dir,
+        "{0}.{1}.sphere.reg.{2}h.fsaverage_sym.surf.gii".format(
+            inputs["subjectid"], native_hemi, other_hemi.lower()))
+    cmd = ["mris_convert", sym_sphere, sym_sphere_gii]
+    converter = FSWrapper(cmd, shfile=inputs["freesurfer_sh"])
+    converter()
+    sym_sphere = os.path.join(
+        subj_dir, "surf",
+        "{0}h.fsaverage_sym.sphere.reg".format(native_hemi.lower()))
+    sym_sphere_gii = os.path.join(
+        analysis_dir,
+        "{0}.{1}.sphere.reg.{2}h.fsaverage_sym.surf.gii".format(
+            inputs["subjectid"], native_hemi, native_hemi.lower()))
+    cmd = ["mris_convert", sym_sphere, sym_sphere_gii]
+    converter = FSWrapper(cmd, shfile=inputs["freesurfer_sh"])
+    converter()
+for hemi in ["lh", "rh"]:
+    sym_sphere = os.path.join(
+        inputs["templatesym"], "surf", "{0}.sphere.reg".format(hemi))
+    sym_sphere_gii = os.path.join(
+        sym_dir, "{0}.sphere.reg.gii".format(hemi))
+    cmd = ["mris_convert", sym_sphere, sym_sphere_gii]
+    converter = FSWrapper(cmd, shfile=inputs["freesurfer_sh"])
+    converter()
+
+
+"""
+Identified cingular pole on each individual using Freesurfer annotation in 
+?h.cortex.label.
+"""
+# Welcome message
+if verbose > 0:
+    print("Identify cingular pole...")
+# Run command
+env = os.environ
+env["PATH"] = env["PATH"] + ":" + inputs["source_dir"]
+cmd = ["cingular_projection.py", "-a", "0", "-j", "1"]
+if verbose > 1:
+    print("Executing: {0}".format(cmd))
+subprocess.check_call(cmd, cwd=os.path.dirname(out_subj_dir), env=env)
+
+
+"""
+Sulcal pits extraction using Brainvisa process.
+"""
+# Welcome message
+if verbose > 0:
+    print("Sulcal pits extraction...")
+# Run command
+cmd = ["sulcal_pits_detection.py", "-a", "0", "-j", "1"]
+if verbose > 1:
+    print("Executing: {0}".format(cmd))
+subprocess.check_call(cmd, cwd=os.path.dirname(out_subj_dir), env=env)
+
+
+"""
+Smooth sulcal pits texture using Brainvisa process.
+"""
+# Welcome message
+if verbose > 0:
+    print("Smooth sulcal pits texture...")
+# Run command
+cmd = ["tex_pits_smoothing.py", "-a", "0", "-j", "1"]
+if verbose > 1:
+    print("Executing: {0}".format(cmd))
+subprocess.check_call(cmd, cwd=os.path.dirname(out_subj_dir), env=env)
+
+
+"""
+Projecture textures onto the template using Brainvisa process: project the
+pits, DPF, geodesic depth and pits smoothed textures.
+"""
+# Welcome message
+if verbose > 0:
+    print("Projecture textures onto the template...")
+# Run command
+cmd = ["project_to_template.py", "-a", "0", "-j", "1"]
+if verbose > 1:
+    print("Executing: {0}".format(cmd))
+subprocess.check_call(cmd, cwd=os.path.dirname(out_subj_dir), env=env)
+
+
+"""
+Clean data
+"""
+shutil.move(
+    os.path.join(out_subj_dir, "t1mri"),
+    os.path.join(os.path.dirname(out_subj_dir), "t1mri"))
+shutil.rmtree(out_subj_dir)
+
+
+"""
+Update the outputs and save them and the inputs in a 'logs' directory.
+"""
+logdir = os.path.join(os.path.dirname(out_subj_dir), "logs")
+if not os.path.isdir(logdir):
+    os.mkdir(logdir)
+params = locals()
+outputs = {"outdir": os.path.dirname(out_subj_dir)}
+for name, final_struct in [("inputs", inputs), ("outputs", outputs),
+                           ("runtime", runtime)]:
+    log_file = os.path.join(logdir, "{0}.json".format(name))
+    with open(log_file, "wt") as open_file:
+        json.dump(final_struct, open_file, sort_keys=True, check_circular=True,
+                  indent=4)
+if verbose > 0:
+    print("[info] Outputs:")
+    pprint(outputs)

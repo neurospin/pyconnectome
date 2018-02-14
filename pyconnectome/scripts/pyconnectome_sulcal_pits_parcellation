@@ -1,0 +1,338 @@
+#!/usr/bin/env python
+##########################################################################
+# NSAp - Copyright (C) CEA, 2018
+# Distributed under the terms of the CeCILL-B license, as published by
+# the CEA-CNRS-INRIA. Refer to the LICENSE file or to
+# http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html
+# for details.
+##########################################################################
+
+# System import
+from __future__ import print_function
+from collections import OrderedDict
+import os
+import sys
+import glob
+import json
+import shutil
+import argparse
+import textwrap
+import subprocess
+from pprint import pprint
+from datetime import datetime
+from argparse import RawTextHelpFormatter
+
+# Bredala import
+try:
+    import bredala
+    bredala.USE_PROFILER = False
+except:
+    pass
+
+# Package import
+import pyconnectome
+from pyconnectome import __version__ as version
+
+# Third party import
+import numpy
+from pyfreesurfer import __version__ as pyfreesurfer_version
+from pyfreesurfer.wrapper import FSWrapper
+from pyfreesurfer import DEFAULT_FREESURFER_PATH
+from pyfreesurfer import DEFAULT_TEMPLATE_SYM_PATH
+from pyfreesurfer.utils.surftools import TriSurface
+import nibabel.gifti.giftiio as gio
+
+# Parameters to keep trace
+__hopla__ = ["runtime", "inputs", "outputs"]
+
+
+# Script documentation
+DOC = """
+Compute joint cortex parcellation based on subjects symetric suclal pits
+descriptions.
+
+References
+----------
+Code for Genetic Influence on the Sulcal Pits: On the Origin of the First
+Cortical Folds, Cerebral Cortex, 2017, https://doi.org/10.1093/cercor/bhx098
+
+Example on HCP data:
+
+python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_sulcal_pits_parcellation \
+    -o /neurospin/nsap/processed/hcp_sillons/data/pits \
+    -d $HOME/git/sulcal_pits_analysis/build_pits_database \
+    -v 2
+"""
+
+def is_file(filearg):
+    """ Type for argparse - checks that file exists but does not open.
+    """
+    if not os.path.isfile(filearg):
+        raise argparse.ArgumentError(
+            "The file '{0}' does not exist!".format(filearg))
+    return filearg
+
+
+def is_directory(dirarg):
+    """ Type for argparse - checks that directory exists.
+    """
+    if not os.path.isdir(dirarg):
+        raise argparse.ArgumentError(
+            "The directory '{0}' does not exist!".format(dirarg))
+    return dirarg
+
+
+def get_cmd_line_args():
+    """
+    Create a command line argument parser and return a dict mapping
+    <argument name> -> <argument value>.
+    """
+    parser = argparse.ArgumentParser(
+        prog="python pyconnectome_sulcal_pits_parcellation",
+        description=textwrap.dedent(DOC),
+        formatter_class=RawTextHelpFormatter)
+
+    # Required arguments
+    required = parser.add_argument_group("required arguments")
+    required.add_argument(
+        "-o", "--outdir",
+        type=is_directory, required=True, metavar="PATH",
+        help="Directory where to output that is also were the individual pits "
+             "analysis were run.")
+    required.add_argument(
+        "-d", "--source-dir",
+        type=is_directory, required=True, metavar="PATH",
+        help="Directory where the sulcal pits analysis scripts are located.")
+
+    # Optional arguments
+    parser.add_argument(
+        "-v", "--verbose",
+        type=int, choices=[0, 1, 2], default=2,
+        help="Increase the verbosity level: 0 silent, [1, 2] verbose.")
+    parser.add_argument(
+        "-T", "--templatesym",
+        metavar="PATH", type=is_directory,
+        help=("path to the 'fsaverage_sym' template."))
+    parser.add_argument(
+        "-F", "--freesurfer-sh",
+        type=is_file, metavar="<path>",
+        help="Bash script initializing FreeSurfer's environment.")
+
+    # Create a dict of arguments to pass to the 'main' function
+    args = parser.parse_args()
+    kwargs = vars(args)
+    verbose = kwargs.pop("verbose")
+    if kwargs["freesurfer_sh"] is None:
+        kwargs["freesurfer_sh"] = DEFAULT_FREESURFER_PATH
+    if kwargs["templatesym"] is None:
+        kwargs["templatesym"] = DEFAULT_TEMPLATE_SYM_PATH
+
+    return kwargs, verbose
+
+
+"""
+Parse the command line.
+"""
+inputs, verbose = get_cmd_line_args()
+runtime = {
+    "tool": "pyconnectome_sulcal_pits_parcellation",
+    "tool_version": version,
+    "pyfreesurfer_version": pyfreesurfer_version,
+    "timestamp": datetime.now().isoformat(),
+    "freesurfer_version": FSWrapper([], inputs["freesurfer_sh"]).version
+}
+outputs = None
+out_files = []
+if verbose > 0:
+    pprint("[info] Starting sulcal pits parcellation...")
+    pprint("[info] Runtime:")
+    pprint(runtime)
+    pprint("[info] Inputs:")
+    pprint(inputs)
+
+
+"""
+Organize the file from Freesurfer output and convert them to gii.
+"""
+# Welcome message
+if verbose > 0:
+    print("Organize & convert files...")
+# Create folders
+out_subj_dir = os.path.join(inputs["outdir"], "fsaveragesym", "fsaveragesym")
+mesh_dir = os.path.join(out_subj_dir, "t1mri", "BL", "default_analysis",
+                        "segmentation", "mesh")
+analysis_dir = os.path.join(mesh_dir, "surface_analysis")
+label_dir = os.path.join(out_subj_dir, "label")
+reg_dir = os.path.join(inputs["outdir"], "fsaveragesym", "registration")
+for path in [mesh_dir, label_dir, analysis_dir, reg_dir]:
+    if not os.path.isdir(path):
+        os.makedirs(path)
+# Convert mesh
+subj_dir = inputs["templatesym"]
+for hemi in ["lh", "rh"]:
+    white_mgz = os.path.join(subj_dir, "surf", "{0}.white".format(hemi))
+    white_gii = os.path.join(mesh_dir, "fsaveragesym_{0}white.gii".format(
+        hemi[0].upper()))
+    cmd = ["mris_convert", white_mgz, white_gii]
+    converter = FSWrapper(cmd, shfile=inputs["freesurfer_sh"])
+    converter()
+# Copy labels
+for hemi in ["lh", "rh"]:
+    label_in = os.path.join(subj_dir, "label", "{0}.cortex.label".format(hemi))
+    label_out = os.path.join(label_dir, "{0}.cortex.label".format(hemi))
+    shutil.copy2(label_in, label_out)
+# Convert spheres
+for hemi in ["lh", "rh"]:
+    sym_sphere = os.path.join(
+        subj_dir, "surf", "{0}.sphere.reg".format(hemi))
+    sym_sphere_gii = os.path.join(
+        reg_dir, "{0}.sphere.reg.gii".format(hemi))
+    cmd = ["mris_convert", sym_sphere, sym_sphere_gii]
+    converter = FSWrapper(cmd, shfile=inputs["freesurfer_sh"])
+    converter()
+
+
+"""
+Identified cingular pole of the template.
+"""
+# Welcome message
+if verbose > 0:
+    print("Identify cingular pole...")
+# Run command
+env = os.environ
+env["PATH"] = env["PATH"] + ":" + inputs["source_dir"]
+cmd = ["cingular_projection.py", "-a", "0", "-j", "1"]
+if verbose > 1:
+    print("Executing: {0}".format(cmd))
+subprocess.check_call(cmd, cwd=os.path.dirname(out_subj_dir), env=env)
+shutil.move(
+    os.path.join(out_subj_dir, "t1mri"),
+    os.path.join(os.path.dirname(out_subj_dir), "t1mri"))
+shutil.rmtree(out_subj_dir)
+
+
+"""
+Compute group pits density.
+"""
+# Welcome message
+if verbose > 0:
+    print("Compute group pits density...")
+# Run command
+cmd = ["pits_density.py", "-a", "0", "-j", "1"]
+if verbose > 1:
+    print("Executing: {0}".format(cmd))
+subprocess.check_call(cmd, cwd=inputs["outdir"], env=env)
+
+
+"""
+Group watershed on the group pits density to obtain the group-clusters of
+pits (i.e. areals).
+"""
+# Welcome message
+if verbose > 0:
+    print("Group watershed on the group pits density...")
+# Run command
+cmd = ["group_watershed.py", "-a", "0", "-j", "6", "--ncore", "6"]
+if verbose > 1:
+    print("Executing: {0}".format(cmd))
+subprocess.check_call(cmd, cwd=inputs["outdir"], env=env)
+
+
+"""
+Try to automatically label the new areals.
+"""
+# Welcome message
+if verbose > 0:
+    print("Automatic labeling of the new areals...")
+
+# Locate input patterns
+cluster_pattern = os.path.join(
+    inputs["outdir"], "pits_density_sym_{0}", "clusters_{1}_*_sym_{0}*.gii")
+reflabel_pattern = os.path.join(
+    os.path.dirname(pyconnectome.__file__), "resources", "{0}_{1}_labels.json")
+white_pattern = os.path.join(
+    inputs["outdir"], "fsaveragesym", "t1mri", "BL", "default_analysis",
+    "segmentation", "mesh", "fsaveragesym_{0}white.gii")
+out_pattern = os.path.join(
+    inputs["outdir"], "pits_density_sym_{0}",
+    "clusters_labels_{1}_sym_{0}.json")
+
+# Deal with each configuration
+for native_hemi in ("L", "R"):
+    for template_hemi in ("lh", "rh"):
+
+        # Get the new cluster labels
+        cluster_files = glob.glob(
+            cluster_pattern.format(template_hemi, native_hemi))
+        if len(cluster_files) != 1:
+            raise ValueError("Expect one cluster for {0}({1},{2}).".format(
+                cluster_pattern, template_hemi, native_hemi))
+        cluster_data = gio.read(cluster_files[0]).darrays[0].data
+
+        # Load the reference labels
+        reflabel_file = reflabel_pattern.format(template_hemi, native_hemi)
+        with open(reflabel_file, "rt") as open_file:
+            reflabel_dict = json.load(open_file, object_pairs_hook=OrderedDict)
+
+        # Load the reference white mesh
+        white_file = white_pattern.format(
+            "R" if template_hemi == "rh" else "L")
+        image = gio.read(white_file)
+        nb_of_surfs = len(image.darrays)
+        if nb_of_surfs != 2:
+            raise ValueError("'{0}' does not a contain a valid white "
+                             "mesh.".format(white_file))
+        vertices = image.darrays[0].data
+        triangles = image.darrays[1].data
+        labels = numpy.round(cluster_data).astype(int)
+        surf = TriSurface(vertices, triangles, labels=labels)
+
+        # Try to find labels for the new areals
+        new_labels = {}
+        ref_centroids = [value["areal_centroid"]
+                         for value in reflabel_dict.values()]
+        ref_centroids = numpy.asarray(ref_centroids)
+        for label in numpy.unique(surf.labels):
+            indices = numpy.where(surf.labels == label)
+            points = surf.vertices[indices]
+            if len(points) == 0:
+                raise ValueError("Surface is incorrect, please investigate.")
+            centroid = numpy.mean(points, axis=0)
+            dist = numpy.sqrt(((ref_centroids - centroid) ** 2).mean(axis=1))
+            arg_min = numpy.argmin(dist)
+            if dist[arg_min] < 3:
+                name = reflabel_dict.values()[arg_min]["areal_name"]
+            else:
+                name = "unknown"
+            new_labels[label] = {
+                "areal_name": name,
+                "areal_centroid": centroid.tolist()}
+
+        # Save the result
+        outfile = out_pattern.format(template_hemi, native_hemi)
+        with open(outfile, "wt") as open_file:
+            json.dump(new_labels, open_file, indent=4)
+        
+
+
+"""
+Update the outputs and save them and the inputs in a 'logs' directory.
+"""
+logdir = os.path.join(inputs["outdir"], "logs")
+if not os.path.isdir(logdir):
+    os.mkdir(logdir)
+params = locals()
+outputs = {
+    "pits_density_sym_lh": os.path.join(
+        inputs["outdir"], "pits_density_sym_lh"),
+    "pits_density_sym_rh": os.path.join(
+        inputs["outdir"], "pits_density_sym_rh")}
+for name, final_struct in [("inputs", inputs), ("outputs", outputs),
+                           ("runtime", runtime)]:
+    log_file = os.path.join(logdir, "{0}.json".format(name))
+    with open(log_file, "wt") as open_file:
+        json.dump(final_struct, open_file, sort_keys=True, check_circular=True,
+                  indent=4)
+if verbose > 0:
+    print("[info] Outputs:")
+    pprint(outputs)

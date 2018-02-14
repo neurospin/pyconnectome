@@ -22,59 +22,149 @@ from pyconnectome.utils.filetools import load_folds
 # Third party import
 import nibabel
 import progressbar
+import nibabel.gifti.giftiio as gio
 from sklearn.cluster import MeanShift
 from scipy.spatial.distance import cdist
 from pyfreesurfer.utils.surftools import TriSurface
 from pyfreesurfer.utils.surftools import apply_affine_on_mesh
+from pyfreesurfer.utils.regtools import tkregister_translation
 
 
-def intersect_folds_with_tractogram(tractogram_file, folds_file, graph_file,
-                                    t1_file, nodiff_file, outdir, tol=3,
-                                    verbose=0):
-    """ Get the streamlines near the requested folds.
+def convert_pits(pits_file, mesh_file, t1_file, outdir=None, mgz_file=None,
+                 freesurfer_native_t1_file=None):
+    """ Extract pits coordinates from white matter mesh in physical
+    morphological space and put them in NIFTI voxel space.
+
+    Parameters
+    ----------
+    pits_file: str
+        the pits '.gii' file.
+    mesh_file: str
+        the path to white matter '.gii' mesh file.
+    t1_file: str
+        the t1 NIFTI file.
+    outdir: str, default None
+        if set, save the mesh in native space.
+    mgzfile: str, default None
+        a FreeSurfer '.mgz' file.
+    freesurfer_native_t1_file: str, default None
+        if set, consider the input mesh as a FreeSurfer mesh in the conformed
+        space, otherwise a morphologist mesh.
+
+    Returns
+    -------
+    mesh_vertices: ndarray (shape (N,3))
+        all mesh vertices in NIFTI voxel space.
+    pits_indexes : ndarray (shape (N,1))
+        the pits locations that can be applied on the mesh vertices.
+    """
+    # Load pits and mesh file
+    pits_gii = gio.read(pits_file)
+    mesh_gii = gio.read(mesh_file)
+
+    # Get mesh vertices and pits' mask array and check data adequacy
+    pits_vertices = pits_gii.darrays[0].data
+    mesh_vertices = mesh_gii.darrays[0].data
+    if mesh_vertices.shape[0] != pits_vertices.shape[0]:
+        raise ValueError("Surface pits file and white matter surface file "
+                         "should have the same number of vertices.")
+    pits_indexes = numpy.argwhere(pits_vertices == 1).flatten()
+
+    # Load image
+    t1im = nibabel.load(t1_file)
+    affine = t1im.affine
+    shape = t1im.shape
+
+    # Realign the mesh in voxel Nifti space
+    # Morphologist mesh
+    if freesurfer_native_t1_file is None:
+        # > generate affine trf in morphologist coordinates
+        morphcoord = numpy.eye(4)
+        morphcoord[0, 0] = -1
+        morphcoord[1, 1] = 1
+        morphcoord[2, 2] = 1
+        morphcoord[0, 3] = affine[0, 3]
+        morphcoord[1, 3] = -affine[1, 3]
+        morphcoord[2, 3] = -affine[2, 3]
+        morphaffine = numpy.dot(morphcoord, affine)
+        # > deal with axis inversion
+        inv_morphaffine = numpy.linalg.inv(morphaffine)
+        inv_morphaffine[1, 1] = -inv_morphaffine[1, 1]
+        inv_morphaffine[2, 2] = -inv_morphaffine[2, 2]
+        inv_morphaffine[1, 3] = shape[1]
+        inv_morphaffine[2, 3] = shape[2]
+        mesh_vertices = apply_affine_on_mesh(mesh_vertices, inv_morphaffine)
+    # FreeSurfer mesh
+    else:
+        fs_t1_image = nibabel.load(freesurfer_native_t1_file)
+        # > FreeSurfer resample the T1 image to 1iso
+        freesurfer_to_original_trf = numpy.dot(
+            numpy.linalg.inv(t1im.affine), fs_t1_image.affine)
+        # > Deal with FreeSurfer inner conformed space
+        physical_to_index = numpy.linalg.inv(fs_t1_image.get_affine())
+        translation = tkregister_translation(mgz_file)
+        conformed_to_native_trf = numpy.dot(physical_to_index, translation)
+        conformed_to_original_trf = numpy.dot(
+            freesurfer_to_original_trf ,conformed_to_native_trf)
+        mesh_vertices = apply_affine_on_mesh(
+            mesh_vertices, conformed_to_original_trf)
+    # Save the vertices as an image    
+    if outdir is not None:
+        overlay_file = os.path.join(outdir, "mesh.native.nii.gz")
+        overlay = numpy.zeros(t1im.shape, dtype=numpy.uint)
+        indices = numpy.round(mesh_vertices).astype(int).T
+        indices[0, numpy.where(indices[0] >= t1im.shape[0])] = 0
+        indices[1, numpy.where(indices[1] >= t1im.shape[1])] = 0
+        indices[2, numpy.where(indices[2] >= t1im.shape[2])] = 0
+        overlay[indices.tolist()] = 1
+        overlay_image = nibabel.Nifti1Image(overlay, t1im.affine)
+        nibabel.save(overlay_image, overlay_file)
+
+    return mesh_vertices, pits_indexes
+
+
+def intersect_tractogram(tractogram_file, rois, t1_file, nodiff_file, outdir,
+                         tol=3, verbose=0):
+    """ Get the streamlines near the requested region.
 
     Parameters
     ----------
     tractogram_file: str
-        the path to the tractogram.
-    folds_file: str
-        the folds '.gii' file.
-    graph_file: str (optional, default None)
-        the path to a morphologist '.arg' graph file.
+        the path to the tractogram in diffusion coordinates (in mm).
+    rois: list of ndarray (N, 3)
+        the points in the T1 voxel NIFTI space associated to the region of
+        interests.
     t1_file: str
-        the t1 NIFTI file.
+        the path to the t1 NIFTI file.
     nodiff_file: str
-        the no diffusion NIFTI file.
+        the path or the no diffusion NIFTI file.
     outdir: str
         the destination folder.
     tol: float
-        Distance (in the units of the streamlines, here voxel) between the
-        end points coordinate in the streamline and the center of any voxel in
-        the ROI.
+        Distance between the end points coordinate in the streamline and the
+        center of any voxel in the ROI.
     verbose: int, default 0
         control the verbosity level.
 
     Returns
     -------
     bundles_file: str
-        a list of bundles associated with each fold.
+        a list of bundles associated with each ROI.
     """
-    # Load anatomical image
+    # Load antomical references
     if verbose > 0:
-        print("[info] Loading images...")
+        print("[info] Loading anatomical references...")    
     t1_image = nibabel.load(t1_file)
     nodiff_image = nibabel.load(nodiff_file)
 
-    # Get the folds in image voxel coordinates
+    # Load the tractogram
     if verbose > 0:
-        print("[info] Loading folds...")
-    folds = convert_folds(folds_file, graph_file, t1_file)
-
-    # Load & downsample & check alignment of the tractogram using voxel
-    # coordinates
-    if verbose > 0:
-        print("[info] Loading tractogram...")
+        print("[info] Loading tractogram...")    
     tracks = nibabel.streamlines.load(tractogram_file)
+
+    # Downsample & check alignment of the tractogram using voxel coordinates
+    if verbose > 0:
+        print("[info] Checking tractogram...")
     streamlines = numpy.concatenate(
         [arr[[0, -1]] for arr in tracks.streamlines])
     vox_streamlines = apply_affine_on_mesh(
@@ -88,54 +178,48 @@ def intersect_folds_with_tractogram(tractogram_file, folds_file, graph_file,
     if verbose > 0:
         print("[info] Number of tracks: {0}".format(len(streamlines) / 2))
 
-    # Put the folds in the diffusion space using voxel coordinates
+    # Put the ROI in the diffusion space using voxel coordinates
     if verbose > 0:
-        print("[info] Putting folds in diffusion space...")
+        print("[info] Putting ROI in diffusion space...")
     affine = numpy.dot(numpy.linalg.inv(nodiff_image.affine), t1_image.affine)
-    vox_folds = None
-    for labelindex, surf in folds.items():
-        surf.vertices = apply_affine_on_mesh(surf.vertices, affine)
-        if vox_folds is None:
-            vox_folds = surf.vertices
-        else:
-            vox_folds = numpy.concatenate((vox_folds, surf.vertices))
-    folds_map = numpy.zeros(nodiff_image.shape, dtype=int)
-    folds_map[vox_folds.T.tolist()] = 1
-    folds_map_file = os.path.join(outdir, "folds_map.nii.gz")
-    folds_map_image = nibabel.Nifti1Image(folds_map, nodiff_image.affine)
-    folds_map_image.to_filename(folds_map_file)
+    vox_diff_rois = []
+    roi_map = numpy.zeros(nodiff_image.shape, dtype=int)
+    for roi in rois:
+        vox_diff_rois.append(apply_affine_on_mesh(roi, affine))
+        roi_map[vox_diff_rois[-1].T.tolist()] = 1
+    roi_map_file = os.path.join(outdir, "roi_map.nii.gz")
+    roi_map_image = nibabel.Nifti1Image(roi_map, nodiff_image.affine)
+    roi_map_image.to_filename(roi_map_file)
 
-    # Get all the folds associated fibers
+    # Get the ROI associated fibers
     if verbose > 0:
-        print("[info] Filter tractogram using requested folds...")
+        print("[info] Filter tractogram using requested ROI...")
     bundles = {}
-    with progressbar.ProgressBar(max_value=len(folds),
+    with progressbar.ProgressBar(max_value=len(vox_diff_rois),
                                  redirect_stdout=True) as bar:
-        cnt = 0
-        for labelindex, surf in folds.items():
+        for cnt, roi in enumerate(vox_diff_rois):
 
-            # Downsample fold vertices
+            # Downsample ROI vertices
             ms = MeanShift(bandwidth=tol / 2, bin_seeding=True)
-            ms.fit(surf.vertices)
+            ms.fit(roi)
             cluster_centers = ms.cluster_centers_
 
             # Select fibers
-            bundles[str(labelindex)] = []
+            bundles[cnt] = []
             dist = cdist(vox_streamlines[::2], cluster_centers, "euclidean")
             fibers_indices = numpy.argwhere(
                 numpy.min(dist, -1) <= tol).squeeze().tolist()
             if not isinstance(fibers_indices, list):
                 fibers_indices = [fibers_indices]
-            bundles[str(labelindex)].extend(fibers_indices)
+            bundles[cnt].extend(fibers_indices)
             dist = cdist(vox_streamlines[1::2], cluster_centers, "euclidean")
             fibers_indices = numpy.argwhere(
                 numpy.min(dist, -1) <= tol).squeeze().tolist()
             if not isinstance(fibers_indices, list):
                 fibers_indices = [fibers_indices]
-            bundles[str(labelindex)].extend(fibers_indices)
-            bundles[str(labelindex)] = list(set(bundles[str(labelindex)]))
+            bundles[cnt].extend(fibers_indices)
+            bundles[cnt] = list(set(bundles[cnt]))
             bar.update(cnt)
-            cnt += 1
 
     # Save the bundles result
     bundles_file = os.path.join(outdir, "bundles.json")

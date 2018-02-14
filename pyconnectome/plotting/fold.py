@@ -10,7 +10,6 @@
 from __future__ import print_function
 import os
 import numpy
-import nibabel.gifti.giftiio as gio
 
 # Package import
 from pyconnectome.utils.filetools import load_folds
@@ -18,6 +17,7 @@ from pyconnectome.utils.filetools import load_folds
 # Third party import
 import pyconnectome.plotting.pvtk as pvtk
 from pyfreesurfer.utils.surftools import TriSurface
+import nibabel.gifti.giftiio as gio
 
 
 class LabelsOnPick(object):
@@ -193,7 +193,149 @@ def display_folds(folds_file, labels, weights, white_file=None, pits_file=None,
         pvtk.add(ren, actor)
         obs = LabelsOnPick(actor, static_position=True,
                            to_keep_actors=["white", "pits", "geodesic"])
-        pvtk.show(ren, title="morphologist folds", observers=[obs])
+        pvtk.show(ren, title=name, observers=[obs])
+
+    # Create a snap
+    if snap:
+        if not os.path.isdir(outdir):
+            raise ValueError("'{0}' is not a valid directory.".format(outdir))
+        pvtk.record(ren, outdir, name, n_frames=1)
+
+    # Create an animation
+    if animate:
+        if not os.path.isdir(outdir):
+            raise ValueError("'{0}' is not a valid directory.".format(outdir))
+        pvtk.record(ren, outdir, name, n_frames=36, az_ang=10, animate=True,
+                    delay=25)
+
+
+def display_pits_parcellation(
+        white_file, parcellation_file, labels=None, pits_file=None,
+        interactive=True, snap=False, animate=False, outdir=None,
+        name="pits_parcellation", actor_ang=(0., 0., 0.)):
+    """ Display the pits parcellation.
+
+    The scene supports one feature activated via the keystroke:
+
+    * 'p': Pick the data at the current mouse point. This will pop-up a window
+      with information on the current pick (ie. the areal name).
+
+    Parameters
+    ----------
+    white_file: str
+        the white surface will be displayed.
+    parcellation_file: str
+        the parcellation texture file.
+    labels: dict, default None
+        a mapping between an areal number and its name.
+    pits_file: str, default None
+        if specified the PITS locations.
+    interactive: bool, default True
+        if True display the renderer.
+    snap: bool, default False
+        if True create a snap of the scene: need a valid outdir.
+    animate: bool, default False
+        if True create a gif 360 degrees animation of the scene: need a valid
+        outdir.
+    outdir: str, default None
+        an existing directory.
+    name: str, default 'pits_parcellation'
+        the basename of the generated files.
+    actor_ang: 3-uplet, default (0, 0, 0)
+        the actors x, y, z position (in degrees).
+    """
+    # Load the PITS if specified
+    if pits_file is not None:
+        image = gio.read(pits_file)
+        nb_of_surfs = len(image.darrays)
+        if nb_of_surfs != 1:
+            raise ValueError("'{0}' does not a contain a valid pits "
+                             "texture.".format(pits_file))
+        pits_texture = image.darrays[0].data
+    else:
+        pits_texture = None
+
+    # Create an actor for the white matter surface
+    ren = pvtk.ren()
+    ren.SetBackground(1, 1, 1)
+    image = gio.read(white_file)
+    image_labels = gio.read(parcellation_file)
+    nb_of_surfs = len(image.darrays)
+    if nb_of_surfs != 2:
+        raise ValueError("'{0}' does not a contain a valid white "
+                         "mesh.".format(white_file))
+    vertices = image.darrays[0].data
+    triangles = image.darrays[1].data
+    labels = numpy.round(image_labels.darrays[0].data).astype(int)
+    wm_surf = TriSurface(vertices, triangles, labels=labels.copy())
+
+    # Four colors theorem to generate the cmap
+    import networkx as nx
+    import json
+    # > define distinct colors
+    colors_rgb = [(230, 25, 75), (60, 180, 75), (255, 225, 25), (0, 130, 200),
+                  (245, 130, 48), (145, 30, 180), (70, 240, 240),
+                  (240, 50, 230), (210, 245, 60), (250, 190, 190),
+                  (0, 128, 128), (230, 190, 255), (170, 110, 40),
+                  (255, 250, 200), (128, 0, 0), (170, 255, 195), (128, 128, 0),
+                  (255, 215, 180), (0, 0, 128), (128, 128, 128),
+                  (255, 255, 255)]
+    # > create the graph nodes
+    graph = nx.Graph()
+    unique_labels = numpy.unique(labels)
+    graph.add_nodes_from(unique_labels, color=None)
+    # > get the cluster centroids & neighboor vertices
+    clusters_map = {}
+    for label in unique_labels:
+        indices = numpy.where(wm_surf.labels == label)[0]
+        cluster_triangles = wm_surf.triangles[
+            list(numpy.where(numpy.isin(wm_surf.triangles, indices))[0])]
+        cluster_indices = cluster_triangles[
+            numpy.where(numpy.isin(cluster_triangles, indices, invert=True))]
+        neighboors_indices = list(set(
+            cluster_indices.astype(int)) - set(indices.astype(int)))
+        clusters_map[label] = {
+            "vertices": indices.tolist(),
+            "neighboors": neighboors_indices}
+    # > compute the graph edges
+    edges = []
+    nb_labels = len(unique_labels)
+    for ind1 in range(nb_labels):
+        for ind2 in range(ind1 + 1, nb_labels):
+            label = unique_labels[ind1]
+            other_label = unique_labels[ind2]
+            if numpy.isin(clusters_map[other_label]["vertices"],
+                          clusters_map[label]["neighboors"]).any():
+                edges.append([label, other_label])
+    graph.add_edges_from(edges)
+    # > graph coloring
+    colors = nx.algorithms.coloring.greedy_coloring.greedy_color(graph)
+    ctab = []
+    for label, color_id in colors.items():
+        if label < 0:
+            continue
+        ctab.append(list(colors_rgb[color_id % len(colors_rgb)]) +
+                    [255., label])
+    ctab.append([0., 0., 0., 255., unique_labels.max() + 1])
+    ctab = numpy.asarray(ctab)
+
+    # > create the actor
+    wm_surf.labels = wm_surf.labels.astype(float)
+    if pits_texture is not None:
+        wm_surf.labels[numpy.where(pits_texture == 1)] = unique_labels.max() + 1
+    wm_surf.labels[numpy.where(wm_surf.labels == -1)] = unique_labels.max() + 1
+    actor = pvtk.surface(wm_surf.vertices, wm_surf.triangles,
+                         wm_surf.labels, ctab=ctab, opacity=1, set_lut=True)
+    actor.label = "white"
+    actor.RotateX(actor_ang[0])
+    actor.RotateY(actor_ang[1])
+    actor.RotateZ(actor_ang[2])
+    pvtk.add(ren, actor)
+
+    # Show the renderer
+    if interactive:
+        pvtk.add(ren, actor)
+        pvtk.show(ren, title=name)
 
     # Create a snap
     if snap:
