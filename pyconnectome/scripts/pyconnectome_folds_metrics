@@ -283,34 +283,33 @@ else:
     out_file_r = os.path.join(inputs["outdir"],
                               "Rh_{0}_folds_measure".format(inputs["subject"]))
 out_files = {out_file_l: measures_l, out_file_r: measures_r}
-for out_file in out_files.keys():
+for out_file, measures in out_files.items():
     with open("{0}.json".format(out_file), 'w') as f:
-        json.dump(measures_l, f)
+        json.dump(measures, f)
     with open("{0}.csv".format(out_file), 'w') as f:
-        random_index = out_files[out_file].keys()[0]
-        random_point = out_files[out_file][random_index].keys()[0]
+        random_index = measures.keys()[0]
+        random_point = measures[random_index].keys()[0]
         features = []
         if inputs["pitsfiles"] is None:
             header = "Fold_index;PointCoord"
         else:
             header = "Pit_index;PointCoord"
-        for feat in out_files[out_file][random_index][random_point].keys():
+        for feat in measures[random_index][random_point].keys():
             features.append(feat)
-            vals = out_files[out_file][random_index][random_point][feat].keys()
+            vals = measures[random_index][random_point][feat].keys()
             for val in vals:
                 header = "{0};{1}_{2}".format(header, feat, val)
         f.write(header)
         f.write("\n")
 
-        for index in out_files[out_file].keys():
-            for point in out_files[out_file][index].keys():
+        for index in measures.keys():
+            for point in measures[index].keys():
                 line = "{0};{1}".format(index, point)
                 for feat in features:
-                    vals = out_files[out_file][index][point][feat].keys()
+                    vals = measures[index][point][feat].keys()
                     for val in vals:
-                        line = "{0};{1}".format(line, out_files[out_file]
-                                                               [index][point]
-                                                               [feat][val])
+                        line = "{0};{1}".format(line, measures[index][point]
+                                                              [feat][val])
                 f.write(line)
                 f.write("\n")
 
@@ -318,10 +317,10 @@ for out_file in out_files.keys():
 Update the outputs and save them and the inputs in a 'logs' directory.
 """
 
-outputs = []
-for ext in ["csv", "json"]:
-    outputs.append("{0}.{1}".format(out_file_l, ext))
-    outputs.append("{0}.{1}".format(out_file_r, ext))
+outputs = {"measures_left_hemi": ["{0}.{1}".format(out_file_l, "csv"),
+                                  "{0}.{1}".format(out_file_l, "json")],
+           "measures_right_hemi": ["{0}.{1}".format(out_file_r, "csv"),
+                                   "{0}.{1}".format(out_file_r, "json")]}
 logdir = os.path.join(inputs["outdir"], "logs")
 if not os.path.isdir(logdir):
     os.mkdir(logdir)
