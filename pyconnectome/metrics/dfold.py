@@ -142,8 +142,8 @@ def convert_pits(pits_file, mesh_file, t1_file):
     return mesh_pits, pits_indexes
 
 
-def sphere_integration(t1_file, folds, scalars, pits=None, pits_ind=None,
-                       seg_file=None, radius=2, wm_label=200, gm_label=100):
+def sphere_integration(t1_file, scalars, points, seg_file=None, radius=2,
+                       wm_label=200, gm_label=100):
     """ Compute some measures attached to vertices using a sphere integration
     strategy.
 
@@ -151,23 +151,18 @@ def sphere_integration(t1_file, folds, scalars, pits=None, pits_ind=None,
     ----------
     t1_file: str
         the reference anatomical file.
-    folds: dict with TriSurface
-        all the loaded folds. The fold names are stored in the metadata.
-        Vertices are in NIFTI voxel space.
-    pits: ndarray (shape (N,3))
-        all pits vertices in white mesh.
-        Vertices are in NIFTI voxel space.
-        If pits is different from None, scalars will be computed on pits only
-        and not on the folds.
     scalars: list of str
         a list of scalar map that will be intersected with the vertices.
+    points: dict of the form {label : vertices (array(N,3))}.
+        all the loaded pits or folds' vertices.
+        Vertices are in NIFTI voxel space.
     seg_file: str, default None
         the white/grey matter segmentation file.
     radius: float, default 2
         the sphere radius defines in the scalar space and expressed in voxel.
     wm_label: int, default 200
         the label for the white matter in the segmentation mask
-    gm_label : int, default 200
+    gm_label : int, default 100
         the label for the grey matter in the segmentation mask
 
     Returns
@@ -208,7 +203,7 @@ def sphere_integration(t1_file, folds, scalars, pits=None, pits_ind=None,
         points_in_wm = numpy.argwhere(condition)
 
         # Switch to voxel scalar coordinates
-        points_in_wm = apply_affine_on_points(points_in_wm, trf)
+        points_in_wm = apply_affine_on_mesh(points_in_wm, trf)
         points_in_wm = points_in_wm.astype(int)
 
         # Put in neurological convention
@@ -221,7 +216,7 @@ def sphere_integration(t1_file, folds, scalars, pits=None, pits_ind=None,
         points_in_gm = numpy.argwhere(condition)
 
         # Switch to voxel scalar coordinates
-        points_in_gm = apply_affine_on_points(points_in_gm, trf)
+        points_in_gm = apply_affine_on_mesh(points_in_gm, trf)
         points_in_gm = points_in_gm.astype(int)
 
         # Put in neurological convention
@@ -232,93 +227,32 @@ def sphere_integration(t1_file, folds, scalars, pits=None, pits_ind=None,
 
     # Go through each fold/pits
     measures = {}
-    if pits is None:
-        for labelindex, surf in folds.items():
-
-            # Set the vertices to the scalar space
-            vertices = apply_affine_on_mesh(surf.vertices, trf)
+    with progressbar.ProgressBar(max_value=len(points.keys()),
+                                 redirect_stdout=True) as bar:
+        count = 0
+        for labelindex, vertices in points.items():
+            vertices = apply_affine_on_mesh(vertices, trf)
 
             # For each vertex compute the sphere intersection with all the
             # scalar maps
             measures[labelindex] = {}
-            with progressbar.ProgressBar(max_value=len(vertices),
-                                         redirect_stdout=True) as bar:
-                for cnt, vertex in enumerate(vertices):
-                    key = repr(vertex.tolist())
-                    measures[labelindex][key] = {}
-                    for name, image in scalarims.items():
-                        # Initialize mean and median values
-                        wm_mean, gm_mean = None, None
-                        wm_median, gm_median = None, None
-                        if name in measures[labelindex][key]:
-                            raise ValueError("All the scalar map must have "
-                                             "different names.")
-                        int_points = inside_sphere_points(
-                            center=vertex, radius=radius, shape=image.shape)
-                        wm_points = points_intersection(int_points,
-                                                        points_in_wm)
-                        gm_points = points_intersection(int_points,
-                                                        points_in_gm)
-                        if wm_points is not None and len(wm_points) != 0:
-                            wm_points_x = tuple(wm_points[:, 0])
-                            wm_points_y = tuple(wm_points[:, 1])
-                            wm_points_z = tuple(wm_points[:, 2])
-                            wm_mean = float(numpy.mean(image.get_data()
-                                            [wm_points_x, wm_points_y,
-                                             wm_points_z]))
-                            wm_median = float(numpy.median(image.get_data()
-                                              [wm_points_x, wm_points_y,
-                                               wm_points_z]))
-                        if gm_points is not None and len(gm_points) != 0:
-                            gm_points_x = tuple(gm_points[:, 0])
-                            gm_points_y = tuple(gm_points[:, 1])
-                            gm_points_z = tuple(gm_points[:, 2])
-                            gm_mean = float(numpy.mean(image.get_data()
-                                            [gm_points_x, gm_points_y,
-                                             gm_points_z]))
-                            gm_median = float(numpy.median(image.get_data()
-                                              [gm_points_x, gm_points_y,
-                                               gm_points_z]))
-                        int_points_x = tuple(int_points[:, 0])
-                        int_points_y = tuple(int_points[:, 1])
-                        int_points_z = tuple(int_points[:, 2])
-                        measures[labelindex][key][name] = {
-                            "global_mean": float(numpy.mean(image.get_data()
-                                                 [int_points_x, int_points_y,
-                                                  int_points_z])),
-                            "wm_mean": wm_mean,
-                            "gm_mean": gm_mean,
-                            "global_median": float(numpy.median(
-                                                   image.get_data()
-                                                   [int_points_x,
-                                                    int_points_y,
-                                                    int_points_z])),
-                            "wm_median": wm_median,
-                            "gm_median": gm_median
-                        }
-                    bar.update(cnt)
-    else:
-        # Set the pits to the scalar space
-        pits = apply_affine_on_mesh(pits, trf)
-        # For each vertex compute the sphere intersection with all the scalar
-        # maps
-        with progressbar.ProgressBar(max_value=len(pits),
-                                     redirect_stdout=True) as bar:
-            for cnt, vertex in enumerate(pits):
-                coord = repr(vertex.tolist())
-                pit_index = pits_ind[cnt]
-                measures[pit_index] = {}
+
+            for cnt, vertex in enumerate(vertices):
+                key = repr(vertex.tolist())
+                measures[labelindex][key] = {}
                 for name, image in scalarims.items():
                     # Initialize mean and median values
                     wm_mean, gm_mean = None, None
                     wm_median, gm_median = None, None
-                    if name in measures[pit_index]:
+                    if name in measures[labelindex][key]:
                         raise ValueError("All the scalar map must have "
                                          "different names.")
                     int_points = inside_sphere_points(
                         center=vertex, radius=radius, shape=image.shape)
-                    wm_points = points_intersection(int_points, points_in_wm)
-                    gm_points = points_intersection(int_points, points_in_gm)
+                    wm_points = points_intersection(int_points,
+                                                    points_in_wm)
+                    gm_points = points_intersection(int_points,
+                                                    points_in_gm)
                     if wm_points is not None and len(wm_points) != 0:
                         wm_points_x = tuple(wm_points[:, 0])
                         wm_points_y = tuple(wm_points[:, 1])
@@ -342,8 +276,7 @@ def sphere_integration(t1_file, folds, scalars, pits=None, pits_ind=None,
                     int_points_x = tuple(int_points[:, 0])
                     int_points_y = tuple(int_points[:, 1])
                     int_points_z = tuple(int_points[:, 2])
-                    measures[pit_index][name] = {
-                        "coord_scalar_space": coord,
+                    measures[labelindex][key][name] = {
                         "global_mean": float(numpy.mean(image.get_data()
                                              [int_points_x, int_points_y,
                                               int_points_z])),
@@ -357,32 +290,10 @@ def sphere_integration(t1_file, folds, scalars, pits=None, pits_ind=None,
                         "wm_median": wm_median,
                         "gm_median": gm_median
                     }
-
-                bar.update(cnt)
+            count += 1
+            bar.update(count)
 
     return measures
-
-
-def apply_affine_on_points(points, trf):
-    """ Return a transformed list of points
-
-    Parameters
-    ----------
-    points : array, shape (m,3)
-       array of points to be transformed.
-    trf : affine matrix, shape (t,4)
-       transformation matrix.
-
-    Returns
-    -------
-    points : array, shape (N,3)
-       the array of the transformed points
-    """
-    M = trf[:3, :3]
-    abc = trf[:3, 3]
-    for i in range(points.shape[0]):
-        points[i, :] = numpy.add(numpy.dot(M, points[i, :]), abc)
-    return points
 
 
 def points_intersection(points1, points2):
