@@ -143,40 +143,44 @@ def get_cmd_line_args():
     parser.add_argument(
         "-F", "--foldsfile",
         type=is_file, nargs='+', metavar="<path>",
-        help="Path to the folds .gii file.")
+        help="Path to the folds .gii file. The left hemisphere folds file must"
+             "be the first input")
     required.add_argument(
         "-A", "--graphfile",
         type=is_file, nargs='+', metavar="<path>",
-        help="Path to the morphologist graph file.")
+        help="Path to the morphologist graph file. The left hemisphere graph "
+             "file must be the first input")
     parser.add_argument(
         "-L", "--leftfolds",
         type=int, nargs='*',
-        help="Selection of left hemisphere folds indexes on which to compute \
-             value (e.g : 94). Not adding this argument will compute the \
-             folds' metrics on every fold and putting this argument to -1 \
-             won't compute any value for the hemisphere folds.")
+        help="Selection of left hemisphere folds indexes on which to compute"
+             "value (e.g : 94). Not adding this argument will compute the"
+             "folds' metrics on every fold and putting this argument to -1"
+             "won't compute any value for the hemisphere folds.")
     parser.add_argument(
         "-R", "--rightfolds",
         type=int, nargs='*',
-        help="Selection of right hemisphere folds indexes on which to compute \
-             value (e.g : 94). Not adding this argument will compute the \
-             folds' metrics on every fold and putting this argument to -1 \
-             won't compute any value for the hemisphere folds.")
+        help="Selection of right hemisphere folds indexes on which to compute"
+             "value (e.g : 94). Not adding this argument will compute the"
+             "folds' metrics on every fold and putting this argument to -1"
+             "won't compute any value for the hemisphere folds.")
     parser.add_argument(
         "-I", "--pitsfiles",
         type=is_file, nargs='*',
-        help="Selection of left and right hemisphere pits indexes on which to \
-             compute scalar values. Not adding this argument will compute the \
-             scalars' metrics on folds instead of pits.")
+        help="Selection of left and right hemisphere pits indexes on which to"
+             "compute scalar values. Not adding this argument will compute the"
+             "scalars' metrics on folds instead of pits. The left hemisphere"
+             "pits indexes must be the first input.")
     parser.add_argument(
         "-G", "--meshfiles",
         type=is_file, nargs='*',
-        help="Selection of left and right hemisphere white mesh file.")
+        help="Selection of left and right hemisphere white mesh file. The left"
+             "hemisphere white mesh file must be the first input.")
     parser.add_argument(
         "-M", "--wgmfile",
         type=is_file, nargs='*', metavar="<path>",
-        help="Path to the white/grey matter segmentation files (one for each"
-              "hemisphere).")
+        help="Path to the white/grey matter segmentation files. The left "
+              "hemisphere segmentation file must be the first input")
     parser.add_argument(
         "-V", "--verbose",
         type=int, choices=[0, 1, 2], default=2,
@@ -208,213 +212,105 @@ if verbose > 0:
     pprint(inputs)
 
 """
-Start the folds' metrics computation
+Start the folds/pits' metrics computation
 """
 
 if inputs["pitsfiles"] is not None:
     # Compute scalar values on pits instead of folds
     # Extract pits coordinates from white/grey matter mesh in physical
     # morphological space and put them in NIFTI voxel space.
-    mesh_pitsL, indexes_pitsL = convert_pits(inputs["pitsfiles"][0],
-                                             inputs["meshfiles"][0],
-                                             inputs["t1"])
-    mesh_pitsR, indexes_pitsR = convert_pits(inputs["pitsfiles"][1],
-                                             inputs["meshfiles"][1],
-                                             inputs["t1"])
+    mesh_pits_l, indexes_pits_l = convert_pits(inputs["pitsfiles"][0],
+                                               inputs["meshfiles"][0],
+                                               inputs["t1"])
+    mesh_pits_r, indexes_pits_r = convert_pits(inputs["pitsfiles"][1],
+                                               inputs["meshfiles"][1],
+                                               inputs["t1"])
 
-    # Extract scalar values on pits
-    measuresL = sphere_integration(inputs["t1"], None,
-                                   inputs["scalarfile"], pits=mesh_pitsL,
-                                   pits_ind=indexes_pitsL,
-                                   seg_file=inputs["wgmfile"][0], radius=2)
-    measuresR = sphere_integration(inputs["t1"], None,
-                                   inputs["scalarfile"], pits=mesh_pitsR,
-                                   pits_ind=indexes_pitsR,
-                                   seg_file=inputs["wgmfile"][1], radius=2)
+    points_l = {}
+    for p in range(len(indexes_pits_l)):
+        points_l[indexes_pits_l[p]] = np.array([mesh_pits_l[p]])
 
-    foldsL_ = {}
-    foldsR_ = {}
+    points_r = {}
+    for p in range(len(indexes_pits_r)):
+        points_r[indexes_pits_r[p]] = np.array([mesh_pits_r[p]])
 
 else:
     # Parse the Morphologist graph file to get the fold labels
-    labelsL = parse_graph(inputs["graphfile"][0])
-    labelsR = parse_graph(inputs["graphfile"][1])
+    labels_l = parse_graph(inputs["graphfile"][0])
+    labels_r = parse_graph(inputs["graphfile"][1])
 
     # Convert the folds in physical morphological space to NIFTI voxel space
-    foldsL = convert_folds(inputs["foldsfile"][0], inputs["graphfile"][0],
-                           inputs["t1"])
-    foldsR = convert_folds(inputs["foldsfile"][1], inputs["graphfile"][1],
-                           inputs["t1"])
-    foldsL_ = {}
-    foldsR_ = {}
+    folds_l = convert_folds(inputs["foldsfile"][0], inputs["graphfile"][0],
+                            inputs["t1"])
+    folds_r = convert_folds(inputs["foldsfile"][1], inputs["graphfile"][1],
+                            inputs["t1"])
+    points_l = {}
+    points_r = {}
 
-    # If no folds were specified, select all folds for the computation
+    # If no folds were specified, select all folds vertices for the computation
     if inputs["leftfolds"] is None:
-        for ind in labelsL.keys():
-            foldsL_[ind] = foldsL[ind]
-    # If the user specified folds (-1 == no folds), add them to computed on
+        for ind in labels_l.keys():
+            points_l[ind] = folds_l[ind].vertices
+    # If the user specified folds (-1 == no folds), do the computation on these
+    # folds vertices
     elif inputs["leftfolds"][0] != -1:
         for ind in inputs["leftfolds"]:
-            foldsL_[ind] = foldsL[ind]
+            points_l[ind] = folds_l[ind].vertices
 
     if inputs["rightfolds"] is None:
         for ind in labelsR.keys():
-            foldsR_[ind] = foldsR[ind]
+            points_r[ind] = folds_r[ind].vertices
     elif inputs["rightfolds"][0] != -1:
         for ind in inputs["rightfolds"]:
-            foldsR_[ind] = foldsR[ind]
+            points_r[ind] = folds_r[ind].vertices
 
-    if foldsL_:
-        measuresL = sphere_integration(inputs["t1"], foldsL_,
-                                       inputs["scalarfile"], pits=None,
-                                       seg_file=inputs["wgmfile"][0],
-                                       radius=2)
-    if foldsR_:
-        measuresR = sphere_integration(inputs["t1"], foldsR_,
-                                       inputs["scalarfile"], pits=None,
-                                       seg_file=inputs["wgmfile"][1],
-                                       radius=2)
 
-"""
-Save output in json and csv files
-"""
-outputs = []
+# Extract scalar values on folds/pits
+measures_l = sphere_integration(inputs["t1"], inputs["scalarfile"], points_l,
+                                seg_file=inputs["wgmfile"][0], radius=2)
+measures_r = sphere_integration(inputs["t1"], inputs["scalarfile"], points_r,
+                                seg_file=inputs["wgmfile"][1], radius=2)
 
-# Write JSON output
-# For folds
-if foldsL_:
-    out_file = os.path.join(inputs["outdir"],
-                            "Lh_{0}_folds_measure.json".format(
-                            inputs["subject"]))
-    with open(out_file, 'w') as outfile:
-        json.dump(measuresL, outfile)
-    outputs.append(out_file)
-if foldsR_:
-    out_file = os.path.join(inputs["outdir"],
-                            "Rh_{0}_folds_measure.json".format(
-                            inputs["subject"]))
-    with open(out_file, 'w') as outfile:
-        json.dump(measuresR, outfile)
-    outputs.append(out_file)
-
-# For pits
+# Write csv and json output
 if inputs["pitsfiles"] is not None:
-    out_file = os.path.join(inputs["outdir"],
-                            "Lh_{0}_pits_measure.json".format(
-                            inputs["subject"]))
-    with open(out_file, 'w') as outfile:
-        json.dump(measuresL, outfile)
-    outputs.append(out_file)
-    out_file = os.path.join(inputs["outdir"],
-                            "Rh_{0}_pits_measure.json".format(
-                            inputs["subject"]))
-    with open(out_file, 'w') as outfile:
-        json.dump(measuresR, outfile)
-    outputs.append(out_file)
-
-# Write csv output
-# For folds
-if foldsL_:
-    out_file = os.path.join(inputs["outdir"],
-                            "Lh_{0}_folds_measure.csv".format(
-                            inputs["subject"]))
-    outputs.append(out_file)
-    with open(out_file, 'w') as f:
-        random_fold = measuresL.keys()[0]
-        random_point = measuresL[random_fold].keys()[0]
+    out_file_l = os.path.join(inputs["outdir"],
+                              "Lh_{0}_pits_measure".format(inputs["subject"]))
+    out_file_r = os.path.join(inputs["outdir"],
+                              "Rh_{0}_pits_measure".format(inputs["subject"]))
+else:
+    out_file_l = os.path.join(inputs["outdir"],
+                              "Lh_{0}_folds_measure".format(inputs["subject"]))
+    out_file_r = os.path.join(inputs["outdir"],
+                              "Rh_{0}_folds_measure".format(inputs["subject"]))
+out_files = {out_file_l: measures_l, out_file_r: measures_r}
+for out_file in out_files.keys():
+    with open("{0}.json".format(out_file), 'w') as f:
+        json.dump(measures_l, f)
+    with open("{0}.csv".format(out_file), 'w') as f:
+        random_index = out_files[out_file].keys()[0]
+        random_point = out_files[out_file][random_index].keys()[0]
         features = []
-        header = "Fold;PointCoord"
-        for feat in measuresL[random_fold][random_point].keys():
+        if inputs["pitsfiles"] is None:
+            header = "Fold_index;PointCoord"
+        else:
+            header = "Pit_index;PointCoord"
+        for feat in out_files[out_file][random_index][random_point].keys():
             features.append(feat)
-            for value in measuresL[random_fold][random_point][feat].keys():
-                header = "{0};{1}_{2}".format(header, feat, value)
+            vals = out_files[out_file][random_index][random_point][feat].keys()
+            for val in vals:
+                header = "{0};{1}_{2}".format(header, feat, val)
         f.write(header)
         f.write("\n")
 
-        for fold in measuresL.keys():
-            for point in measuresL[fold].keys():
-                line = "{0};{1}".format(labelsL[fold], point)
+        for index in out_files[out_file].keys():
+            for point in out_files[out_file][index].keys():
+                line = "{0};{1}".format(index, point)
                 for feat in features:
-                    for value in measuresL[fold][point][feat].keys():
-                        line = "{0};{1}".format(line,
-                                                measuresL[fold][point]
-                                                         [feat][value])
-                f.write(line)
-                f.write("\n")
-
-if foldsR_:
-    out_file = os.path.join(inputs["outdir"],
-                            "Rh_{0}_folds_measure.csv".format(
-                            inputs["subject"]))
-    outputs.append(out_file)
-    with open(out_file, 'w') as f:
-        random_fold = measuresR.keys()[0]
-        random_point = measuresR[random_fold].keys()[0]
-        features = []
-        header = "Fold;PointCoord"
-        for feat in measuresR[random_fold][random_point].keys():
-            features.append(feat)
-            for value in measuresR[random_fold][random_point][feat].keys():
-                header = "{0};{1}_{2}".format(header, feat, value)
-        f.write(header)
-        f.write("\n")
-
-        for fold in measuresR.keys():
-            for point in measuresR[fold].keys():
-                line = "{0};{1}".format(labelsR[fold], point)
-                for feat in features:
-                    for value in measuresR[fold][point][feat].keys():
-                        line = "{0};{1}".format(line,
-                                                measuresR[fold][point]
-                                                         [feat][value])
-                f.write(line)
-                f.write("\n")
-
-# For pits
-if inputs["pitsfiles"] is not None:
-    out_file = os.path.join(inputs["outdir"],
-                            "Lh_{0}_pits_measure.csv".format(
-                            inputs["subject"]))
-    outputs.append(out_file)
-    with open(out_file, 'w') as f:
-        random_pit = measuresL.keys()[0]
-        features = []
-        header = "Pits_indexes"
-        for feat in measuresL[random_pit].keys():
-            features.append(feat)
-            for value in measuresL[random_pit][feat].keys():
-                header = "{0};{1}_{2}".format(header, feat, value)
-        f.write(header)
-        f.write("\n")
-
-        for pit in measuresL.keys():
-            line = "{0}".format(pit)
-            for feat in features:
-                for value in measuresL[pit][feat].keys():
-                    line = "{0};{1}".format(line, measuresL[pit][feat][value])
-                f.write(line)
-                f.write("\n")
-
-    out_file = os.path.join(inputs["outdir"],
-                            "Rh_{0}_pits_measure.csv".format(
-                            inputs["subject"]))
-    outputs.append(out_file)
-    with open(out_file, 'w') as f:
-        random_pit = measuresR.keys()[0]
-        features = []
-        header = "Pits_indexes"
-        for feat in measuresR[random_pit].keys():
-            features.append(feat)
-            for value in measuresR[random_pit][feat].keys():
-                header = "{0};{1}_{2}".format(header, feat, value)
-        f.write(header)
-        f.write("\n")
-
-        for pit in measuresR.keys():
-            line = "{0}".format(pit)
-            for feat in features:
-                for value in measuresR[pit][feat].keys():
-                    line = "{0};{1}".format(line, measuresR[pit][feat][value])
+                    vals = out_files[out_file][index][point][feat].keys()
+                    for val in vals:
+                        line = "{0};{1}".format(line, out_files[out_file]
+                                                               [index][point]
+                                                               [feat][val])
                 f.write(line)
                 f.write("\n")
 
@@ -422,6 +318,10 @@ if inputs["pitsfiles"] is not None:
 Update the outputs and save them and the inputs in a 'logs' directory.
 """
 
+outputs = []
+for ext in ["csv", "json"]:
+    outputs.append("{0}.{1}".format(out_file_l, ext))
+    outputs.append("{0}.{1}".format(out_file_r, ext))
 logdir = os.path.join(inputs["outdir"], "logs")
 if not os.path.isdir(logdir):
     os.mkdir(logdir)
