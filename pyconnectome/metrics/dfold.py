@@ -38,7 +38,7 @@ def convert_folds(folds_file, graph_file, t1_file):
     t1_file: str
         the t1 NIFTI file.
 
-    Returnsfrom pyfreesurfer.utils.surftools import apply_affine_on_mesh
+    Returns
     -------
     folds: dict with TriSurface
         all the loaded folds. The fold names are stored in the metadata.
