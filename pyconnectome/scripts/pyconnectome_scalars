@@ -51,7 +51,7 @@ __hopla__ = ["runtime", "inputs", "outputs"]
 
 # Script documentation
 DOC = """
-Parse the command line.
+Compute dMRI scalars.
 
 Example on HCP data:
 
