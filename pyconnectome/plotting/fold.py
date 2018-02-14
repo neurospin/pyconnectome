@@ -322,7 +322,8 @@ def display_pits_parcellation(
     # > create the actor
     wm_surf.labels = wm_surf.labels.astype(float)
     if pits_texture is not None:
-        wm_surf.labels[numpy.where(pits_texture == 1)] = unique_labels.max() + 1
+        wm_surf.labels[numpy.where(pits_texture == 1)] = (
+            unique_labels.max() + 1)
     wm_surf.labels[numpy.where(wm_surf.labels == -1)] = unique_labels.max() + 1
     actor = pvtk.surface(wm_surf.vertices, wm_surf.triangles,
                          wm_surf.labels, ctab=ctab, opacity=1, set_lut=True)
