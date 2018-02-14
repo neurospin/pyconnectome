@@ -219,12 +219,14 @@ if inputs["pitsfiles"] is not None:
     # Compute scalar values on pits instead of folds
     # Extract pits coordinates from white/grey matter mesh in physical
     # morphological space and put them in NIFTI voxel space.
-    mesh_pits_l, indexes_pits_l = convert_pits(inputs["pitsfiles"][0],
-                                               inputs["meshfiles"][0],
-                                               inputs["t1"])
-    mesh_pits_r, indexes_pits_r = convert_pits(inputs["pitsfiles"][1],
-                                               inputs["meshfiles"][1],
-                                               inputs["t1"])
+    mesh_l, indexes_pits_l = convert_pits(inputs["pitsfiles"][0],
+                                          inputs["meshfiles"][0],
+                                          inputs["t1"])
+    mesh_pits_l = mesh_l[indexes_pits_l]
+    mesh_r, indexes_pits_r = convert_pits(inputs["pitsfiles"][1],
+                                          inputs["meshfiles"][1],
+                                          inputs["t1"])
+    mesh_pits_r = mesh_r[indexes_pits_r]
 
     points_l = {}
     for p in range(len(indexes_pits_l)):
