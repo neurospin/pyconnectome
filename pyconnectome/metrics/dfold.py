@@ -106,10 +106,10 @@ def convert_pits(pits_file, mesh_file, t1_file, outdir=None, mgz_file=None,
         translation = tkregister_translation(mgz_file)
         conformed_to_native_trf = numpy.dot(physical_to_index, translation)
         conformed_to_original_trf = numpy.dot(
-            freesurfer_to_original_trf ,conformed_to_native_trf)
+            freesurfer_to_original_trf, conformed_to_native_trf)
         mesh_vertices = apply_affine_on_mesh(
             mesh_vertices, conformed_to_original_trf)
-    # Save the vertices as an image    
+    # Save the vertices as an image
     if outdir is not None:
         overlay_file = os.path.join(outdir, "mesh.native.nii.gz")
         overlay = numpy.zeros(t1im.shape, dtype=numpy.uint)
@@ -154,13 +154,13 @@ def intersect_tractogram(tractogram_file, rois, t1_file, nodiff_file, outdir,
     """
     # Load antomical references
     if verbose > 0:
-        print("[info] Loading anatomical references...")    
+        print("[info] Loading anatomical references...")
     t1_image = nibabel.load(t1_file)
     nodiff_image = nibabel.load(nodiff_file)
 
     # Load the tractogram
     if verbose > 0:
-        print("[info] Loading tractogram...")    
+        print("[info] Loading tractogram...")
     tracks = nibabel.streamlines.load(tractogram_file)
 
     # Downsample & check alignment of the tractogram using voxel coordinates
@@ -347,7 +347,7 @@ def sphere_integration(t1_file, scalars, points, seg_file=None, radius=2,
         points_in_wm = points_in_wm.astype(int)
         # > put in neurological convention
         points_in_wm[:, 0] = scalarshape[0] - points_in_wm[:, 0]
-	# > check that some points are found
+        # > check that some points are found
         if points_in_wm.shape[0] == 0:
             points_in_wm = None
 
@@ -359,7 +359,7 @@ def sphere_integration(t1_file, scalars, points, seg_file=None, radius=2,
         points_in_gm = points_in_gm.astype(int)
         # > put in neurological convention
         points_in_gm[:, 0] = scalarshape[0] - points_in_gm[:, 0]
-	# > check that some points are found
+        # > check that some points are found
         if points_in_gm.shape[0] == 0:
             points_in_gm = None
 
@@ -387,10 +387,8 @@ def sphere_integration(t1_file, scalars, points, seg_file=None, radius=2,
                                          "different names.")
                     int_points = inside_sphere_points(
                         center=vertex, radius=radius, shape=image.shape)
-                    wm_points = points_intersection(
-			int_points, points_in_wm)
-                    gm_points = points_intersection(
-			int_points, points_in_gm)
+                    wm_points = points_intersection(int_points, points_in_wm)
+                    gm_points = points_intersection(int_points, points_in_gm)
                     if wm_points is not None and len(wm_points) != 0:
                         wm_points_x = tuple(wm_points[:, 0])
                         wm_points_y = tuple(wm_points[:, 1])
