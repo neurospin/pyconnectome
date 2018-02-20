@@ -191,8 +191,9 @@ def get_cmd_line_args():
         help="Path to a FreeSurfer '.mgz' file.")
     parser.add_argument(
         "-N", "--fsnative", type=is_file, metavar="<path>",
-        help="If set, consider the input mesh as a FreeSurfer mesh in the "
-             "conformed space, otherwise a morphologist mesh")
+        help="Path to a Freesurfer mesh. If set, consider the input mesh as a " 
+             "FreeSurfer mesh in the conformed space, otherwise a "
+             "morphologist mesh")
     parser.add_argument(
         "-V", "--verbose",
         type=int, choices=[0, 1, 2], default=2,
