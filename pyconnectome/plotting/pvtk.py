@@ -370,7 +370,7 @@ def line(lines, colors, lut=None, opacity=1, linewidth=1):
 
     # Create the line mapper
     mapper = vtk.vtkPolyDataMapper()
-    mapper.SetInputData(polydata)
+    mapper.SetInput(polydata)
     mapper.SetLookupTable(lut)
     mapper.SetColorModeToMapScalars()
     mapper.SetScalarRange(0.0, 1.0)

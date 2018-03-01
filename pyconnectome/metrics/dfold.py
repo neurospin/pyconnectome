@@ -46,7 +46,7 @@ def convert_pits(pits_file, mesh_file, t1_file, outdir=None, mgz_file=None,
         the t1 NIFTI file.
     outdir: str, default None
         if set, save the mesh in native space.
-    mgzfile: str, default None
+    mgz_file: str, default None
         a FreeSurfer '.mgz' file.
     freesurfer_native_t1_file: str, default None
         if set, consider the input mesh as a FreeSurfer mesh in the conformed

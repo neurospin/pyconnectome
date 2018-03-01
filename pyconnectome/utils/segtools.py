@@ -272,7 +272,7 @@ def fast(input_file, out_fileroot, klass=3, im_type=1, segments=False,
     biascorrected_file = out_fileroot + "_restore" + image_ext
     if not os.path.isfile(biascorrected_file):
         biascorrected_file = None
-    tpm = glob.glob(out_fileroot + "_pve_*")
+    tpm = glob.glob(out_fileroot + "_prob_*")
     tsm = glob.glob(out_fileroot + "_pve_*")
 
     return tpm, tsm, segmentation_file, bias_file, biascorrected_file
