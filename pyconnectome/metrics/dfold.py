@@ -21,6 +21,7 @@ import numpy
 from pyconnectome.utils.filetools import load_folds
 
 # Third party import
+import collections
 import nibabel
 import progressbar
 import nibabel.gifti.giftiio as gio
@@ -364,7 +365,7 @@ def sphere_integration(t1_file, scalars, points, seg_file=None, radius=2,
             points_in_gm = None
 
     # Go through each fold/pits
-    measures = {}
+    measures = collections.OrderedDict()
     with progressbar.ProgressBar(max_value=len(points.keys()),
                                  redirect_stdout=True) as bar:
         count = 0
@@ -373,11 +374,11 @@ def sphere_integration(t1_file, scalars, points, seg_file=None, radius=2,
 
             # For each vertex compute the sphere intersection with all the
             # scalar maps
-            measures[labelindex] = {}
+            measures[labelindex] = collections.OrderedDict()
 
             for cnt, vertex in enumerate(vertices):
                 key = repr(vertex.tolist())
-                measures[labelindex][key] = {}
+                measures[labelindex][key] = collections.OrderedDict()
                 for name, image in scalarims.items():
                     # Initialize mean and median values
                     wm_mean, gm_mean = None, None
@@ -412,20 +413,21 @@ def sphere_integration(t1_file, scalars, points, seg_file=None, radius=2,
                     int_points_x = tuple(int_points[:, 0])
                     int_points_y = tuple(int_points[:, 1])
                     int_points_z = tuple(int_points[:, 2])
-                    measures[labelindex][key][name] = {
-                        "global_mean": float(numpy.mean(image.get_data()
-                                             [int_points_x, int_points_y,
-                                              int_points_z])),
-                        "wm_mean": wm_mean,
-                        "gm_mean": gm_mean,
-                        "global_median": float(numpy.median(
-                                               image.get_data()
-                                               [int_points_x,
-                                                int_points_y,
-                                                int_points_z])),
-                        "wm_median": wm_median,
-                        "gm_median": gm_median
-                    }
+                    global_mean = float(numpy.mean(image.get_data()
+                                        [int_points_x, int_points_y,
+                                        int_points_z]))
+                    global_median = float(numpy.median(image.get_data()
+                                          [int_points_x, int_points_y,
+                                          int_points_z])),
+                    measures[labelindex][key][name] = collections.OrderedDict()
+                    (measures[labelindex][key][name]
+                             ["global_mean"]) = global_mean
+                    (measures[labelindex][key][name]
+                             ["global_median"]) = global_median
+                    measures[labelindex][key][name]["wm_mean"] = wm_mean
+                    measures[labelindex][key][name]["wm_median"] = wm_median
+                    measures[labelindex][key][name]["gm_mean"] = gm_mean
+                    measures[labelindex][key][name]["gm_median"] = gm_median
             count += 1
             bar.update(count)
 
