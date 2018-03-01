@@ -25,6 +25,7 @@ from pyconnectome.metrics.dfold import sphere_integration
 # Third party import
 import json
 import numpy as np
+import collections
 
 # Parameters to keep trace
 __hopla__ = ["runtime", "inputs", "outputs"]
@@ -191,7 +192,7 @@ def get_cmd_line_args():
         help="Path to a FreeSurfer '.mgz' file.")
     parser.add_argument(
         "-N", "--fsnative", type=is_file, metavar="<path>",
-        help="Path to a Freesurfer mesh. If set, consider the input mesh as a " 
+        help="Path to a Freesurfer mesh. If set, consider the input mesh as a "
              "FreeSurfer mesh in the conformed space, otherwise a "
              "morphologist mesh")
     parser.add_argument(
@@ -246,11 +247,10 @@ if inputs["pitsfiles"] is not None:
                                           freesurfer_native_t1_file=inputs
                                           ["fsnative"])
     mesh_pits_r = mesh_r[indexes_pits_r]
-    points_l = {}
+    points_l = collections.OrderedDict()
     for p in range(len(indexes_pits_l)):
         points_l[indexes_pits_l[p]] = np.array([mesh_pits_l[p]])
-
-    points_r = {}
+    points_r = collections.OrderedDict()
     for p in range(len(indexes_pits_r)):
         points_r[indexes_pits_r[p]] = np.array([mesh_pits_r[p]])
 
@@ -264,8 +264,8 @@ else:
                             inputs["t1"])
     folds_r = convert_folds(inputs["foldsfile"][1], inputs["graphfile"][1],
                             inputs["t1"])
-    points_l = {}
-    points_r = {}
+    points_l = collections.OrderedDict()
+    points_r = collections.OrderedDict()
 
     # If no folds were specified, select all folds vertices for the computation
     if inputs["leftfolds"] is None:
