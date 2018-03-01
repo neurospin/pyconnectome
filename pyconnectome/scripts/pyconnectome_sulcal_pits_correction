@@ -21,6 +21,8 @@ from pprint import pprint
 from datetime import datetime
 from argparse import RawTextHelpFormatter
 
+init_modules = sys.modules.keys()
+
 # Bredala import
 try:
     import bredala
@@ -29,6 +31,7 @@ except:
     pass
 
 # Package import
+import pyconnectome
 from pyconnectome import __version__ as version
 
 # Third party import
@@ -115,6 +118,10 @@ def get_cmd_line_args():
         action="store_true",
         help="During the PITS filtering, force taking the deepest point. This "
              "could be the best option, because sometimes pits are misplaced.")
+    parser.add_argument(
+        "-H", "--hcp-template",
+        action="store_true",
+        help="Use the HCP 1200 areal template.")
 
     # Create a dict of arguments to pass to the 'main' function
     args = parser.parse_args()
@@ -143,6 +150,25 @@ if verbose > 0:
     pprint(inputs)
 
 
+
+"""
+Organize the template files.
+"""
+if inputs["hcp_template"]:
+    # Welcome message
+    if verbose > 0:
+        print("Organize template files...")
+    # Create folders
+    resource_dir = os.path.join(
+        os.path.dirname(pyconnectome.__file__), "resources")
+    for dirname in ("fsaveragesym", "pits_density_sym_lh",
+                    "pits_density_sym_rh"):
+        dest_dir = os.path.join(inputs["outdir"], dirname)
+        if not os.path.isdir(dest_dir):
+            src_dir = os.path.join(resource_dir, dirname)
+            shutil.copytree(src_dir, dest_dir)
+
+
 """
 Project the group parcellation to the subject native space.
 """
@@ -165,6 +191,15 @@ subprocess.check_call(cmd, cwd=inputs["outdir"], env=env)
 """
 The previous step uses an interpolation on labels. Fix it.
 """
+# Reload numpy >=1.14 here to avoid brainvisa errors
+sys.path.insert(1, "/home/ag239446/.local/lib/python2.7/site-packages")
+for module_name in sys.modules.keys():
+    if module_name not in init_modules:
+        sys.modules.pop(module_name)
+import numpy
+import nibabel.gifti.giftiio as gio
+from pyfreesurfer.utils.surftools import TriSurface
+
 # Locate input patterns
 analysis_dir = os.path.join(inputs["outdir"], inputs["subjectid"], "t1mri",
                             "BL", "default_analysis", "segmentation", "mesh",
@@ -255,7 +290,7 @@ for native_hemi in ["L", "R"]:
     pits_file = os.path.join(analysis_dir, "{0}_{1}white_pits.gii".format(
         inputs["subjectid"], native_hemi))
     clusters_file = os.path.join(
-        analysis_dir, "{0}_{1}_clusters_sym_lh.gii".format(
+        analysis_dir, "{0}_{1}_clusters_sym_lh_int.gii".format(
             inputs["subjectid"], native_hemi))
     dpf_file = os.path.join(analysis_dir, "{0}_{1}white_DPF.gii".format(
         inputs["subjectid"], native_hemi))
