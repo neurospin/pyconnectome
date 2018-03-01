@@ -233,19 +233,21 @@ if inputs["pitsfiles"] is not None:
     # Compute scalar values on pits instead of folds
     # Extract pits coordinates from white/grey matter mesh in physical
     # morphological space and put them in NIFTI voxel space.
-    mesh_l, indexes_pits_l = convert_pits(inputs["pitsfiles"][0],
-                                          inputs["meshfiles"][0],
-                                          inputs["t1"], inputs["outdir"],
-                                          mgz_file=inputs["mgzfile"],
-                                          freesurfer_native_t1_file=inputs
-                                          ["fsnative"])
+    mesh_l, indexes_pits_l = convert_pits(
+        inputs["pitsfiles"][0],
+        inputs["meshfiles"][0],
+        inputs["t1"],
+        os.path.join(inputs["outdir"], "Lh.{0}.".format(inputs["subject"])),
+        mgz_file=inputs["mgzfile"],
+        freesurfer_native_t1_file=inputs["fsnative"])
     mesh_pits_l = mesh_l[indexes_pits_l]
-    mesh_r, indexes_pits_r = convert_pits(inputs["pitsfiles"][1],
-                                          inputs["meshfiles"][1],
-                                          inputs["t1"], inputs["outdir"],
-                                          mgz_file=inputs["mgzfile"],
-                                          freesurfer_native_t1_file=inputs
-                                          ["fsnative"])
+    mesh_r, indexes_pits_r = convert_pits(
+        inputs["pitsfiles"][1],
+        inputs["meshfiles"][1],
+        inputs["t1"],
+        os.path.join(inputs["outdir"], "Rh.{0}.".format(inputs["subject"])),
+        mgz_file=inputs["mgzfile"],
+        freesurfer_native_t1_file=inputs["fsnative"])
     mesh_pits_r = mesh_r[indexes_pits_r]
     points_l = collections.OrderedDict()
     for p in range(len(indexes_pits_l)):
@@ -345,8 +347,9 @@ logdir = os.path.join(inputs["outdir"], "logs")
 if not os.path.isdir(logdir):
     os.mkdir(logdir)
 params = locals()
-for name, final_struct in [("inputs", inputs), ("outputs", outputs),
-                           ("runtime", runtime)]:
+for name, final_struct in [("inputs_{0}".format(inputs["subject"]), inputs),
+                           ("outputs_{0}".format(inputs["subject"]), outputs),
+                           ("runtime_{0}".format(inputs["subject"]), runtime)]:
     log_file = os.path.join(logdir, "{0}.json".format(name))
     with open(log_file, "wt") as open_file:
         json.dump(final_struct, open_file, sort_keys=True, check_circular=True,

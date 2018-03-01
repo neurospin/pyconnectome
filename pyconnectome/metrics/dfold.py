@@ -32,7 +32,7 @@ from pyfreesurfer.utils.surftools import apply_affine_on_mesh
 from pyfreesurfer.utils.regtools import tkregister_translation
 
 
-def convert_pits(pits_file, mesh_file, t1_file, outdir=None, mgz_file=None,
+def convert_pits(pits_file, mesh_file, t1_file, outpattern=None, mgz_file=None,
                  freesurfer_native_t1_file=None):
     """ Extract pits coordinates from white matter mesh in physical
     morphological space and put them in NIFTI voxel space.
@@ -45,8 +45,9 @@ def convert_pits(pits_file, mesh_file, t1_file, outdir=None, mgz_file=None,
         the path to white matter '.gii' mesh file.
     t1_file: str
         the t1 NIFTI file.
-    outdir: str, default None
-        if set, save the mesh in native space.
+    outpattern: str, default None
+        if set, save the mesh in native space concatenating this patern with
+        'mesh.native.nii.gz'.
     mgz_file: str, default None
         a FreeSurfer '.mgz' file.
     freesurfer_native_t1_file: str, default None
@@ -111,8 +112,8 @@ def convert_pits(pits_file, mesh_file, t1_file, outdir=None, mgz_file=None,
         mesh_vertices = apply_affine_on_mesh(
             mesh_vertices, conformed_to_original_trf)
     # Save the vertices as an image
-    if outdir is not None:
-        overlay_file = os.path.join(outdir, "mesh.native.nii.gz")
+    if outpattern is not None:
+        overlay_file = outpattern + "mesh.native.nii.gz"
         overlay = numpy.zeros(t1im.shape, dtype=numpy.uint)
         indices = numpy.round(mesh_vertices).astype(int).T
         indices[0, numpy.where(indices[0] >= t1im.shape[0])] = 0
