@@ -418,7 +418,7 @@ def sphere_integration(t1_file, scalars, points, seg_file=None, radius=2,
                                         int_points_z]))
                     global_median = float(numpy.median(image.get_data()
                                           [int_points_x, int_points_y,
-                                          int_points_z])),
+                                          int_points_z]))
                     measures[labelindex][key][name] = collections.OrderedDict()
                     (measures[labelindex][key][name]
                              ["global_mean"]) = global_mean
