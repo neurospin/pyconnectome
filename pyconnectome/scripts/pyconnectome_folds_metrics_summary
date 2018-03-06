@@ -1,0 +1,385 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*
+##########################################################################
+# NSAp - Copyright (C) CEA, 2018
+# Distributed under the terms of the CeCILL-B license, as published by
+# the CEA-CNRS-INRIA. Refer to the LICENSE file or to
+# http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html for details.
+##########################################################################
+
+# System import
+import os
+import re
+import argparse
+import textwrap
+from argparse import RawTextHelpFormatter
+from datetime import datetime
+from pprint import pprint
+
+# Third party import
+import collections
+import numpy
+import glob
+import nibabel
+import json
+import nibabel.gifti.giftiio as gio
+
+# Package import
+from pyconnectome import __version__ as version
+
+
+DOC = """
+Summary of pits' features.
+-----------------------------
+
+Averages diffusion scalar parameters over the different subjects' pits.
+
+Requirements:
+    - path to the folder that contains all the csv data (required). Each csv
+      file must be named as Lh_subjectid_pits_measure.csv for left hemisphere
+      and Rh_subjectid_pits_measure.csv for right hemisphere.
+    - patterns to pit files for left and right hemisphere (required). These
+      patterns will be formated with the subject names in order to retrieve all
+      the pits files. The left hemisphere pits pattern must be the first input.
+    - patterns to cluster files for left and right hemisphere (required). These
+      patterns will be formated with the subject names in order to retrieve all
+      the cluster files. The left hemisphere pits pattern must be the first
+      input.
+    - pattern matching subject id in csv data filename (required).
+    - names of the different fields expected for each diffusion scalars
+      (e.g : global_mean), in the same order than in the csv data and separated
+      in the csv data header by an underscore (e.g : dtifit_FA_global_mean).
+    - path to results' output directory (required).
+
+Example command on hcp data :
+python pyconnectome_folds_metrics_summary \
+    -i /neurospin/hcp/ANALYSIS/3T_pits_metrics/ \
+    -p /neurospin/hcp/ANALYSIS/3T_pits/{0}/t1mri/BL/default_analysis/segmentation/mesh/surface_analysis/{0}_Lwhite_pits_corrected.gii \
+       /neurospin/hcp/ANALYSIS/3T_pits/{0}/t1mri/BL/default_analysis/segmentation/mesh/surface_analysis/{0}_Rwhite_pits_corrected.gii \
+    -c /neurospin/hcp/ANALYSIS/3T_pits/{0}/t1mri/BL/default_analysis/segmentation/mesh/surface_analysis/{0}_Lclusters_sym_lh_int.gii \
+       /neurospin/hcp/ANALYSIS/3T_pits/{0}/t1mri/BL/default_analysis/segmentation/mesh/surface_analysis/{0}_Rclusters_sym_lh_int.gii \
+    -r [0-9]+ \
+    -m global_mean global_median wm_mean wm_median gm_mean gm_median \
+    -o /volatile/HCP_FOLDS/DTI_QBALL_METRICS_V2/
+"""
+
+
+def is_file(filepath):
+    """ Check file's existence - argparse 'type' argument.
+    """
+    if not os.path.isfile(filepath):
+        raise argparse.ArgumentError("File does not exist: %s" % filepath)
+    return filepath
+
+
+def is_directory(dirarg):
+    """ Type for argparse - checks that directory exists.
+    """
+    if not os.path.isdir(dirarg):
+        raise argparse.ArgumentError(
+            "The directory '{0}' does not exist!".format(dirarg))
+    return dirarg
+
+
+def get_cluster_data(sub, csv_file, labels_cluster, clusters, metrics):
+    """ Append to the clusters dictionnary diffusion scalars
+        from a subject csv file.
+
+    Parameters
+    ----------
+    sub: int
+        the subject ID.
+    csv_file: str
+        the subject csv file.
+    labels_cluster: ndarray(1,N)
+        the pits corresponding cluster labels.
+    clusters: dict of the form cluster : diffusion data.
+        e.g : {cluster_id : {diffusion_scalar : {param1: {subject1: value1,
+                             ...}, ..}, ..}
+    metrics: list
+        the names of the different fields expected for each diffusion scalar.
+
+    Returns
+    -------
+    clusters: dict of the form cluster : diffusion data.
+    diffusion_scalars: list
+        all the diffusion scalar names.
+    """
+    with open(csv_file, 'r') as f:
+        header = f.readline().split(";")[2:]
+        lines = f.readlines()
+        diffusion_scalars = []
+        for i in range(0, len(header), len(metrics)):
+            diff_scalar = header[i]
+            prefix = "_" + metrics[0]
+            diff_scalar = re.sub(prefix, "", diff_scalar)
+            diffusion_scalars.append(diff_scalar)
+        for line in lines:
+            line = line.split(";")
+            pit_id = int(line[0])
+            line = line[2:]
+            cluster_nb = int(labels_cluster[pit_id])
+            if cluster_nb not in clusters.keys():
+                clusters[cluster_nb] = collections.OrderedDict()
+            for j, elt in enumerate(diffusion_scalars):
+                if elt not in clusters[cluster_nb].keys():
+                    clusters[cluster_nb][elt] = collections.OrderedDict()
+                for k, metric in enumerate(metrics):
+                    if metric not in clusters[cluster_nb][elt].keys():
+                        ordered_dict = collections.OrderedDict()
+                        clusters[cluster_nb][elt][metric] = ordered_dict
+                    sub_value = line[k+j*len(metrics)]
+                    clusters[cluster_nb][elt][metric][sub] = sub_value
+    return clusters, diffusion_scalars
+
+
+def write_csv_summary(subjects, clusters, diffusion_scalars, metrics, out_path,
+                      hemisphere):
+    """ Summarize diffusion data for all subjects in csv outputs.
+
+    Parameters
+    ----------
+    subjects: list
+        list of all subjects.
+    clusters: dict of the form cluster : diffusion data.
+        e.g : {cluster_id : {diffusion_scalar : {param1: {subject1: value1,
+                             ...}, ..}, ..}
+    diffusion_scalars: list
+        all the diffusion scalar names.
+    metrics: list
+        the names of the different fields expected for each diffusion scalar.
+    out_path: str
+        the path to the output directory.
+    hemisphere: str
+        string added to output file name specifying on which hemisphere the
+        data is computed.
+
+    Returns
+    -------
+    out_files: list
+        the csv outputs for each diffusion scalar.
+    """
+    out_files = []
+    for i, scalar in enumerate(diffusion_scalars):
+        out_file = os.path.join(
+            out_path, "{0}_{1}_pits_summary.csv".format(hemisphere, scalar))
+        out_files.append(out_file)
+        with open(out_file, 'w') as f:
+            header_line1 = "SubjectID"
+            header_line2 = "\t"
+            clusters = collections.OrderedDict(sorted(clusters.items()))
+            for cluster in clusters.keys():
+                header_line1 = "{0};{1}".format(header_line1,
+                                                "Cluster_{0}.".format(cluster))
+                for i in range(len(metrics)-1):
+                    header_line1 = "{0};\t".format(header_line1)
+                header_line2 = "{0};{1}".format(header_line2,
+                                                ":".join(metrics))
+            print
+            f.write(header_line1)
+            f.write("\n")
+            f.write(header_line2)
+            f.write("\n")
+            for sub in subjects:
+                line = str(sub)
+                for cluster in clusters.keys():
+                    cluster_metrics = []
+                    for metric in metrics:
+                        if sub not in clusters[cluster][scalar][metric].keys():
+                            cluster_metrics.append("No_pit")
+                        else:
+                            cluster_metrics.append(
+                                clusters[cluster][scalar][metric][sub])
+                    cluster_metrics = ":".join(cluster_metrics)
+                    line = "{0};{1}".format(line, cluster_metrics)
+                f.write(line)
+                f.write("\n")
+    return out_files
+
+
+# Parse input arguments
+def get_cmd_line_args():
+    """
+    Create a command line argument parser and return a dict mapping
+    <argument name> -> <argument value>.
+    """
+    parser = argparse.ArgumentParser(
+        prog="python pyconnectome_folds_metrics_summary",
+        description=textwrap.dedent(DOC),
+        formatter_class=RawTextHelpFormatter)
+
+    # Required arguments
+    required = parser.add_argument_group("required arguments")
+    required.add_argument(
+        "-i", "--input", type=is_directory, metavar="<path>", required=True,
+        help="Path to the folder that contains all the csv data.")
+    required.add_argument(
+        "-p", "--pits", required=True, nargs='+',
+        help="Patterns to pit files for left and right hemisphere. The left"
+             " hemisphere pits pattern must be the first input.")
+    required.add_argument(
+        "-c", "--clusters", required=True, nargs='+',
+        help="Patterns to cluster files for left and right hemisphere. "
+             " The left hemisphere cluster pattern must be the first input.")
+    required.add_argument(
+        "-r", "--pattern", required=True,
+        help="Pattern matching subject id in csv data filename.")
+    required.add_argument(
+        "-m", "--metrics", required=True, nargs='+',
+        help="Names of the different fields expected for each diffusion"
+             " scalars (e.g : _global_mean). The concatenation of these fields"
+             " to the diffusion scalar names give the different fields of the"
+             " csv file header (e.g : dtifit_FA_global_mean).")
+    required.add_argument(
+        "-o", "--output", required=True, type=is_directory, metavar="<path>",
+        help="Path to output directory.")
+    parser.add_argument(
+        "-V", "--verbose",
+        type=int, choices=[0, 1, 2], default=2,
+        help="Increase the verbosity level: 0 silent, [1, 2] verbose.")
+
+    # Create a dict of arguments to pass to the 'main' function
+    args = parser.parse_args()
+    kwargs = vars(args)
+    verbose = kwargs.pop("verbose")
+    return kwargs, verbose
+
+
+"""
+Parse the command line.
+"""
+inputs, verbose = get_cmd_line_args()
+tool = "pyconnectome_folds_metrics_summary"
+timestamp = datetime.now().isoformat()
+tool_version = version
+params = locals()
+runtime = dict([(name, params[name])
+               for name in ("tool", "tool_version",
+                            "timestamp")])
+if verbose > 0:
+    pprint("[info] Starting computation of folds metrics summary...")
+    pprint("[info] Runtime:")
+    pprint(runtime)
+    pprint("[info] Inputs:")
+    pprint(inputs)
+
+INPUT_PATH = inputs["input"]
+PITS_LH = inputs["pits"][0]
+PITS_RH = inputs["pits"][1]
+CLUSTER_LH = inputs["clusters"][0]
+CLUSTER_RH = inputs["clusters"][1]
+OUT_PATH = inputs["output"]
+pattern = inputs["pattern"]
+metrics = inputs["metrics"]
+
+
+# Get subject IDs
+subjects_lh = glob.glob(os.path.join(INPUT_PATH, "Lh*.csv"))
+subjects_lh = [re.findall(pattern, os.path.basename(x))[0]
+               for x in subjects_lh]
+subjects_rh = glob.glob(os.path.join(INPUT_PATH, "Rh*.csv"))
+subjects_rh = [re.findall(pattern, os.path.basename(x))[0]
+               for x in subjects_rh]
+subjects = set(subjects_lh + subjects_rh)  # get unique subject id values
+
+if verbose > 0:
+    pprint("[info] Total number of subjects...")
+    pprint(len(subjects))
+
+# List pits and cluster gii files for each subject and each hemisphere
+subjects_to_process = {}
+subjects_missing_data = []
+
+for sub in subjects:
+    pits_lh_file = PITS_LH.format(sub)
+    pits_rh_file = PITS_RH.format(sub)
+    cluster_lh_file = CLUSTER_LH.format(sub)
+    cluster_rh_file = CLUSTER_RH.format(sub)
+    csv_lh_file = os.path.join(INPUT_PATH,
+                               "Lh_{0}_pits_measure.csv".format(sub))
+    csv_rh_file = os.path.join(INPUT_PATH,
+                               "Rh_{0}_pits_measure.csv".format(sub))
+    if (os.path.isfile(pits_lh_file) and os.path.isfile(pits_rh_file) and
+       os.path.isfile(cluster_lh_file) and os.path.isfile(cluster_rh_file) and
+       os.path.isfile(csv_lh_file) and os.path.isfile(csv_rh_file)):
+        subjects_to_process[sub] = {"pits_lh_file": pits_lh_file,
+                                    "pits_rh_file": pits_rh_file,
+                                    "cluster_lh_file": cluster_lh_file,
+                                    "cluster_rh_file": cluster_rh_file,
+                                    "csv_lh_file": csv_lh_file,
+                                    "csv_rh_file": csv_rh_file
+                                    }
+    else:
+        subjects_missing_data.append(sub)
+
+if verbose > 0:
+    pprint("[info] Subjects with missing data (no cluster or only one"
+           " hemisphere csv data...)")
+    pprint(subjects_missing_data)
+
+# For each cluster, match the cluster to the subject pits and retrieve the
+# corresponding diffusion values.
+# e.g : >> cluster_lh
+#       {88: {"dtifit_FA":{ "subject1": {"global_mean":
+#                            [0.493810534477, 0.21403595], ...},...}}}
+clusters_lh = collections.OrderedDict()
+clusters_rh = collections.OrderedDict()
+
+for sub, files in subjects_to_process.items():
+    outputs_subjects = []
+    cluster_lh_gii = gio.read(files["cluster_lh_file"])
+    cluster_rh_gii = gio.read(files["cluster_rh_file"])
+    labels_lh_cluster = cluster_lh_gii.darrays[0].data
+    labels_rh_cluster = cluster_rh_gii.darrays[0].data
+    csv_lh_file = os.path.join(INPUT_PATH,
+                               "Lh_{0}_pits_measure.csv".format(sub))
+    csv_rh_file = os.path.join(INPUT_PATH,
+                               "Rh_{0}_pits_measure.csv".format(sub))
+    clusters_lh, diffusion_scalars = get_cluster_data(
+        sub, csv_lh_file, labels_lh_cluster, clusters_lh, metrics)
+    clusters_rh, diffusion_scalars = get_cluster_data(
+        sub, csv_rh_file, labels_rh_cluster, clusters_rh, metrics)
+
+
+# Write summary results
+outputs_lh = []
+outputs_rh = []
+
+# > Write JSON output
+output_lh_json = os.path.join(OUT_PATH, "Lh_pits_summary.json")
+output_rh_json = os.path.join(OUT_PATH, "Rh_pits_summary.json")
+outputs_lh.append(output_lh_json)
+outputs_rh.append(output_rh_json)
+with open(output_lh_json, 'w') as f:
+    json.dump(clusters_lh[-1], f)
+with open(output_rh_json, 'w') as f:
+    json.dump(clusters_rh, f)
+
+# > Write csv output
+output_lh_csv = write_csv_summary(subjects_to_process, clusters_lh,
+                                  diffusion_scalars, metrics, OUT_PATH, "Lh")
+output_rh_csv = write_csv_summary(subjects_to_process, clusters_rh,
+                                  diffusion_scalars, metrics, OUT_PATH, "Rh")
+outputs_lh.append(output_lh_csv)
+outputs_rh.append(output_rh_csv)
+outputs = {"summary_file_lh": outputs_lh, "summary_file_rh": outputs_rh}
+if verbose > 1:
+    print("[final]")
+    pprint(outputs)
+
+# Write logs
+log_dir = os.path.join(OUT_PATH, "logs")
+logfiles = []
+if not os.path.isdir(log_dir):
+    os.mkdir(log_dir)
+for log, logdata in {"missing_data_subjects": subjects_missing_data,
+                     "subjects_processed": subjects_to_process}.items():
+    log_file = os.path.join(log_dir, "{0}.json".format(log))
+    logfiles.append(log_file)
+    with open(log_file, 'w') as f:
+        for elt in logdata:
+            f.write(elt)
+            f.write("\n")
+if verbose > 1:
+    print("[logs]")
+    pprint(logfiles)
