@@ -237,7 +237,6 @@ def get_cmd_line_args():
         "-V", "--verbose",
         type=int, choices=[0, 1, 2], default=2,
         help="Increase the verbosity level: 0 silent, [1, 2] verbose.")
-
     # Create a dict of arguments to pass to the 'main' function
     args = parser.parse_args()
     kwargs = vars(args)
@@ -350,10 +349,12 @@ output_lh_json = os.path.join(OUT_PATH, "Lh_pits_summary.json")
 output_rh_json = os.path.join(OUT_PATH, "Rh_pits_summary.json")
 outputs_lh.append(output_lh_json)
 outputs_rh.append(output_rh_json)
+encoded_lh = json.dumps(clusters_lh)
 with open(output_lh_json, 'w') as f:
-    json.dump(clusters_lh[-1], f)
+    json.dump(encoded_lh, f)
+encoded_rh = json.dumps(clusters_rh)
 with open(output_rh_json, 'w') as f:
-    json.dump(clusters_rh, f)
+    json.dump(encoded_rh, f)
 
 # > Write csv output
 output_lh_csv = write_csv_summary(subjects_to_process, clusters_lh,
