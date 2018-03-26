@@ -18,6 +18,7 @@ from pyconnectome.utils.filetools import load_folds
 import pyconnectome.plotting.pvtk as pvtk
 from pyfreesurfer.utils.surftools import TriSurface
 import nibabel.gifti.giftiio as gio
+import nibabel.freesurfer as fio
 
 
 class LabelsOnPick(object):
@@ -211,8 +212,9 @@ def display_folds(folds_file, labels, weights, white_file=None, pits_file=None,
 
 def display_pits_parcellation(
         white_file, parcellation_file, labels=None, pits_file=None,
-        interactive=True, snap=False, animate=False, outdir=None,
-        name="pits_parcellation", actor_ang=(0., 0., 0.)):
+        parcellation_as_annotation=False, interactive=True, snap=False,
+        animate=False, outdir=None, name="pits_parcellation",
+        actor_ang=(0., 0., 0.)):
     """ Display the pits parcellation.
 
     The scene supports one feature activated via the keystroke:
@@ -223,13 +225,15 @@ def display_pits_parcellation(
     Parameters
     ----------
     white_file: str
-        the white surface will be displayed.
+        the white surface that will be displayed.
     parcellation_file: str
         the parcellation texture file.
     labels: dict, default None
         a mapping between an areal number and its name.
     pits_file: str, default None
         if specified the PITS locations.
+    parcellation_as_annotation: bool, default False
+        if set expect a FreeSurfer annotation file as a parcellation input.
     interactive: bool, default True
         if True display the renderer.
     snap: bool, default False
@@ -259,15 +263,19 @@ def display_pits_parcellation(
     ren = pvtk.ren()
     ren.SetBackground(1, 1, 1)
     image = gio.read(white_file)
-    image_labels = gio.read(parcellation_file)
     nb_of_surfs = len(image.darrays)
     if nb_of_surfs != 2:
         raise ValueError("'{0}' does not a contain a valid white "
                          "mesh.".format(white_file))
     vertices = image.darrays[0].data
     triangles = image.darrays[1].data
-    labels = numpy.round(image_labels.darrays[0].data).astype(int)
-    wm_surf = TriSurface(vertices, triangles, labels=labels.copy())
+    if parcellation_as_annotation:
+        annotations = fio.read_annot(parcellation_file)
+        texture, _, labels = annotations
+    else:
+        image_labels = gio.read(parcellation_file)
+        texture = numpy.round(image_labels.darrays[0].data).astype(int)
+    wm_surf = TriSurface(vertices, triangles, labels=texture.copy())
 
     # Four colors theorem to generate the cmap
     import networkx as nx
@@ -282,7 +290,7 @@ def display_pits_parcellation(
                   (255, 255, 255)]
     # > create the graph nodes
     graph = nx.Graph()
-    unique_labels = numpy.unique(labels)
+    unique_labels = numpy.unique(texture)
     graph.add_nodes_from(unique_labels, color=None)
     # > get the cluster centroids & neighboor vertices
     clusters_map = {}
