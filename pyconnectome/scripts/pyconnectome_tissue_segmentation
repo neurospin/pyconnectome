@@ -26,6 +26,8 @@ try:
                      names=["bet2", "fast", "robustfov"])
     bredala.register("pydcmio.plotting.slicer",
                      names=["mosaic"])
+    bredala.register("pyconnectome.utils.regtools",
+                     names=["flirt"])
 except:
     pass
 
@@ -36,6 +38,7 @@ from pyconnectome.wrapper import FSLWrapper
 from pyconnectome.utils.segtools import bet2
 from pyconnectome.utils.segtools import fast
 from pyconnectome.utils.segtools import robustfov
+from pyconnectome.utils.regtools import flirt
 
 # Third party import
 import numpy
@@ -124,7 +127,7 @@ def get_cmd_line_args():
     parser.add_argument(
         "-O", "--docrop",
         action="store_true",
-        help="if set, reduce the FOC of the input image to remove lower head "
+        help="if set, reduce the FOV of the input image to remove lower head "
              "and neck.")
     parser.add_argument(
         "-I", "--brainsize",
@@ -213,6 +216,7 @@ if inputs["docrop"]:
         out=cropped_und_file,
         init=cropped_trf,
         applyxfm=True,
+        interp="spline",
         verbose=verbose,
         shfile=inputs["fsl_sh"])
 
