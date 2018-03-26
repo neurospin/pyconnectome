@@ -443,6 +443,36 @@ def fslreorient2std(input_image, output_image, fslconfig=DEFAULT_FSL_PATH):
     return glob.glob(output_image + "*")[0]
 
 
+def surf2surf(input_surf, output_surf, fslconfig=DEFAULT_FSL_PATH):
+    """ Convert an input surface in ASCI mode.
+
+    Parameters
+    ----------
+    input_surf: str (mandatory)
+        The input surface to convert.
+    output_surf: str (mandatory)
+        The converted surface.
+    fslconfig: str (optional, default DEFAULT_FSL_PATH)
+        The FSL configuration batch.
+    """
+    # check the input parameter
+    if not os.path.isfile(input_surf):
+        raise ValueError("'{0}' is not a valid input file.".format(
+                         input_surf))
+
+    # Define the FSL command
+    cmd = [
+        "surf2surf",
+        "-i", input_surf,
+        "-o", output_surf,
+        "--outputtype=ASCII",
+        "--values=1"]
+
+    # Call fslreorient2std
+    fslprocess = FSLWrapper(cmd, shfile=fslconfig)
+    fslprocess()
+
+
 def apply_mask(input_file, output_fileroot, mask_file,
                fslconfig=DEFAULT_FSL_PATH):
     """ Apply a mask to an image.
@@ -521,3 +551,37 @@ def monkeypatch(klass, methodname=None):
         setattr(klass, name, func)
         return func
     return decorator
+
+
+class TempDir(object):
+    """ Create a tempdir with the with synthax.
+    """
+    def __init__(self, dirname=None, basename=None):
+        """ Initialize the TempDir class.
+
+        Parameters
+        ----------
+        dirname: str, default None
+            if set, the temporary directory is generated in this folder and 
+            will not be removed.
+        basename: str, default None
+            if set, use this name as a temporary folder prefix.
+        """
+        self.path = None
+        self.dirname = dirname
+        self.basename = basename
+        return
+
+    def __enter__(self):
+        kwargs = {}
+        if self.dirname is not None:
+            kwargs["dir"] = self.dirname
+        if self.basename is not None:
+            kwargs["prefix"] = self.basename
+        self.path = tempfile.mkdtemp(**kwargs)
+        return self.path
+
+    def __exit__(self, type, value, traceback):
+        if self.dirname is None:
+            shutil.rmtree(self.path)
+
