@@ -562,7 +562,7 @@ class TempDir(object):
         Parameters
         ----------
         dirname: str, default None
-            if set, the temporary directory is generated in this folder and 
+            if set, the temporary directory is generated in this folder and
             will not be removed.
         basename: str, default None
             if set, use this name as a temporary folder prefix.
@@ -584,4 +584,3 @@ class TempDir(object):
     def __exit__(self, type, value, traceback):
         if self.dirname is None:
             shutil.rmtree(self.path)
-

@@ -222,15 +222,15 @@ def matrix(matrix, snapshot, labels=None, transform=None,
         ax.set_xticklabels(labels, size=labels_size, rotation=90)
 
     # Set display options
-    #ax.set_aspect("equal")
+    # ax.set_aspect("equal")
     kwargs = {}
     if vmin is not None:
         kwargs["vmin"] = vmin
     if vmax is not None:
         kwargs["vmax"] = vmax
     heatmap = ax.pcolor(matrix, cmap=plt.cm.Reds, **kwargs)
-    #colorbar = fig.colorbar(heatmap)
-    #colorbar.set_label(colorbar_title, rotation=270, labelpad=20)
+    # colorbar = fig.colorbar(heatmap)
+    # colorbar.set_label(colorbar_title, rotation=270, labelpad=20)
     fig.tight_layout()
 
     # Save to PNG file
