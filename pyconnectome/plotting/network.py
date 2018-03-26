@@ -11,8 +11,8 @@
 Modules that provides tools to display networks.
 """
 
-
 # System import
+from __future__ import division
 import os
 import numpy
 from collections import OrderedDict
@@ -154,3 +154,92 @@ def get_surface_parcellation_centroids(lh_surf, rh_surf, labels):
                 centroids[key] = numpy.mean(vertices, axis=0)
 
     return centroids
+
+
+def matrix(matrix, snapshot, labels=None, transform=None,
+           colorbar_title="", dpi=200, labels_size=4,
+           vmin=None, vmax=None):
+    """
+    Create a PNG snapshot of a matrix.
+
+    Parameters
+    ----------
+    matrix: ndarray
+        The connectivity matrix.
+    snapshot: str
+        Path to the output snapshot.
+    labels: str, default None
+        The label names. By default no labels.
+        Should be ordered like the rows of the connectivity matrix.
+    transform: callable, default None
+        A Callable function to apply on the matrix (e.g. numpy.log1p).
+        By default no transformation is applied.
+    colorbar_title: str, default ""
+        How to interpret the values of the connectivity,
+        e.g. "Log(# of tracks)" or "% of tracks"
+    dpi: int, default 200
+        "Dot Per Inch", set higher for better resolution.
+    labels_size: int, default 4
+        The label font size.
+    vmin, vmax: float, default None
+        The display range.
+
+    Returns
+    -------
+    snapshot: str
+        Path to the output connectome snapshot.
+    """
+    # Import in function, so that the rest of the module can be used even
+    # if matplotlib is not available
+    import matplotlib.pyplot as plt
+
+    # Check matrix dimensions
+    if matrix.ndim != 2:
+        raise ValueError("Connectivity matrix should be a square matrix."
+                         "Shape of matrix: {}".format(matrix.shape))
+    if matrix.shape[0] < matrix.shape[1]:
+        matrix = matrix.T
+
+    # Apply transformation if requested
+    if transform is not None:
+        matrix = transform(matrix)
+
+    # Create the figure with matplotlib
+    size_x = 50
+    size_y = min(matrix.shape[0] / matrix.shape[1] * 50, 150)
+    fig, ax = plt.subplots(figsize=(size_x, size_y))
+    ax.invert_yaxis()
+    ax.xaxis.tick_top()
+    ax.set_xticks(numpy.arange(0.5, matrix.shape[1]))
+    ax.tick_params(which="both", axis="x", width=0, length=0)
+
+    # Add the labels if passed
+    if labels is not None:
+        if len(labels) != matrix.shape[1]:
+            raise ValueError(
+                "Wrong number of labels: {0}. Should be {1}.".format(
+                    len(labels), matrix.shape[1]))
+        ax.set_xticklabels(labels, size=labels_size, rotation=90)
+
+    # Set display options
+    #ax.set_aspect("equal")
+    kwargs = {}
+    if vmin is not None:
+        kwargs["vmin"] = vmin
+    if vmax is not None:
+        kwargs["vmax"] = vmax
+    heatmap = ax.pcolor(matrix, cmap=plt.cm.Reds, **kwargs)
+    #colorbar = fig.colorbar(heatmap)
+    #colorbar.set_label(colorbar_title, rotation=270, labelpad=20)
+    fig.tight_layout()
+
+    # Save to PNG file
+    if not snapshot.endswith(".png"):
+        snapshot += ".png"
+    fig.savefig(snapshot, dpi=dpi)
+
+    # Release memory
+    fig.clear()
+    plt.close()
+
+    return snapshot
