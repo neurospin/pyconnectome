@@ -1,0 +1,450 @@
+#! /usr/bin/env python
+##########################################################################
+# NSAp - Copyright (C) CEA, 2018
+# Distributed under the terms of the CeCILL-B license, as published by
+# the CEA-CNRS-INRIA. Refer to the LICENSE file or to
+# http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html
+# for details.
+##########################################################################
+
+# System import
+from __future__ import print_function
+import argparse
+import os
+import json
+import shutil
+from datetime import datetime
+from pprint import pprint
+import textwrap
+from collections import OrderedDict
+from argparse import RawTextHelpFormatter
+
+# Bredala import
+try:
+    import bredala
+    bredala.USE_PROFILER = False
+    bredala.register("pyconnectomist.utils.pdftools",
+                     names=["generate_pdf"])
+    bredala.register("pyconnectome.utils.filetools",
+                     names=["fslreorient2std"])
+    bredala.register("pyconnectome.utils.regtools",
+                     names=["flirt"])
+except:
+    pass
+
+# Package import
+from pyconnectome import __version__ as version
+
+# Third party import
+from nilearn import plotting
+import nibabel
+import numpy
+import matplotlib.pyplot as plt
+from pyconnectomist.utils.pdftools import generate_pdf
+from pyconnectome.utils.filetools import fslreorient2std
+from pyconnectome.utils.regtools import flirt
+from pyconnectome import DEFAULT_FSL_PATH
+from pyconnectome.wrapper import FSLWrapper
+
+
+# Script documentation
+DOC = """
+Segmentation Quality Check
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Inspect the results returned by the Morphologist/SPM/FreeSurfer segmentation.
+Create white/pial mesh overlays.
+
+Commands:
+# SPM
+python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_segmentation_report \
+    -t /neurospin/tmp/agrigis/hbn/sub-NDARAA948VFH_acq-HCP_T1w.nii.gz \
+    -g /neurospin/tmp/agrigis/hbn/segment/sub-NDARAA948VFH/c1usub-NDARAA948VFH_acq-HCP_T1w.nii.gz \
+    -w /neurospin/tmp/agrigis/hbn/segment/sub-NDARAA948VFH/c2usub-NDARAA948VFH_acq-HCP_T1w.nii.gz \
+    -s sub-NDARAA948VFH \
+    -o /neurospin/tmp/agrigis/hbn/results \
+    -a C A S \
+    -d SPM \
+    -I 20 \
+    -P HBN
+
+# Morphologist
+python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_segmentation_report \
+    -t /neurospin/tmp/agrigis/hbn/sub-NDARAA948VFH_acq-HCP_T1w.nii.gz \
+    -g /neurospin/tmp/agrigis/hbn/morphologist/sub-NDARAA948VFH/t1mri/default_acquisition/default_analysis/segmentation/Lgrey_white_sub-NDARAA948VFH.nii.gz \
+       /neurospin/tmp/agrigis/hbn/morphologist/sub-NDARAA948VFH/t1mri/default_acquisition/default_analysis/segmentation/Rgrey_white_sub-NDARAA948VFH.nii.gz \
+    -w /neurospin/tmp/agrigis/hbn/morphologist/sub-NDARAA948VFH/t1mri/default_acquisition/default_analysis/segmentation/Lgrey_white_sub-NDARAA948VFH.nii.gz \
+       /neurospin/tmp/agrigis/hbn/morphologist/sub-NDARAA948VFH/t1mri/default_acquisition/default_analysis/segmentation/Rgrey_white_sub-NDARAA948VFH.nii.gz \
+    -s sub-NDARAA948VFH \
+    -o /neurospin/tmp/agrigis/hbn/results \
+    -a C \
+    -d MORPHOLOGIST \
+    -I 20 \
+    -S \
+    -P HBN
+
+# FreeSurfer
+python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_segmentation_report \
+    -t /neurospin/tmp/agrigis/hbn/sub-NDARAA948VFH_acq-HCP_T1w.nii.gz \
+    -g /neurospin/tmp/agrigis/hbn/fsextra/sub-NDARAA948VFH/convert/images/lh.ribbon.nii.gz \
+       /neurospin/tmp/agrigis/hbn/fsextra/sub-NDARAA948VFH/convert/images/rh.ribbon.nii.gz \
+    -w /neurospin/tmp/agrigis/hbn/fsextra/sub-NDARAA948VFH/convert/images/lh.ribbon.nii.gz \
+       /neurospin/tmp/agrigis/hbn/fsextra/sub-NDARAA948VFH/convert/images/rh.ribbon.nii.gz \
+    -s sub-NDARAA948VFH \
+    -o /neurospin/tmp/agrigis/hbn/results \
+    -a C \
+    -d FREESURFER \
+    -I 20 \
+    -S \
+    -P HBN
+"""
+
+
+def is_file(filearg):
+    """ Type for argparse - checks that file exists but does not open.
+    """
+    if not os.path.isfile(filearg):
+        raise argparse.ArgumentError(
+            "The file '{0}' does not exist!".format(filearg))
+    return filearg
+
+
+def is_directory(dirarg):
+    """ Type for argparse - checks that directory exists.
+    """
+    if not os.path.isdir(dirarg):
+        raise argparse.ArgumentError(
+            "The directory '{0}' does not exist!".format(dirarg))
+    return dirarg
+
+
+def get_cmd_line_args():
+    """
+    Create a command line argument parser and return a dict mapping
+    <argument name> -> <argument value>.
+    """
+    parser = argparse.ArgumentParser(
+        prog="python pyconnectome_segmentation_report",
+        description=textwrap.dedent(DOC),
+        formatter_class=RawTextHelpFormatter)
+
+    # Required arguments
+    required = parser.add_argument_group("required arguments")
+    required.add_argument(
+        "-t", "--t1",
+        required=True, type=is_file,
+        help="the path to t1 file.")
+    required.add_argument(
+        "-s", "--subjectid",
+        required=True,
+        help="the subject identifier.")
+    required.add_argument(
+        "-o", "--outdir",
+        required=True, type=is_directory,
+        help="the output directory.")
+    required.add_argument(
+        "-a", "--cutaxis",
+        required=True, nargs="+", choices=["C", "A", "S"],
+        help=("the cut axis, use 'C' for Coronal, 'A' for Axial and 'S' for "
+              "Sagittal."))
+    required.add_argument(
+        "-d", "--datatype",
+        required=True, choices=["SPM", "FREESURFER", "MORPHOLOGIST"],
+        help=("specifies if the data has been generated by SPM, FreeSurfer or "
+              " morphologist."))
+    required.add_argument(
+        "-g", "--grey-matter",
+        required=True, type=is_file, nargs='+',
+        help="the path to the grey matter file(s). If the segmentation are "
+             "splitted by hemispheres, gives the two files here (lh then rh).")
+    required.add_argument(
+        "-w", "--white-matter", nargs='+',
+        required=True, type=is_file,
+        help="the path to the white matter file(s). If the segmentation are "
+             "splitted by hemispheres, gives the two files here (lh then rh).")
+
+    # Optional arguments
+    parser.add_argument(
+        "-P", "--projectname",
+        default="NC",
+        help="the project name.")
+    parser.add_argument(
+        "-I", "--increment",
+        default=1, type=int,
+        help="the increment between two slices.")
+    parser.add_argument(
+        "-C", "--clientname",
+        default="NC",
+        help="the client name.")
+    parser.add_argument(
+        "-v", "--verbose",
+        type=int, choices=[0, 1, 2], default=2,
+        help="increase the verbosity level: 0 silent, [1, 2] verbose.")
+    parser.add_argument(
+        "-S", "--save",
+        action="store_true", default=False,
+        help="save reconstructed wm/gm/pial files for morphologist data.")
+    parser.add_argument(
+        "-F", "--fsl-sh",
+        type=is_file, metavar="<path>",
+        help="bash script initializing FSL's environment.")
+
+    # Create a dict of arguments to pass to the 'main' function
+    args = parser.parse_args()
+    kwargs = vars(args)
+    verbose = kwargs.pop("verbose")
+    if kwargs["fsl_sh"] is None:
+        kwargs["fsl_sh"] = DEFAULT_FSL_PATH
+
+    return kwargs, verbose
+
+
+"""
+Parse the command line.
+"""
+inputs, verbose = get_cmd_line_args()
+runtime = {
+    "tool": "pyconnectome_segmentation_report",
+    "tool_version": version,
+    "timestamp": datetime.now().isoformat(),
+    "fsl_version": FSLWrapper([], shfile=inputs["fsl_sh"]).version}
+outputs = {"png": [], "pdf": []}
+if verbose > 0:
+    print("[info] Starting segmentation QC reporting...")
+    print("[info] Runtime:")
+    pprint(runtime)
+    print("[info] Inputs:")
+    pprint(inputs)
+outdir = os.path.join(inputs["outdir"], inputs["subjectid"])
+if not os.path.isdir(outdir):
+    os.mkdir(outdir)
+
+
+"""
+Create white/pial mesh overlays
+"""
+axis_correspondence = {
+    "C": 1,
+    "A": 2,
+    "S": 0}
+display_correspondence = {
+    0: "x",
+    1: "y",
+    2: "z"}
+slices = {}
+lwidth = 0.3
+t1_file = os.path.join(
+    outdir, os.path.basename(inputs["t1"]))
+fslreorient2std(inputs["t1"], t1_file,
+                fslconfig=inputs["fsl_sh"])
+t1_img = nibabel.load(t1_file)
+
+# SPM case: load volumes
+if inputs["datatype"] == "SPM":
+
+    # Reorient volumes
+    white_matter_file = os.path.join(
+        outdir, os.path.basename(inputs["white_matter"][0]))
+    fslreorient2std(inputs["white_matter"][0], white_matter_file,
+                    fslconfig=inputs["fsl_sh"])
+    grey_matter_file = os.path.join(
+        outdir, os.path.basename(inputs["grey_matter"][0]))
+    fslreorient2std(inputs["grey_matter"][0], grey_matter_file,
+                    fslconfig=inputs["fsl_sh"])
+
+    # Load volumes
+    wm_img = nibabel.load(white_matter_file)
+    gm_img = nibabel.load(grey_matter_file)
+
+# MORPHOLOGIST case: load/split/merge volumes
+elif inputs["datatype"] == "MORPHOLOGIST":
+
+    # Reorient volumes
+    lh_tissues_file = os.path.join(
+        outdir, os.path.basename(inputs["white_matter"][0]))
+    fslreorient2std(inputs["white_matter"][0], lh_tissues_file,
+                    fslconfig=inputs["fsl_sh"])
+    rh_tissues_file = os.path.join(
+        outdir, os.path.basename(inputs["white_matter"][1]))
+    fslreorient2std(inputs["white_matter"][1], rh_tissues_file,
+                    fslconfig=inputs["fsl_sh"])
+
+    # Realign volumes
+    identity_file = os.path.join(outdir, "identity.txt")
+    identity = numpy.eye(4)
+    numpy.savetxt(identity_file, identity)
+    flirt(
+        in_file=lh_tissues_file,
+        ref_file=t1_file,
+        init=identity_file,
+        out=lh_tissues_file,
+        applyxfm=True,
+        shfile=inputs["fsl_sh"])
+    flirt(
+        in_file=rh_tissues_file,
+        ref_file=t1_file,
+        init=identity_file,
+        out=rh_tissues_file,
+        applyxfm=True,
+        shfile=inputs["fsl_sh"])
+
+    # Load volumes
+    t1_img = nibabel.load(t1_file)
+    lh_wgm_img = nibabel.load(lh_tissues_file)
+    rh_wgm_img = nibabel.load(rh_tissues_file)
+    lh_wgm_img_data = lh_wgm_img.get_data()
+    rh_wgm_img_data = rh_wgm_img.get_data()
+
+    # Split white and grey matter
+    wm_img_data = numpy.zeros(lh_wgm_img_data.shape,
+                              dtype=lh_wgm_img_data.dtype)
+    gm_img_data = numpy.zeros(lh_wgm_img_data.shape,
+                              dtype=lh_wgm_img_data.dtype)
+
+    # Merge volumes: white (200) and grey (100)
+    wm_indexes = numpy.where(lh_wgm_img_data == 200)
+    wm_img_data[wm_indexes] = 1
+    wm_indexes = numpy.where(rh_wgm_img_data == 200)
+    wm_img_data[wm_indexes] = 1
+    gm_indexes = numpy.where(lh_wgm_img_data == 100)
+    gm_img_data[gm_indexes] = 1
+    gm_indexes = numpy.where(rh_wgm_img_data == 100)
+    gm_img_data[gm_indexes] = 1
+
+    # Create images
+    wm_img = nibabel.Nifti1Image(wm_img_data, affine=lh_wgm_img.affine)
+    gm_img = nibabel.Nifti1Image(gm_img_data, affine=lh_wgm_img.affine)
+    if inputs["save"]:
+        wm_img.to_filename(os.path.join(outdir, "wm.nii.gz"))
+        gm_img.to_filename(os.path.join(outdir, "gm.nii.gz"))
+        outputs["intermediate_files"] = [
+            os.path.join(outdir, "wm.nii.gz"),
+            os.path.join(outdir, "gm.nii.gz")]
+
+# FREESURFER case
+else:
+
+    # Reorient volumes
+    lh_tissues_file = os.path.join(
+        outdir, os.path.basename(inputs["white_matter"][0]))
+    fslreorient2std(inputs["white_matter"][0], lh_tissues_file,
+                    fslconfig=inputs["fsl_sh"])
+    rh_tissues_file = os.path.join(
+        outdir, os.path.basename(inputs["white_matter"][1]))
+    fslreorient2std(inputs["white_matter"][1], rh_tissues_file,
+                    fslconfig=inputs["fsl_sh"])
+
+    # Load volumes
+    t1_img = nibabel.load(t1_file)
+    lh_wgm_img = nibabel.load(lh_tissues_file)
+    rh_wgm_img = nibabel.load(rh_tissues_file)
+    lh_wgm_img_data = lh_wgm_img.get_data()
+    rh_wgm_img_data = rh_wgm_img.get_data()
+
+    # Split white and grey matter
+    gm_img_data = numpy.zeros(lh_wgm_img_data.shape,
+                              dtype=lh_wgm_img_data.dtype)
+
+    # Merge volumes: grey (1)
+    gm_indexes = numpy.where(lh_wgm_img_data > 0)
+    gm_img_data[gm_indexes] = 1
+    gm_indexes = numpy.where(rh_wgm_img_data > 0)
+    gm_img_data[gm_indexes] = 1
+
+    # Create images
+    gm_img = nibabel.Nifti1Image(gm_img_data, affine=lh_wgm_img.affine)
+    wm_img = gm_img
+
+# Generate snaps
+for axis in inputs["cutaxis"]:
+    cut_outdir = os.path.join(outdir, axis)
+    if not os.path.isdir(cut_outdir):
+        os.mkdir(cut_outdir)
+    slices[axis] = OrderedDict()
+    array_axis = axis_correspondence[axis]
+    for slice_nb in range(1, t1_img.shape[array_axis], inputs["increment"]):
+        point = numpy.zeros((4, 1))
+        point[3] = 1
+        point[array_axis] = slice_nb
+        slice_mm = numpy.dot(t1_img.affine, point)[array_axis]
+        display = plotting.plot_anat(
+            t1_img,
+            vmin=0,
+            vmax=numpy.percentile(t1_img.get_data(), 98),
+            display_mode=display_correspondence[array_axis],
+            cut_coords=[slice_mm])
+        try:
+            display.add_contours(wm_img, levels=[0.5],
+                                 display_mode=display_correspondence[array_axis],
+                                 cut_coords=[slice_mm], colors="#ff0000",
+                                 linewidths=lwidth)
+            display.add_contours(gm_img, levels=[0.5],
+                                 display_mode=display_correspondence[array_axis],
+                                 cut_coords=[slice_mm], colors="#00e600",
+                                 linewidths=lwidth)
+        except ValueError:
+            print("Uncorrect slice: {0}".format(slice_nb))
+        finally:
+            out_png = os.path.join(cut_outdir, "{0}_{1}_{2}_{3}.png".format(
+                inputs["subjectid"], inputs["datatype"], axis, slice_nb))
+            slices[axis][slice_nb] = out_png
+            display.savefig(out_png, dpi=300)
+            display.close()
+outputs["png"] = slices
+
+
+"""
+Createa QC report
+"""
+
+# Write pdf struct
+pdfstruct = os.path.join(outdir, "pdf_struct.json")
+pdfstruct_json = OrderedDict()
+pdfstruct_json["cover"] = {
+    "type": "cover"
+}
+for cnt, axis in enumerate(inputs["cutaxis"]):
+    page_nb = "page{0}".format(cnt + 1)
+    selected_slices = numpy.linspace(0, len(slices[axis]) - 1, 6, dtype=int)
+    images = [[slices[axis].values()[index]] for index in selected_slices]
+    page_struct = {
+            "type": "triplanar",
+            "style": "TwoCol",
+            "images": images,
+            "texts": [
+                "The pial/white surface edges in the coronal direction."
+            ],
+            "topmargin": 0.05,
+            "linecount": 120
+        }
+    pdfstruct_json[page_nb] = page_struct
+with open(pdfstruct, "wt") as open_file:
+    json.dump(pdfstruct_json, open_file, indent=4)
+
+# Generate pdf/remove png
+tic = datetime.now()
+filename = os.path.join(outdir, "{0}_{1}_QC.pdf".format(
+    inputs["subjectid"], inputs["datatype"]))
+generate_pdf(outdir, pdfstruct, "NSAP", inputs["clientname"], "pyConnectome",
+             inputs["projectname"], "NC", inputs["subjectid"], tic,
+             "{0} QC reporting".format(inputs["datatype"]), filename)
+outputs["pdf"].append(filename)
+
+
+"""
+Update the outputs and save them and the inputs in a 'logs' directory.
+"""
+logdir = os.path.join(outdir, "logs")
+if not os.path.isdir(logdir):
+    os.mkdir(logdir)
+params = locals()
+for name, final_struct in [("inputs", inputs), ("outputs", outputs),
+                           ("runtime", runtime)]:
+    log_file = os.path.join(logdir, "{0}_{1}.json".format(
+        name, inputs["datatype"]))
+    with open(log_file, "wt") as open_file:
+        json.dump(final_struct, open_file, sort_keys=True, check_circular=True,
+                  indent=4)
+if verbose > 1:
+    print("[final]")
+    pprint(outputs)
