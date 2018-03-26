@@ -376,6 +376,56 @@ def fnirt(in_file, ref_file, affine_file, outdir, inmask_file=None, verbose=0,
     return outputs
 
 
+def applywarp(in_file, ref_file, out_file, warp_file, pre_affine_file=None,
+              post_affine_file=None, interp="trilinear", verbose=0,
+              shfile=DEFAULT_FSL_PATH):
+    """ Apply FSL deformation field.
+
+    Parameters
+    ----------
+    in_file: str
+        filename of input image (to be warped).
+    ref_file: str
+        filename for reference image.
+    out_file: str
+        filename for output (warped) image.
+    warp_file: str
+        filename for warp/coefficient (volume).
+    pre_affine_file: str
+        filename for pre-transform (affine matrix).
+    post_affine_file: str
+        filename for post-transform (affine matrix).
+    interp: str (optional, default "trilinear")
+        interpolation method {nn,trilinear,sinc,spline}
+    verbose: int, default 0
+        the verbosity level.
+    shfile: str, default DEFAULT_FSL_PATH
+        The FSL configuration batch.
+    """
+    # Check the input parameters
+    for filename in (in_file, ref_file, pre_affine_file, post_affine_file):
+        if filename is not None and not os.path.isfile(filename):
+            raise ValueError(
+                "'{0}' is not a valid input file.".format(filename))
+
+    # Define the FSL command
+    cmd = ["applywarp",
+           "-i", in_file,
+           "-r", ref_file,
+           "-o", out_file,
+           "-w", warp_file,
+           "--interp={0}".format(interp),
+           "--verbose={0}".format(verbose)]
+    if pre_affine_file is not None:
+        cmd.append("--premat={0}".format(pre_affine_file))
+    if post_affine_file is not None:
+        cmd.append("--postmat={0}".format(post_affine_file))
+
+    # Call fnirt
+    fslprocess = FSLWrapper(cmd, shfile=shfile)
+    fslprocess()
+
+
 def flirt2aff(mat_file, in_file, ref_file):
     """ Map from 'in_file' image voxels to 'ref_file' voxels given `omat` FSL
     affine transformation.
