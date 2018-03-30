@@ -75,9 +75,24 @@ REQUIRES = [
     "numpy>=1.14.0",
     "scipy>=0.9.0",
     "nibabel>=1.1.0",
-    "dipy>=0.13.0"
+    "dipy>=0.13.0",
+    "networkx>=1.11",
+    "matplotlib>=1.5.1",
+    "progressbar2>=3.34.3",
 ]
-EXTRA_REQUIRES = {}
+EXTRA_REQUIRES = {
+    "obsolete": {
+        "clindmri>=0.0.0"
+    },
+    "standalone": {
+        "bctpy>=0.5.0",
+        "nilearn>=0.3.1",
+        "pydcmio>=2.0.1",
+        "scikit-learn>=0.19.1"
+        "pyconnectomist>=2.0.0",
+        "pyfreesurfer>=1.2.0",
+    }
+}
 SCRIPTS = [
     "pyconnectome/scripts/pyconnectome_ants_register",
     "pyconnectome/scripts/pyconnectome_ants_template",
