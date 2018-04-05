@@ -465,8 +465,8 @@ def flirt2aff(mat_file, in_file, ref_file):
         return flipr
 
     # Check image orientation
-    inspace = numpy.diag(in_hdr.get_zooms() + (1, ))
-    refspace = numpy.diag(ref_hdr.get_zooms() + (1, ))
+    inspace = numpy.diag(in_hdr.get_zooms()[:3] + (1, ))
+    refspace = numpy.diag(ref_hdr.get_zooms()[:3] + (1, ))
     if numpy.linalg.det(in_img.get_affine()) >= 0:
         inspace = numpy.dot(inspace, _x_flipper(in_hdr.get_data_shape()[0]))
     if numpy.linalg.det(ref_img.get_affine()) >= 0:
