@@ -149,6 +149,11 @@ def get_cmd_line_args():
         type=int, default=2,
         help="Number of cpu cores to use locally.")
     parser.add_argument(
+        "-R", "--restrict-deformation",
+        type=int, nargs="*",
+        help="This option allows the user to restrict the optimization of the "
+             "displacement field.")
+    parser.add_argument(
         "-v", "--verbose",
         type=int, choices=[0, 1, 2], default=2,
         help="Increase the verbosity level: 0 silent, [1, 2] verbose.")
@@ -225,6 +230,10 @@ transform_parameters = [(inputs["gradient_step"], ),
 shrink_factors = [[6, 4, 2, 1], [6, 4, 2, 1]]
 smoothing_sigmas = [[4, 2, 1, 0], [4, 2, 1, 0]]
 metric_weight = [inputs["weights"], inputs["weights"]]
+if inputs["restrict_deformation"] is not None:
+    restrict_deformation = inputs["restrict_deformation"]
+else:
+    restrict_deformation = [1, 1, 1]
 baseoutput = os.path.join(inputs["outdir"], "ants_")
 
 
@@ -315,7 +324,8 @@ if inputs["dononlinear"]:
             convergence_threshold[1],
             convergence_window_size[1]),
         "-f", to_ants_list(shrink_factors[1]),
-        "-s", to_ants_list(smoothing_sigmas[1])]
+        "-s", to_ants_list(smoothing_sigmas[1]),
+        "-g", to_ants_list(restrict_deformation)]
 if verbose > 0:
     print("-" * 20)
     print(" ".join(cmd1))
@@ -350,9 +360,17 @@ for index in range(nb_modalities):
         "-i", inputs["images"][index],
         "-o", outfile,
         "-r", inputs["references"][index],
-        "-t", fieldfile,
-        "-t", affinefile,
         "-n", "BSpline"]
+    if inputs["dononlinear"]:
+        cmd2 += [
+            "-t", fieldfile,
+            "-t", affinefile,
+            "-n", "BSpline"]
+    else:
+        cmd2 += [
+            "-t", affinefile]
+
+
 if verbose > 0:
     print("-" * 20)
     print(" ".join(cmd2))
