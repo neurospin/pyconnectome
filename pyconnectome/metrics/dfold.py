@@ -50,7 +50,7 @@ def convert_mesh(texture_file, mesh_file, t1_file, outpattern=None,
     ----------
     texture_file: str
         the pits or parcellations '.gii' file. The parcellation can also be
-        given as an annation '.annot' file. 
+        given as an annation '.annot' file.
     mesh_file: str
         the path to white matter '.gii' mesh file.
     t1_file: str
@@ -86,7 +86,7 @@ def convert_mesh(texture_file, mesh_file, t1_file, outpattern=None,
     mesh_gii = gio.read(mesh_file)
     mesh_vertices = mesh_gii.darrays[0].data
 
-    # Get mesh vertices and pits' mask array and check data adequacy   
+    # Get mesh vertices and pits' mask array and check data adequacy
     if mesh_vertices.shape[0] != texture.shape[0]:
         raise ValueError("Texture file and white matter surface file "
                          "should have the same number of vertices.")
@@ -413,7 +413,7 @@ def sphere_integration(t1_file, scalars, points, seg_file=None, radius=2,
         if points_in_gm.shape[0] == 0:
             points_in_gm = None
     else:
-        points_in_wm =None
+        points_in_wm = None
         points_in_gm = None
 
     # Go through each list of vertices
@@ -458,7 +458,7 @@ def sphere_integration(t1_file, scalars, points, seg_file=None, radius=2,
                     # Compute points indices
                     if radius is None:
                         int_points = vertex.reshape(1, 3).astype(int)
-                    else: 
+                    else:
                         int_points = inside_sphere_points(
                             center=vertex, radius=radius, shape=image.shape)
                     wm_points = points_intersection(int_points, points_in_wm)
@@ -556,8 +556,8 @@ def points_intersection(points1, points2):
     Returns
     -------
     xyz: array, shape (N, 3)
-        the array of the intersecting points. If no intersection is found return
-        None.
+        the array of the intersecting points. If no intersection is found
+        return None.
     """
     if points1 is None or points2 is None:
         return None
