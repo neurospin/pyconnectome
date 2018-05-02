@@ -62,7 +62,7 @@ Rigid/affine or non linear registration with FSL using flirt and fnirt.
 
 Command:
 
-python $HOME/git/pyfsl/pyconnectome/scripts/pyconnectome_register \
+python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_register \
     -v 2 \
     -s test_fsl \
     -o /volatile/nsap/recalage_cathy/results \
