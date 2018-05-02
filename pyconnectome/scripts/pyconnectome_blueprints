@@ -1,0 +1,744 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*
+##########################################################################
+# NSAp - Copyright (C) CEA, 2018
+# Distributed under the terms of the CeCILL-B license, as published by
+# the CEA-CNRS-INRIA. Refer to the LICENSE file or to
+# http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html
+# for details.
+##########################################################################
+
+# System modules
+from __future__ import print_function
+from collections import OrderedDict
+import os
+import re
+import shutil
+import glob
+import json
+import textwrap
+import argparse
+from pprint import pprint
+from datetime import datetime
+from argparse import RawTextHelpFormatter
+
+
+# Bredala module
+try:
+    import bredala
+    bredala.USE_PROFILER = False
+    bredala.register("pyconnectome.tractography.probabilist",
+                     names=["probtrackx2"])
+    bredala.register("pyconnectome.utils.regtools",
+                     names=["flirt", "fnirt", "applywarp"])
+    bredala.register("pyconnectome.utils.filetools",
+                     names=["surf2surf"])
+    bredala.register("pyconnectome.plotting.network",
+                     names=["matrix"])
+except:
+    pass
+
+
+# Package import
+from pyconnectome import __version__ as version
+from pyconnectome import DEFAULT_FSL_PATH
+from pyconnectome.wrapper import FSLWrapper
+from pyconnectome.utils.regtools import flirt
+from pyconnectome.utils.regtools import fnirt
+from pyconnectome.utils.regtools import flirt2aff
+from pyconnectome.utils.regtools import applywarp
+from pyconnectome.utils.filetools import TempDir
+from pyconnectome.utils.filetools import surf2surf
+from pyconnectome.plotting.network import matrix
+from pyconnectome.tractography.probabilist import probtrackx2
+
+
+# Third party import
+import numpy
+import nibabel
+import nibabel.freesurfer as fsio
+import progressbar
+import scipy.sparse
+from pyfreesurfer.utils.surftools import TriSurface
+from pyfreesurfer.utils.surftools import apply_affine_on_mesh
+
+
+# Parameters to keep trace
+__hopla__ = ["runtime", "inputs", "outputs"]
+
+
+# Command parameters
+doc = """
+Extract the bluprints for one subject using FSL porbtrackx2 with the omatrix2
+setting.
+
+Reference: Rogier B. Mars et al.: Whole brain comparative anatomy using
+connectivity blueprints.
+
+
+Example of command for HCP data:
+
+python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_blueprints \
+    -o /neurospin/nsap/research/blueprints/results \
+    -s 100206 \
+    -b /neurospin/hcp/PROCESSED/3T_bedpostx/100206/T1w/Diffusion.bedpostX \
+    -a /neurospin/hcp/ANALYSIS/3T_freesurfer/100206/T1w/T1w_acpc_dc_restore_brain_1mm.nii.gz \
+    -r /neurospin/hcp/ANALYSIS/3T_freesurfer_extras/100206/convert/surfaces/rh.white.4.native \
+    -l /neurospin/hcp/ANALYSIS/3T_freesurfer_extras/100206/convert/surfaces/lh.white.4.native \
+    -n /neurospin/hcp/ANALYSIS/3T_mrtrix/100206/nodif_brain.nii.gz \
+    -t /usr/share/fsl/data/standard/MNI152_T1_1mm_brain.nii.gz \
+    -p /usr/share/fsl/data/atlases/JHU/JHU-ICBM-tracts-maxprob-thr25-1mm.nii.gz \
+    -m /neurospin/nsap/research/blueprints/jhu_tract.json \
+    -RL /neurospin/hcp/ANALYSIS/3T_freesurfer_extras/100206/convert/surfaces/rh.aparc.annot.4 \
+    -LL /neurospin/hcp/ANALYSIS/3T_freesurfer_extras/100206/convert/surfaces/lh.aparc.annot.4 \
+    -I \
+    -A 1000 \
+    -L 0.5 \
+    -M 2 \
+    -v 2 \
+    -D
+
+python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_blueprints \
+    -o /neurospin/nsap/research/blueprints/results \
+    -s 100206 \
+    -b /neurospin/hcp/PROCESSED/3T_bedpostx/100206/T1w/Diffusion.bedpostX \
+    -a /neurospin/hcp/ANALYSIS/3T_freesurfer/100206/T1w/T1w_acpc_dc_restore_brain_1mm.nii.gz \
+    -r /neurospin/hcp/ANALYSIS/3T_freesurfer_extras/100206/convert/surfaces/rh.white.4.native \
+    -l /neurospin/hcp/ANALYSIS/3T_freesurfer_extras/100206/convert/surfaces/lh.white.4.native \
+    -n /neurospin/hcp/ANALYSIS/3T_mrtrix/100206/nodif_brain.nii.gz \
+    -t /usr/share/fsl/data/standard/MNI152_T1_1mm_brain.nii.gz \
+    -p /neurospin/nsap/research/blueprints/Talairach-labels-1mm.nii.gz \
+    -m /neurospin/nsap/research/blueprints/Talairach-labels-1mm.json \
+    -A 1000 \
+    -L 0.5 \
+    -M 2 \
+    -v 2 \
+    -D
+
+python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_ants_register \
+    -b /usr/lib/ants \
+    -o /neurospin/nsap/research/blueprints/results/ants \
+    -i /usr/share/fsl/data/standard/MNI152_T1_1mm_brain.nii.gz \
+    -r /neurospin/hcp/ANALYSIS/3T_mrtrix/100206/nodif_brain.nii.gz \
+    -w 1 \
+    -B \
+    -D 3 \
+    -G 0.1 \
+    -J 6 \
+    -N \
+    -v 2
+"""
+
+
+def is_file(filearg):
+    """ Type for argparse - checks that file exists but does not open.
+    """
+    if not os.path.isfile(filearg):
+        raise argparse.ArgumentError(
+            "The file '{0}' does not exist!".format(filearg))
+    return filearg
+
+
+def is_directory(dirarg):
+    """ Type for argparse - checks that directory exists.
+    """
+    if not os.path.isdir(dirarg):
+        raise argparse.ArgumentError(
+            "The directory '{0}' does not exist!".format(dirarg))
+    return dirarg
+
+
+def get_cmd_line_args():
+    """
+    Create a command line argument parser and return a dict mapping
+    <argument name> -> <argument value>.
+    """
+    parser = argparse.ArgumentParser(
+        prog="pyconnectome_blueprints",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=textwrap.dedent(doc))
+
+    # Required arguments
+    required = parser.add_argument_group("required arguments")
+    required.add_argument(
+        "-o", "--outdir",
+        type=is_directory, required=True, metavar="<path>",
+        help="Directory where to output.")
+    required.add_argument(
+        "-s", "--subject-id",
+        required=True, metavar="<id>",
+        help="Subject identifier.")
+    required.add_argument(
+        "-b", "--bedpostxdir",
+        type=is_directory, required=True, metavar="<path>",
+        help="The FSL bedpostx directory.")
+    required.add_argument(
+        "-a", "--t1-brain",
+        type=is_file, required=True, metavar="<path>",
+        help="The anatomical image used to generate the seeding meshes.")
+    required.add_argument(
+        "-r", "--right-mesh",
+        type=is_file, required=True, metavar="<path>",
+        help="The seeding right mesh: vertices must be in voxel coordiantes "
+             "of the t1 brain image.")
+    required.add_argument(
+        "-l", "--left-mesh",
+        type=is_file, required=True, metavar="<path>",
+        help="The seeding right mesh: vertices must be in voxel coordiantes "
+             "of the t1 brain image.")
+    required.add_argument(
+        "-n", "--nodif-brain",
+        type=is_file, required=True, metavar="<path>",
+        help="Diffusion brain-only volume: used to estimate the registration "
+             "between diffusion and T1.")
+    required.add_argument(
+        "-t", "--template-brain",
+        type=is_file,required=True,  metavar="<path>",
+        help="The template brain.")
+    required.add_argument(
+        "-p", "--white-segmentation",
+        type=is_file, required=True, metavar="<path>",
+        help="The white matter segmentation image in the tempalte space.")
+    required.add_argument(
+        "-m", "--white-segmentation-map",
+        type=is_file, required=True, metavar="<path>",
+        help="The white matter segmentation labels in a JSON file. The order "
+             "is important and will be used to build the tracty map.")
+
+    # Optional arguments
+    required.add_argument(
+        "-RL", "--right-labels",
+        type=is_file, metavar="<path>",
+        help="Right hemisphere labels (in FreeSurfer annotation format) "
+             "where -1 means do not use this vertex.")
+    required.add_argument(
+        "-LL", "--left-labels",
+        type=is_file, metavar="<path>",
+        help="Left hemisphere labels (in FreeSurfer annotation format) "
+             "where -1 means do not use this vertex.")
+    parser.add_argument(
+        "-R", "--anat-trf",
+        type=is_file, metavar="<path>",
+        help="If the anatomical image has been reoriented, give the "
+             "transformaton matrix here. It will be applied to the "
+             "mesh vertices.")
+    parser.add_argument(
+        "-I", "--round_int",
+        default=False, action="store_true",
+        help="If set use only int vertices coordiantes.")
+    parser.add_argument(
+        "-D", "--debug",
+        action="store_true",
+        help="The number of samples in probtrackx.")
+    parser.add_argument(
+        "-A", "--nsamples",
+        type=int, metavar="<int>", default=5000,
+        help="The number of samples in probtrackx.")
+    parser.add_argument(
+        "-T", "--nsteps",
+        type=int, metavar="<int>", default=2000,
+        help="The number of steps per sample in probtrackx.")
+    parser.add_argument(
+        "-L", "--steplength",
+        type=float, metavar="<float>", default=0.5,
+        help="The propagation step in probtrackx.")
+    parser.add_argument(
+        "-M", "--sampvox",
+        type=float, metavar="<float>", default=0.0,
+        help="Random sampling sphere in probtrackx (in mm).")
+    parser.add_argument(
+        "-F", "--fsl-sh",
+        type=is_file, metavar="<path>",
+        help="Bash script initializing FSL's environment.")
+    parser.add_argument(
+        "-v", "--verbose",
+        dest="verbose", type=int, choices=[0, 1, 2], default=0,
+        help="Increase the verbosity level: 0 silent, [1, 2] verbose.")
+    args = parser.parse_args()
+
+    # Create a dict of arguments to pass to the 'main' function
+    args = parser.parse_args()
+    kwargs = vars(args)
+    verbose = kwargs.pop("verbose")
+    if kwargs["fsl_sh"] is None:
+        kwargs["fsl_sh"] = DEFAULT_FSL_PATH
+
+    return kwargs, verbose
+
+
+"""
+Parse the command line.
+"""
+inputs, verbose = get_cmd_line_args()
+runtime = {
+    "tool": "pyconnectome_blueprints",
+    "tool_version": version,
+    "fsl_version": FSLWrapper([], shfile=inputs["fsl_sh"]).version,
+    "timestamp": datetime.now().isoformat()}
+outputs = None
+sid_outdir = os.path.join(inputs["outdir"], inputs["subject_id"])
+if not os.path.isdir(sid_outdir):
+    os.mkdir(sid_outdir)
+if verbose > 0:
+    print("[info] Starting FSL probtrackx2 blueprints...")
+    print("[info] Runtime:")
+    pprint(runtime)
+    print("[info] Inputs:")
+    pprint(inputs)
+
+
+"""
+Check the FSL bedpostx directory
+"""
+merged_prefix = os.path.join(inputs["bedpostxdir"], "merged")
+merged_files = glob.glob(merged_prefix + "*")
+if len(merged_files) == 0:
+    raise ValueError("'{0}' is not a valid FSL bedpostx folder.".format(
+        inputs["bedpostxdir"]))
+nodifmask_file = os.path.join(inputs["bedpostxdir"], "nodif_brain_mask.nii.gz")
+if not os.path.isfile(nodifmask_file):
+    raise ValueError("'{0}' is not a valid FSL bedpostx folder.".format(
+        inputs["bedpostxdir"]))
+
+
+"""
+Compute the diffusion to antomical transformation using FSL.
+"""
+# Generate a xfms folder
+xfmsdir = os.path.join(sid_outdir, "xfms")
+if not os.path.isdir(xfmsdir):
+    os.mkdir(xfmsdir)
+else:
+    print("[info] '{0}' folder already created.".format(xfmsdir))
+
+# Create symlinks
+t1_file = os.path.join(sid_outdir, "t1.nii.gz")
+nodif_file = os.path.join(sid_outdir, "nodif.nii.gz")
+if not os.path.islink(t1_file):
+    os.symlink(inputs["t1_brain"], t1_file)
+if not os.path.islink(nodif_file):
+    os.symlink(inputs["nodif_brain"], nodif_file)
+
+# Compute the registration.
+anat2dif_trf = os.path.join(xfmsdir, "anat2dif.txt")
+anat2dif_file = os.path.join(xfmsdir, "anat2dif_rigid.nii.gz")
+if not (inputs["debug"] and os.path.isfile(anat2dif_trf)):
+    flirt(
+        in_file=inputs["t1_brain"],
+        ref_file=inputs["nodif_brain"],
+        omat=anat2dif_trf,
+        out=anat2dif_file,
+        cost="normmi",
+        interp="trilinear",
+        dof=6,
+        shfile=inputs["fsl_sh"])
+
+# Invert anat2dif transform
+dif2anat_trf = os.path.join(xfmsdir, "dif2anat.txt")
+if not (inputs["debug"] and os.path.isfile(dif2anat_trf)):
+    trf = numpy.loadtxt(anat2dif_trf)
+    trf_inv = numpy.linalg.inv(trf)
+    numpy.savetxt(dif2anat_trf, trf_inv)
+
+
+"""
+Compute the template to antomical transformation using FSL.
+"""
+#TODO: estimate the anat2template deformation and use the inverse
+# Affine part
+template2anat_trf = os.path.join(xfmsdir, "template2anat.txt")
+template2anat_file = os.path.join(xfmsdir, "template2anat_affine.nii.gz")
+if not (inputs["debug"] and os.path.isfile(template2anat_trf)):
+    flirt(
+        in_file=inputs["template_brain"],
+        ref_file=inputs["t1_brain"],
+        omat=template2anat_trf,
+        out=template2anat_file,
+        cost="normmi",
+        interp="trilinear",
+        dof=12,
+        shfile=inputs["fsl_sh"])
+
+# NL part
+warp_file = os.path.join(
+    xfmsdir, "fout_" + os.path.basename(inputs["template_brain"]))
+if not (inputs["debug"] and os.path.isfile(warp_file)):
+    cout, iout, fout, jout, refout, intout, logout = fnirt(
+        in_file=inputs["template_brain"],
+        ref_file=inputs["t1_brain"],
+        affine_file=template2anat_trf,
+        outdir=xfmsdir,
+        inmask_file=None,
+        verbose=verbose,
+        shfile=inputs["fsl_sh"])
+
+# Apply warp
+whiteseg2dif_file = os.path.join(sid_outdir, "whiteseg2dif.nii.gz")
+if not (inputs["debug"] and os.path.isfile(whiteseg2dif_file)):
+    applywarp(
+        in_file=inputs["white_segmentation"],
+        ref_file=inputs["t1_brain"],
+        out_file=whiteseg2dif_file,
+        warp_file=warp_file,
+        #pre_affine_file=template2anat_trf,
+        #post_affine_file=anat2dif_trf,
+        interp="nn",
+        verbose=verbose,
+        shfile=inputs["fsl_sh"])
+    flirt(
+        in_file=whiteseg2dif_file,
+        ref_file=inputs["nodif_brain"],
+        init=anat2dif_trf,
+        out=whiteseg2dif_file,
+        applyxfm=True,
+        interp="nearestneighbour",
+        shfile=inputs["fsl_sh"])
+
+
+"""
+Compute the full connectivity profile using probtrackx2
+"""
+# Load the surfaces
+lh_surf = TriSurface.load(inputs["left_mesh"])
+rh_surf = TriSurface.load(inputs["right_mesh"])
+
+# Load labels
+if inputs["left_labels"] is not None:
+    lh_labels, _, _ = fsio.read_annot(inputs["left_labels"])
+else:
+    lh_labels = None
+if inputs["right_labels"] is not None:
+    rh_labels, _, _ = fsio.read_annot(inputs["right_labels"])
+else:
+    rh_labels = None
+
+# Generate a tracking folder
+trackingdir = os.path.join(sid_outdir, "tracking")
+if not os.path.isdir(trackingdir):
+    os.mkdir(trackingdir)
+else:
+    print("[info] '{0}' folder already created.".format(trackingdir))
+
+# Compute the vertices tracking
+t1_im = nibabel.load(inputs["t1_brain"])
+nodif_im = nibabel.load(inputs["nodif_brain"])
+hemi_profiles = OrderedDict()
+for hemi, surf in (("lh", lh_surf), ("rh", rh_surf)):
+    print("[info] Starting {0} surf tracking on vertices {1}...".format(
+        hemi, surf.vertices.shape))
+    hemi_fdt_dir = os.path.join(trackingdir, hemi)
+    seed_file = os.path.join(hemi_fdt_dir, "fdt_coordinates.txt")
+    hemi_profiles[hemi] = (hemi_fdt_dir, surf.vertices.shape[0])
+    if inputs["debug"] and os.path.isdir(hemi_fdt_dir):
+        continue
+
+    # Apply deformation to vertices
+    trf = flirt2aff(anat2dif_trf, inputs["t1_brain"], inputs["nodif_brain"])
+    if inputs["anat_trf"] is not None:
+        anat_trf = numpy.loadtxt(inputs["anat_trf"])
+    else:
+        anat_trf = numpy.eye(4)
+    trf = numpy.dot(trf, anat_trf)
+    vertices2dif = apply_affine_on_mesh(surf.vertices, trf)
+    if inputs["round_int"]:
+        vertices2dif = numpy.round(vertices2dif).astype(int)
+
+    # Save results
+    overlay_file = os.path.join(
+        trackingdir, "{0}.nodif.samples.nii.gz".format(hemi))
+    overlay = numpy.zeros(nodif_im.shape, dtype=numpy.uint)
+    indices = numpy.round(vertices2dif).astype(int).T
+    indices[0, numpy.where(indices[0] >= nodif_im.shape[0])] = 0
+    indices[1, numpy.where(indices[1] >= nodif_im.shape[1])] = 0
+    indices[2, numpy.where(indices[2] >= nodif_im.shape[2])] = 0
+    overlay[indices.tolist()] = 1
+    overlay_image = nibabel.Nifti1Image(overlay, nodif_im.affine)
+    nibabel.save(overlay_image, overlay_file)
+
+    # Genrate output directory
+    if not os.path.isdir(hemi_fdt_dir):
+        os.mkdir(hemi_fdt_dir)
+    else:
+        print("[info] '{0}' folder already created.".format(hemi_fdt_dir))
+
+    # Write the currend seed point
+    numpy.savetxt(seed_file, vertices2dif)
+
+    # Start the tractogram computation.
+    proba_files, network_file = probtrackx2(
+        samples=merged_prefix,
+        mask=nodifmask_file,
+        seed=seed_file,
+        nsamples=inputs["nsamples"],
+        nsteps=inputs["nsteps"],
+        steplength=inputs["steplength"],
+        sampvox=inputs["sampvox"],
+        distthresh=20.,
+        randfib=1,
+        simple=True,
+        loopcheck=True,
+        dir=hemi_fdt_dir,
+        out="fdt_paths",
+        seedref=nodifmask_file,
+        onewaycondition=True,
+        opd=True,
+        pd=True,
+        forcedir=True,
+        savepaths=False,
+        shfile=inputs["fsl_sh"])
+
+# Alternative: Omatrix2 surfaces
+if 0:
+    # Write the current seed points
+    surf_files = {}
+    for hemi, surf in (("lh", lh_surf), ("rh", rh_surf)):
+        trf = numpy.dot(trf, t1_im.affine)
+        vertices2dif = apply_affine_on_mesh(surf.vertices, trf)        
+        white_mesh = os.path.join(trackingdir, "{0}.white".format(hemi))
+        white_mesh_asc = os.path.join(trackingdir, "{0}.white.asc".format(hemi))
+        surf.vertices = vertices2dif
+        surf.save_vtk(white_mesh)
+        surf2surf(white_mesh, white_mesh_asc)
+        surf_files[hemi] = white_mesh_asc
+    seed_file = os.path.join(trackingdir, "fdt_surfaces.txt")
+    with open(seed_file, "wt") as open_file:
+        open_file.write(surf_files["lh"] + "\n")
+        open_file.write(surf_files["rh"])
+
+    # Start the tractogram computation.
+    proba_files, network_file = probtrackx2(
+        samples=merged_prefix,
+        mask=nodifmask_file,
+        seed=seed_file,
+        nsamples=inputs["nsamples"],
+        nsteps=inputs["nsteps"],
+        steplength=inputs["steplength"],
+        sampvox=inputs["sampvox"],
+        distthresh=20.,
+        randfib=1,
+        simple=False,
+        loopcheck=True,
+        dir=trackingdir,
+        out="fdt_paths",
+        seedref=nodifmask_file,
+        onewaycondition=True,
+        omatrix2=True,
+        target2=inputs["nodif_brain"],
+        opd=True,
+        pd=True,
+        forcedir=True,
+        savepaths=False,
+        shfile=inputs["fsl_sh"])
+
+
+"""
+Compute the full connectivity sparse matrix.
+"""
+def fsl_round(number, max_digits=7):
+    """ Round a number as it is performed in FSL.
+    """
+    int_part, dec_part = str(number).split(".")
+    len_int_part = len(int_part)
+    max_loc = max_digits - len_int_part
+    dec_part = dec_part[:max_loc]
+    if int(dec_part[-1]) >= 5:
+        dec_part = str(int(dec_part[:-1]) + 1)
+        if len(dec_part) > max_loc -1:
+            dec_part = None
+            int_part = str(int(int_part) + 1)
+        else:
+            dec_part = dec_part.zfill(max_loc -1)
+    else:
+        dec_part = dec_part[:-1]
+    if dec_part is not None:
+        dec_part = dec_part.rstrip("0")
+        if len(dec_part) == 0:
+            dec_part = None
+    return int_part, dec_part       
+    
+
+# Glob all profiles
+profiles = []
+for hemi, (path, nb_vertices) in hemi_profiles.items():
+    fdt_path = os.path.join(path, "fdt_coordinates.txt")
+    seeds = numpy.loadtxt(fdt_path)
+    all_files = glob.glob(os.path.join(path, "fdt_paths_*.nii.gz"))
+    all_files.sort(key=lambda x: os.path.getctime(x))
+    alignment_issue_count = 0
+    overwrite_tracking = []
+    padd = 0
+    if len(all_files) != nb_vertices:
+        alignment_issue_count =  nb_vertices - len(all_files)
+    for cnt, point in enumerate(seeds):
+        point_repr = []
+        for number in point:
+            int_part, dec_part = fsl_round(number)
+            if dec_part is None:
+                point_repr.append(int_part)
+            else:
+                 point_repr.append("{0}.{1}".format(int_part, dec_part))
+        fdt_path = all_files[cnt + padd]
+        #fdt_regex = ("fdt_paths_{0:.0f}.?[0-9]*_{1:.0f}.?[0-9]*_"
+        #             "{2:.0f}.?[0-9]*.nii.gz".format(*numpy.floor(point)))
+        fdt_regex = ("fdt_paths_{0}_{1}_{2}.nii.gz".format(*point_repr))
+        matched_path = re.findall(fdt_regex, fdt_path)
+        if len(matched_path) != 1:
+            print("-" * 50)
+            print(point, point_repr, fdt_regex, fdt_path, matched_path)
+            print("Impossible to verify fdt path based on the creation date.")
+            if alignment_issue_count != 0:
+                overwrite_matches = re.findall(fdt_regex, ";".join(all_files))
+                print(overwrite_matches)
+                if len(overwrite_matches) == 1: 
+                    print("File overwrite detected.")
+                    overwrite_index = all_files.index(
+                        os.path.join(path, overwrite_matches[0]))
+                    overwrite_tracking.append(
+                        (cnt + padd, all_files[overwrite_index]))
+                    alignment_issue_count -= 1
+                    padd -= 1
+                else:
+                    print(cnt + padd)
+                    print("Impossible to identify a file overwrite.")
+    for insert_index, insert_path in overwrite_tracking:
+        print("Inserting '{0}' at position '{1}'.".format(
+            insert_path, insert_index))
+        all_files.insert(insert_index, insert_path)
+    profiles.extend(all_files)
+nb_vertices = len(profiles)
+if verbose > 0:
+    print("[info] '{0}' connectivity profiles detected.".format(nb_vertices))
+
+# Load the diffusion target mask
+im = nibabel.load(inputs["nodif_brain"])
+flatten_indices = numpy.where(im.get_data() > 0)
+nb_voxels = len(flatten_indices[0])
+if verbose > 0:
+    print("[info] '{0}' target voxels detected.".format(nb_voxels))
+
+# Build the sparse connectivity matrix
+con_profiles_file = os.path.join(sid_outdir, "con_profiles.npz")
+if not (inputs["debug"] and os.path.isfile(con_profiles_file)):
+    density = numpy.zeros(im.shape)
+    row = []
+    col = []
+    values = []
+    with progressbar.ProgressBar(max_value=nb_vertices) as bar:
+        for cnt, path in enumerate(profiles):
+            data = nibabel.load(path).get_data()[flatten_indices]
+            density[flatten_indices] += data
+            data_indices = numpy.where(data > 0)
+            row.extend([cnt] * len(data_indices[0]))
+            col.extend(data_indices[0].tolist())
+            values.extend(data[data_indices].tolist())
+            bar.update(cnt)
+    con_profiles = scipy.sparse.coo_matrix(
+        (values, (row, col)), shape=(nb_vertices, nb_voxels),
+        dtype=numpy.single)
+    scipy.sparse.save_npz(con_profiles_file, con_profiles)
+    density_im = nibabel.Nifti1Image(density, im.affine)
+    nibabel.save(density_im, os.path.join(sid_outdir, "density.nii.gz"))
+else:
+    con_profiles = scipy.sparse.load_npz(con_profiles_file)
+
+
+"""
+Compute the tract map matrix.
+"""
+tract_map_file = os.path.join(sid_outdir, "tract_map.npz")
+with open(inputs["white_segmentation_map"], "rt") as open_file:
+    seg_labels = json.load(open_file, object_pairs_hook=OrderedDict)
+    # TEST
+    #_seg_labels = json.load(open_file, object_pairs_hook=OrderedDict)
+    #seg_labels = {"155": _seg_labels["155"]}
+nb_tracts = len(seg_labels)
+if verbose > 0:
+    print("[info] '{0}' tracts detected.".format(nb_tracts))
+if not (inputs["debug"] and os.path.isfile(tract_map_file)):
+    seg_data = nibabel.load(whiteseg2dif_file).get_data()
+    row = []
+    col = []
+    values = []
+    for cnt, (x, y, z) in enumerate(zip(*flatten_indices)):
+        label = str(int(seg_data[x, y, z]))
+        if label not in seg_labels:
+            continue
+        row.append(cnt)
+        col.append(seg_labels.keys().index(label))
+        values.append(1.)
+    tract_map = scipy.sparse.coo_matrix(
+        (values, (row, col)), shape=(nb_voxels, nb_tracts),
+        dtype=numpy.single)
+    scipy.sparse.save_npz(tract_map_file, tract_map)
+    # TEST
+    #a = numpy.zeros(im.shape)
+    #a[flatten_indices] = tract_map.toarray().squeeze()
+    #i = nibabel.Nifti1Image(a, im.affine)
+    #nibabel.save(i, os.path.join(sid_outdir, "tmp", "test.nii.gz"))
+else:
+    tract_map = scipy.sparse.load_npz(tract_map_file)
+    
+
+"""
+Compute the blueprints.
+"""
+blueprints_file = os.path.join(sid_outdir, "blueprints.npz")
+if not (inputs["debug"] and os.path.isfile(blueprints_file)):
+    blueprints = con_profiles.dot(tract_map)
+    # TEST
+    #b = blueprints.toarray().squeeze()
+    #i = numpy.where(b > b.max()/3)
+    #t = numpy.asarray(profiles)[i]
+    #for p in t:
+    #    s = p.split(os.sep)
+    #    n = s[-2] + s[-1]
+    #    d = os.path.join(sid_outdir, "tmp", n)
+    #    shutil.copy(p, d)
+    scipy.sparse.save_npz(blueprints_file, blueprints)
+    numpy.savetxt(blueprints_file.replace(".npz", ".txt"),
+                  blueprints.toarray())
+else:
+    blueprints = scipy.sparse.load_npz(blueprints_file)
+
+
+"""
+Snap the blueprints.
+"""
+blueprints_snap_file = os.path.join(sid_outdir, "blueprints.png")
+matrix_data = blueprints.toarray()
+#matrix_data /= matrix_data.sum(axis=0)
+matrix(
+    matrix=matrix_data,
+    snapshot=blueprints_snap_file,
+    labels=seg_labels.values(),
+    transform=None,
+    colorbar_title="",
+    dpi=50,
+    labels_size=20,
+    vmin=0,
+    vmax=numpy.percentile(matrix_data, 98))
+
+
+"""
+Update the outputs and save them and the inputs in a 'logs' directory.
+"""
+logdir = os.path.join(sid_outdir, "logs")
+if not os.path.isdir(logdir):
+    os.mkdir(logdir)
+params = locals()
+outputs = dict([(name, params[name])
+               for name in ("anat2dif_trf", "anat2dif_file",
+                            "template2anat_trf", "template2anat_file",
+                            "warp_file", "whiteseg2dif_file", "profiles",
+                            "con_profiles_file", "tract_map_file",
+                            "blueprints_file", "blueprints_snap_file")])
+for name, final_struct in [("inputs", inputs), ("outputs", outputs),
+                           ("runtime", runtime)]:
+    log_file = os.path.join(logdir, "{0}.json".format(name))
+    with open(log_file, "wt") as open_file:
+        json.dump(final_struct, open_file, sort_keys=True, check_circular=True,
+                  indent=4)
+if verbose > 1:
+    print("[info] Outputs:")
+    pprint(outputs)
+
