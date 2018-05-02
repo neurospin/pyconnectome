@@ -12,9 +12,11 @@ Extract diffusion metrics along the human folds.
 
 # System import
 from __future__ import print_function
+from __future__ import division
 import os
 import json
 import numpy
+import collections
 
 
 # Package import
@@ -25,22 +27,30 @@ import collections
 import nibabel
 import progressbar
 import nibabel.gifti.giftiio as gio
+import nibabel.freesurfer as fio
 from sklearn.cluster import MeanShift
 from scipy.spatial.distance import cdist
 from pyfreesurfer.utils.surftools import TriSurface
 from pyfreesurfer.utils.surftools import apply_affine_on_mesh
 from pyfreesurfer.utils.regtools import tkregister_translation
 
+# Global parameters
+SPHERE_INTEGRATION_METRICS = (
+    "global_mean", "global_median", "wm_mean", "wm_median", "gm_mean",
+    "gm_median")
 
-def convert_pits(pits_file, mesh_file, t1_file, outpattern=None, mgz_file=None,
+
+def convert_mesh(texture_file, mesh_file, t1_file, outpattern=None,
+                 mgz_file=None, freesurfer_conformed=True,
                  freesurfer_native_t1_file=None):
-    """ Extract pits coordinates from white matter mesh in physical
+    """ Extract texture coordinates from white matter mesh in physical
     morphological space and put them in NIFTI voxel space.
 
     Parameters
     ----------
-    pits_file: str
-        the pits '.gii' file.
+    texture_file: str
+        the pits or parcellations '.gii' file. The parcellation can also be
+        given as an annation '.annot' file. 
     mesh_file: str
         the path to white matter '.gii' mesh file.
     t1_file: str
@@ -50,6 +60,8 @@ def convert_pits(pits_file, mesh_file, t1_file, outpattern=None, mgz_file=None,
         'mesh.native.nii.gz'.
     mgz_file: str, default None
         a FreeSurfer '.mgz' file.
+    freesurfer_conformed: bool, default True
+        if set apply the translation to go from the conformed to native space.
     freesurfer_native_t1_file: str, default None
         if set, consider the input mesh as a FreeSurfer mesh in the conformed
         space, otherwise a morphologist mesh.
@@ -58,20 +70,37 @@ def convert_pits(pits_file, mesh_file, t1_file, outpattern=None, mgz_file=None,
     -------
     mesh_vertices: ndarray (shape (N,3))
         all mesh vertices in NIFTI voxel space.
-    pits_indexes : ndarray (shape (N,1))
-        the pits locations that can be applied on the mesh vertices.
+    texture_label_indices: list of ndarray (shape (N, 1))
+        the texture labels locations that can be applied on the mesh vertices.
+    texture_label_names: list of str
+        the name of the texture labels.
     """
     # Load pits and mesh file
-    pits_gii = gio.read(pits_file)
+    if texture_file.endswith(".gii"):
+        texture_gii = gio.read(texture_file)
+        texture = texture_gii.darrays[0].data
+        labels = None
+    elif texture_file.endswith(".annot"):
+        texture, _, labels = fio.read_annot(texture_file)
+    texture = texture.astype(int)
     mesh_gii = gio.read(mesh_file)
-
-    # Get mesh vertices and pits' mask array and check data adequacy
-    pits_vertices = pits_gii.darrays[0].data
     mesh_vertices = mesh_gii.darrays[0].data
-    if mesh_vertices.shape[0] != pits_vertices.shape[0]:
-        raise ValueError("Surface pits file and white matter surface file "
+
+    # Get mesh vertices and pits' mask array and check data adequacy   
+    if mesh_vertices.shape[0] != texture.shape[0]:
+        raise ValueError("Texture file and white matter surface file "
                          "should have the same number of vertices.")
-    pits_indexes = numpy.argwhere(pits_vertices == 1).flatten()
+    unique_labels = numpy.unique(texture).tolist()
+    if 0 in unique_labels:
+        unique_labels.remove(0)
+    texture_label_indices = []
+    texture_label_names = []
+    for cnt, label in enumerate(sorted(unique_labels)):
+        if labels is not None:
+            texture_label_names.append("{0}-{1}".format(label, labels[cnt]))
+        else:
+            texture_label_names.append("{0}".format(label))
+        texture_label_indices.append(numpy.where(texture == label))
 
     # Load image
     t1im = nibabel.load(t1_file)
@@ -105,12 +134,16 @@ def convert_pits(pits_file, mesh_file, t1_file, outpattern=None, mgz_file=None,
             numpy.linalg.inv(t1im.affine), fs_t1_image.affine)
         # > Deal with FreeSurfer inner conformed space
         physical_to_index = numpy.linalg.inv(fs_t1_image.get_affine())
-        translation = tkregister_translation(mgz_file)
+        if freesurfer_conformed:
+            translation = tkregister_translation(mgz_file)
+        else:
+            translation = numpy.eye(4)
         conformed_to_native_trf = numpy.dot(physical_to_index, translation)
         conformed_to_original_trf = numpy.dot(
             freesurfer_to_original_trf, conformed_to_native_trf)
         mesh_vertices = apply_affine_on_mesh(
             mesh_vertices, conformed_to_original_trf)
+
     # Save the vertices as an image
     if outpattern is not None:
         overlay_file = outpattern + "mesh.native.nii.gz"
@@ -123,7 +156,7 @@ def convert_pits(pits_file, mesh_file, t1_file, outpattern=None, mgz_file=None,
         overlay_image = nibabel.Nifti1Image(overlay, t1im.affine)
         nibabel.save(overlay_image, overlay_file)
 
-    return mesh_vertices, pits_indexes
+    return mesh_vertices, texture_label_indices, texture_label_names
 
 
 def intersect_tractogram(tractogram_file, rois, t1_file, nodiff_file, outdir,
@@ -284,7 +317,8 @@ def convert_folds(folds_file, graph_file, t1_file):
 
 
 def sphere_integration(t1_file, scalars, points, seg_file=None, radius=2,
-                       wm_label=200, gm_label=100):
+                       wm_label=200, gm_label=100, average=False,
+                       outpattern=None):
     """ Compute some measures attached to vertices using a sphere integration
     strategy.
 
@@ -295,21 +329,30 @@ def sphere_integration(t1_file, scalars, points, seg_file=None, radius=2,
     scalars: list of str
         a list of scalar map that will be intersected with the vertices.
     points: dict of the form {label : vertices (array(N,3))}.
-        all the loaded pits or folds' vertices.
+        all the loaded parcellations, pits or folds' vertices.
         Vertices are in NIFTI voxel space.
     seg_file: str, default None
         the white/grey matter segmentation file.
     radius: float, default 2
         the sphere radius defines in the scalar space and expressed in voxel.
+        If None, consider the sphere center only.
     wm_label: int, default 200
-        the label for the white matter in the segmentation mask
+        the label for the white matter in the segmentation mask.
     gm_label : int, default 100
-        the label for the grey matter in the segmentation mask
+        the label for the grey matter in the segmentation mask.
+    average: bool, default False
+        if set, average the scalar values computed for each element in the
+        input points paarameter.
+    outpattern: str, default None
+        if set, save the points in native space concatenating this patern with
+        '<label>.points.scalar.native.nii.gz'.
 
     Returns
     -------
     measures: dict
         the different scalar measures computed along the vertices.
+    scalar_names: list of str
+        the different scalar measures names.
     """
     # Check inputs
     if len(scalars) == 0:
@@ -320,8 +363,9 @@ def sphere_integration(t1_file, scalars, points, seg_file=None, radius=2,
     t1affine = t1im.affine
 
     # Load all scalars' image files and check they are all in the same space
-    scalarims = {}
+    scalarims = collections.OrderedDict()
     scalaraffine = None
+    scalarshape = None
     for path in scalars:
         name = os.path.basename(path).split(".")[0]
         scalarims[name] = nibabel.load(path)
@@ -330,6 +374,8 @@ def sphere_integration(t1_file, scalars, points, seg_file=None, radius=2,
             scalarshape = scalarims[name].get_data().shape
         elif not numpy.allclose(scalarims[name].affine, scalaraffine):
             raise ValueError("The scalar images must be in the same space.")
+    if scalarshape is None:
+        raise ValueError("Need to specify at least one scalar image.")
 
     # Compute the voxel anatomical to voxel scalar coordinates transformation.
     trf = numpy.dot(numpy.linalg.inv(scalaraffine), t1affine)
@@ -337,9 +383,11 @@ def sphere_integration(t1_file, scalars, points, seg_file=None, radius=2,
     # Load segmentation file and extract wm/gm coordinates
     if seg_file is not None:
         segim = nibabel.load(seg_file)
-        if not numpy.allclose(segim.affine, t1affine, 3):
-            raise ValueError("The white/grey matter image must be in the same "
-                             "space than the anatomical image.")
+        if not numpy.allclose(segim.affine, t1affine):
+            print(t1affine)
+            print(segim.affine)
+            raise ValueError("The white/grey segmentation image must be in "
+                             "the same space than the anatomical image.")
 
         # White matter
         condition = (segim.get_data() == wm_label)
@@ -347,7 +395,7 @@ def sphere_integration(t1_file, scalars, points, seg_file=None, radius=2,
         # > switch to voxel scalar coordinates
         points_in_wm = apply_affine_on_mesh(points_in_wm, trf)
         points_in_wm = points_in_wm.astype(int)
-        # > put in neurological convention
+        # > put in neurological convention: for morphologist only
         points_in_wm[:, 0] = scalarshape[0] - points_in_wm[:, 0]
         # > check that some points are found
         if points_in_wm.shape[0] == 0:
@@ -359,80 +407,140 @@ def sphere_integration(t1_file, scalars, points, seg_file=None, radius=2,
         # > switch to voxel scalar coordinates
         points_in_gm = apply_affine_on_mesh(points_in_gm, trf)
         points_in_gm = points_in_gm.astype(int)
-        # > put in neurological convention
+        # > put in neurological convention: for morphologist only
         points_in_gm[:, 0] = scalarshape[0] - points_in_gm[:, 0]
         # > check that some points are found
         if points_in_gm.shape[0] == 0:
             points_in_gm = None
+    else:
+        points_in_wm =None
+        points_in_gm = None
 
-    # Go through each fold/pits
+    # Go through each list of vertices
     measures = collections.OrderedDict()
-    with progressbar.ProgressBar(max_value=len(points.keys()),
+    with progressbar.ProgressBar(max_value=len(points),
                                  redirect_stdout=True) as bar:
+
+        # Save the vertices as an image
+        if outpattern is not None:
+            overlay_file = outpattern + "points.scalar.native.nii.gz"
+            overlay = numpy.zeros(scalarshape, dtype=numpy.uint)
+
         count = 0
-        for labelindex, vertices in points.items():
+        for label, vertices in points.items():
+
+            # Vertices in scalar space
             vertices = apply_affine_on_mesh(vertices, trf)
+
+            # Save the vertices as an image
+            if outpattern is not None:
+                indices = numpy.round(vertices).astype(int).T
+                indices[0, numpy.where(indices[0] >= scalarshape[0])] = 0
+                indices[1, numpy.where(indices[1] >= scalarshape[1])] = 0
+                indices[2, numpy.where(indices[2] >= scalarshape[2])] = 0
+                overlay[indices.tolist()] = 1
 
             # For each vertex compute the sphere intersection with all the
             # scalar maps
-            measures[labelindex] = collections.OrderedDict()
-
+            _measures = collections.OrderedDict()
             for cnt, vertex in enumerate(vertices):
                 key = repr(vertex.tolist())
-                measures[labelindex][key] = collections.OrderedDict()
+                _measures[key] = collections.OrderedDict()
+
+                # For each scalar map
                 for name, image in scalarims.items():
-                    # Initialize mean and median values
                     wm_mean, gm_mean = None, None
                     wm_median, gm_median = None, None
-                    if name in measures[labelindex][key]:
-                        raise ValueError("All the scalar map must have "
-                                         "different names.")
-                    int_points = inside_sphere_points(
-                        center=vertex, radius=radius, shape=image.shape)
+                    if name in _measures[key]:
+                        raise ValueError(
+                            "All the scalar map must have different names.")
+
+                    # Compute points indices
+                    if radius is None:
+                        int_points = vertex.reshape(1, 3).astype(int)
+                    else: 
+                        int_points = inside_sphere_points(
+                            center=vertex, radius=radius, shape=image.shape)
                     wm_points = points_intersection(int_points, points_in_wm)
                     gm_points = points_intersection(int_points, points_in_gm)
-                    if wm_points is not None and len(wm_points) != 0:
+
+                    # Intersect white matter
+                    if wm_points is not None:
                         wm_points_x = tuple(wm_points[:, 0])
                         wm_points_y = tuple(wm_points[:, 1])
                         wm_points_z = tuple(wm_points[:, 2])
-                        wm_mean = float(numpy.mean(image.get_data()
-                                        [wm_points_x, wm_points_y,
-                                         wm_points_z]))
-                        wm_median = float(numpy.median(image.get_data()
-                                          [wm_points_x, wm_points_y,
-                                           wm_points_z]))
-                    if gm_points is not None and len(gm_points) != 0:
+                        wm_mean = float(
+                            numpy.mean(
+                                image.get_data()
+                                [wm_points_x, wm_points_y, wm_points_z]))
+                        wm_median = float(
+                            numpy.median(
+                                image.get_data()
+                                [wm_points_x, wm_points_y, wm_points_z]))
+
+                    # Intersect gray matter
+                    if gm_points is not None:
                         gm_points_x = tuple(gm_points[:, 0])
                         gm_points_y = tuple(gm_points[:, 1])
                         gm_points_z = tuple(gm_points[:, 2])
-                        gm_mean = float(numpy.mean(image.get_data()
-                                        [gm_points_x, gm_points_y,
-                                         gm_points_z]))
-                        gm_median = float(numpy.median(image.get_data()
-                                          [gm_points_x, gm_points_y,
-                                           gm_points_z]))
+                        gm_mean = float(
+                            numpy.mean(
+                                image.get_data()
+                                [gm_points_x, gm_points_y, gm_points_z]))
+                        gm_median = float(
+                            numpy.median(
+                                image.get_data()
+                                [gm_points_x, gm_points_y, gm_points_z]))
+
+                    # Whole points intersection
                     int_points_x = tuple(int_points[:, 0])
                     int_points_y = tuple(int_points[:, 1])
                     int_points_z = tuple(int_points[:, 2])
-                    global_mean = float(numpy.mean(image.get_data()
-                                        [int_points_x, int_points_y,
-                                        int_points_z]))
-                    global_median = float(numpy.median(image.get_data()
-                                          [int_points_x, int_points_y,
-                                          int_points_z]))
-                    measures[labelindex][key][name] = collections.OrderedDict()
-                    (measures[labelindex][key][name]
-                             ["global_mean"]) = global_mean
-                    (measures[labelindex][key][name]
-                             ["global_median"]) = global_median
-                    measures[labelindex][key][name]["wm_mean"] = wm_mean
-                    measures[labelindex][key][name]["wm_median"] = wm_median
-                    measures[labelindex][key][name]["gm_mean"] = gm_mean
-                    measures[labelindex][key][name]["gm_median"] = gm_median
+                    global_mean = float(
+                        numpy.mean(
+                            image.get_data()
+                            [int_points_x, int_points_y, int_points_z]))
+                    global_median = float(
+                        numpy.median(
+                            image.get_data()
+                            [int_points_x, int_points_y, int_points_z]))
+                    _measures[key][name] = collections.OrderedDict()
+                    _measures[key][name]["global_mean"] = global_mean
+                    _measures[key][name]["global_median"] = global_median
+                    _measures[key][name]["wm_mean"] = wm_mean
+                    _measures[key][name]["wm_median"] = wm_median
+                    _measures[key][name]["gm_mean"] = gm_mean
+                    _measures[key][name]["gm_median"] = gm_median
+
+            # Deal with the average option
+            if average:
+                measures[label] = collections.OrderedDict()
+                measures[label]["average"] = collections.OrderedDict()
+                avg_measure = measures[label]["average"]
+                for name in scalarims:
+                    avg_measure[name] = collections.OrderedDict()
+                    for metric in SPHERE_INTEGRATION_METRICS:
+                        mean_measure = 0
+                        for key in _measures:
+                            measure = _measures[key][name][metric]
+                            if measure is not None:
+                                mean_measure += measure / len(_measures)
+                        if mean_measure == 0:
+                            mean_measure = None
+
+                        avg_measure[name][metric] = mean_measure
+            else:
+                measures[label] = _measures
+
             count += 1
             bar.update(count)
 
-    return measures
+        # Save the vertices as an image
+        if outpattern is not None:
+            overlay_image = nibabel.Nifti1Image(overlay, scalaraffine)
+            nibabel.save(overlay_image, overlay_file)
+
+    return measures, scalarims.keys()
 
 
 def points_intersection(points1, points2):
@@ -440,15 +548,16 @@ def points_intersection(points1, points2):
 
     Parameters
     ----------
-    points1 : array, shape (n,3)
+    points1: array, shape (n, 3)
        first array of points.
-    points2 : array, shape (m,3)
+    points2: array, shape (m, 3)
        second array of points.
 
     Returns
     -------
-    xyz : array, shape (N,3)
-       the array of the intersecting points
+    xyz: array, shape (N, 3)
+        the array of the intersecting points. If no intersection is found return
+        None.
     """
     if points1 is None or points2 is None:
         return None
@@ -456,6 +565,8 @@ def points_intersection(points1, points2):
     points2_set = set([tuple(point) for point in points2.tolist()])
     intersection = points1_set.intersection(points2_set)
     intersection = numpy.array([list(point) for point in intersection])
+    if len(intersection) == 0:
+        intersection = None
     return intersection
 
 

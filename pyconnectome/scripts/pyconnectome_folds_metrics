@@ -9,26 +9,13 @@
 
 # System import
 import os
+import json
 import argparse
 import textwrap
+import collections
 from argparse import RawTextHelpFormatter
 from datetime import datetime
 from pprint import pprint
-
-# Package import
-from pyconnectome import __version__ as version
-from pyconnectome.utils.filetools import parse_graph
-from pyconnectome.metrics.dfold import convert_folds
-from pyconnectome.metrics.dfold import convert_pits
-from pyconnectome.metrics.dfold import sphere_integration
-
-# Third party import
-import json
-import numpy as np
-import collections
-
-# Parameters to keep trace
-__hopla__ = ["runtime", "inputs", "outputs"]
 
 # Bredala module
 try:
@@ -37,36 +24,54 @@ try:
     bredala.register("pyconnectome.utils.filetools",
                      names=["parse_graph"])
     bredala.register("pyconnectome.metrics.dfold",
-                     names=["convert_fold", "sphere_integration"])
+                     names=["convert_fold", "convert_mesh",
+                            "sphere_integration"])
 except:
     pass
+
+# Package import
+from pyconnectome import __version__ as version
+from pyconnectome.utils.filetools import parse_graph
+from pyconnectome.metrics.dfold import convert_folds
+from pyconnectome.metrics.dfold import convert_mesh
+from pyconnectome.metrics.dfold import sphere_integration
+from pyconnectome.metrics.dfold import SPHERE_INTEGRATION_METRICS
+
+# Third party import
+import numpy as np
+
+
+# Parameters to keep trace
+__hopla__ = ["runtime", "inputs", "outputs"]
 
 
 # Script documentation
 DOC = """
-Evaluation of folds features
------------------------------
+Evaluation of folds metrics
+---------------------------
 
-Extract features along different folds (e.g : FA) and output a summary of
-these features in csv and json files.
+Extract features (e.g : FA) along different folds and output a summary of
+these features in csv and json files (default). This script works also for PIT
+or parcellation input features if the appropiate options are set (-P or -I with
+-G options).
 
-Requirements:
+Default requirements:
     - fold files (.gii) for left and right hemisphere (required).
     - T1 image file (required).
     - scalar image files (e.g FA image file) (required).
     - subject id (required).
     - morphologist graph files (.arg) for left and right hemisphere (required).
-    - folds' ids on which to extract features for each hemisphere  :
+    - folds' ids on which to extract features for each hemisphere:
       if no fold is specified features are extracted on every folds,
       if -1 is specified no fold is extracted (optional).
     - white/grey matter segmentation files for left and right hemisphere
       (optional).
 
-Command example on the HCP data :
+Command example for fold features' computation on HCP data:
 
 For fold features' computation
-python pyconnectome_folds_metrics \
-    -o $PROJECT/HCP_FOLDS/TEST_OUTPUT \
+python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_folds_metrics \
+    -o /tmp/HCP_FOLDS \
     -s 101006 \
     -t /neurospin/hcp/ANALYSIS/3T_morphologist/101006/t1mri/default_acquisition/101006.nii.gz \
     -a $PROJECT/HCP_FOLDS/TEST_OUTPUT/101006/3000/dtifit_FA.nii.gz \
@@ -77,25 +82,43 @@ python pyconnectome_folds_metrics \
     -M /neurospin/hcp/ANALYSIS/3T_morphologist/101006/t1mri/default_acquisition/default_analysis/segmentation/Lgrey_white_101006.nii.gz \
        /neurospin/hcp/ANALYSIS/3T_morphologist/101006/t1mri/default_acquisition/default_analysis/segmentation/Rgrey_white_101006.nii.gz \
     -L 86 \
-    -R 86
+    -R 86 \
+    -D 2
 
-For pit features' computation
-python pyconnectome_folds_metrics \
-     -o $PROJECT/HCP_FOLDS/TEST_OUTPUT \
+Command example for PIT features' computation on HCP data:
+
+python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_folds_metrics \
+    -o /tmp/HCP_PITS \
+    -s 101006 \
+    -t /neurospin/hcp/ANALYSIS/3T_morphologist/101006/t1mri/default_acquisition/101006.nii.gz \
+    -a /neurospin/hcp/ANALYSIS/3T_diffusion_scalars/101006/dtifit_FA.nii.gz \
+       /neurospin/hcp/ANALYSIS/3T_diffusion_scalars/101006/dtifit_MD.nii.gz \
+       /neurospin/hcp/ANALYSIS/3T_diffusion_scalars/101006/qball_gfa.nii.gz \
+    -M /neurospin/hcp/ANALYSIS/3T_morphologist/101006/t1mri/default_acquisition/default_analysis/segmentation/Lgrey_white_101006.nii.gz \
+       /neurospin/hcp/ANALYSIS/3T_morphologist/101006/t1mri/default_acquisition/default_analysis/segmentation/Rgrey_white_101006.nii.gz \
+    -I /neurospin/hcp/ANALYSIS/3T_pits/101006/t1mri/BL/default_analysis/segmentation/mesh/surface_analysis/101006_Lwhite_pits_corrected.gii \
+       /neurospin/hcp/ANALYSIS/3T_pits/101006/t1mri/BL/default_analysis/segmentation/mesh/surface_analysis/101006_Rwhite_pits_corrected.gii \
+    -G /neurospin/hcp/ANALYSIS/3T_pits/101006/t1mri/BL/default_analysis/segmentation/mesh/101006_Lwhite.gii \
+       /neurospin/hcp/ANALYSIS/3T_pits/101006/t1mri/BL/default_analysis/segmentation/mesh/101006_Rwhite.gii \
+    -Z /neurospin/hcp/ANALYSIS/3T_freesurfer/101006/T1w/101006/mri/aseg.mgz \
+    -N /neurospin/hcp/ANALYSIS/3T_freesurfer_extras/101006/convert/images/rawavg.native.nii.gz \
+    -D 2
+
+Command example for parcallation features' computation on HCP data:
+
+python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_folds_metrics \
+     -o /tmp/HCP_PARCELS \
      -s 101006 \
      -t /neurospin/hcp/ANALYSIS/3T_morphologist/101006/t1mri/default_acquisition/101006.nii.gz \
      -a /neurospin/hcp/ANALYSIS/3T_diffusion_scalars/101006/dtifit_FA.nii.gz \
         /neurospin/hcp/ANALYSIS/3T_diffusion_scalars/101006/dtifit_MD.nii.gz \
         /neurospin/hcp/ANALYSIS/3T_diffusion_scalars/101006/qball_gfa.nii.gz \
-     -M /neurospin/hcp/ANALYSIS/3T_morphologist/101006/t1mri/default_acquisition/default_analysis/segmentation/Lgrey_white_101006.nii.gz \
-        /neurospin/hcp/ANALYSIS/3T_morphologist/101006/t1mri/default_acquisition/default_analysis/segmentation/Rgrey_white_101006.nii.gz \
-     -I /neurospin/hcp/ANALYSIS/3T_pits/101006/t1mri/BL/default_analysis/segmentation/mesh/surface_analysis/101006_Lwhite_pits_corrected.gii \
-        /neurospin/hcp/ANALYSIS/3T_pits/101006/t1mri/BL/default_analysis/segmentation/mesh/surface_analysis/101006_Rwhite_pits_corrected.gii \
+     -P /neurospin/hcp/ANALYSIS/3T_freesurfer/101006/T1w/101006/label/lh.aparc.annot \
+        /neurospin/hcp/ANALYSIS/3T_freesurfer/101006/T1w/101006/label/rh.aparc.annot \
      -G /neurospin/hcp/ANALYSIS/3T_pits/101006/t1mri/BL/default_analysis/segmentation/mesh/101006_Lwhite.gii \
         /neurospin/hcp/ANALYSIS/3T_pits/101006/t1mri/BL/default_analysis/segmentation/mesh/101006_Rwhite.gii \
      -Z /neurospin/hcp/ANALYSIS/3T_freesurfer/101006/T1w/101006/mri/aseg.mgz \
      -N /neurospin/hcp/ANALYSIS/3T_freesurfer_extras/101006/convert/images/rawavg.native.nii.gz
-
 """
 
 
@@ -170,6 +193,13 @@ def get_cmd_line_args():
              "folds' metrics on every fold and putting this argument to -1"
              "won't compute any value for the hemisphere folds.")
     parser.add_argument(
+        "-P", "--parcellationfiles",
+        type=is_file, nargs='*',
+        help="Selection of left and right hemisphere parcellation labels on"
+             "which to compute scalar values. Not adding this argument will "
+             "compute thescalars' metrics on folds instead of pits. The "
+             "left hemisphere pits indexes must be the first input.")
+    parser.add_argument(
         "-I", "--pitsfiles",
         type=is_file, nargs='*',
         help="Selection of left and right hemisphere pits indexes on which to"
@@ -196,6 +226,14 @@ def get_cmd_line_args():
              "FreeSurfer mesh in the conformed space, otherwise a "
              "morphologist mesh")
     parser.add_argument(
+        "-D", "--radius", type=float,
+        help="The sphere integration radius. If None no integration is "
+             "performed.")
+    parser.add_argument(
+        "-C", "--use-conformed-translation", action="store_false",
+        help="If set apply the translation to go from the conformed to "
+             "native space.")
+    parser.add_argument(
         "-V", "--verbose",
         type=int, choices=[0, 1, 2], default=2,
         help="Increase the verbosity level: 0 silent, [1, 2] verbose.")
@@ -210,14 +248,14 @@ def get_cmd_line_args():
 Parse the command line.
 """
 inputs, verbose = get_cmd_line_args()
-tool = "pyconnectome_get_folds_metrics"
-timestamp = datetime.now().isoformat()
-tool_version = version
-params = locals()
-runtime = dict([(name, params[name])
-               for name in ("tool", "tool_version",
-                            "timestamp")])
+runtime = {
+    "tool": "pyconnectome_get_folds_metrics",
+    "tool_version": version,
+    "timestamp": datetime.now().isoformat()}
 outputs = None
+sid_outdir = os.path.join(inputs["outdir"], inputs["subject"])
+if not os.path.isdir(sid_outdir):
+    os.mkdir(sid_outdir)
 if verbose > 0:
     pprint("[info] Starting computation of folds metrics...")
     pprint("[info] Runtime:")
@@ -226,37 +264,73 @@ if verbose > 0:
     pprint(inputs)
 
 """
-Start the folds/pits' metrics computation
+Start the labels/folds/pits' metrics computation.
 """
-
+# Compute scalar values on pits instead of folds
+# Extract pits coordinates from white/grey matter mesh in physical
+# morphological space and put them in NIFTI voxel space.
 if inputs["pitsfiles"] is not None:
-    # Compute scalar values on pits instead of folds
-    # Extract pits coordinates from white/grey matter mesh in physical
-    # morphological space and put them in NIFTI voxel space.
-    mesh_l, indexes_pits_l = convert_pits(
-        inputs["pitsfiles"][0],
-        inputs["meshfiles"][0],
-        inputs["t1"],
-        os.path.join(inputs["outdir"], "Lh.{0}.".format(inputs["subject"])),
+    average = False
+    mesh_l, indexes_pits_l, _ = convert_mesh(
+        texture_file=inputs["pitsfiles"][0],
+        mesh_file=inputs["meshfiles"][0],
+        t1_file=inputs["t1"],
+        outpattern=os.path.join(sid_outdir,
+                                "lh.{0}.".format(inputs["subject"])),
         mgz_file=inputs["mgzfile"],
+        freesurfer_conformed=inputs["use_conformed_translation"],
         freesurfer_native_t1_file=inputs["fsnative"])
-    mesh_pits_l = mesh_l[indexes_pits_l]
-    mesh_r, indexes_pits_r = convert_pits(
-        inputs["pitsfiles"][1],
-        inputs["meshfiles"][1],
-        inputs["t1"],
-        os.path.join(inputs["outdir"], "Rh.{0}.".format(inputs["subject"])),
+    mesh_pits_l = mesh_l[indexes_pits_l[0]]
+    mesh_r, indexes_pits_r, _ = convert_mesh(
+        texture_file=inputs["pitsfiles"][1],
+        mesh_file=inputs["meshfiles"][1],
+        t1_file=inputs["t1"],
+        outpattern=os.path.join(sid_outdir,
+                                "rh.{0}.".format(inputs["subject"])),
         mgz_file=inputs["mgzfile"],
+        freesurfer_conformed=inputs["use_conformed_translation"],
         freesurfer_native_t1_file=inputs["fsnative"])
-    mesh_pits_r = mesh_r[indexes_pits_r]
+    mesh_pits_r = mesh_r[indexes_pits_r[0]]
     points_l = collections.OrderedDict()
-    for p in range(len(indexes_pits_l)):
-        points_l[indexes_pits_l[p]] = np.array([mesh_pits_l[p]])
+    for pos in range(len(mesh_pits_l.shape[0])):
+        points_l[indexes_pits_l[0][pos]] = mesh_pits_l[pos].reshape(1, 3)
     points_r = collections.OrderedDict()
-    for p in range(len(indexes_pits_r)):
-        points_r[indexes_pits_r[p]] = np.array([mesh_pits_r[p]])
+    for pos in range(len(mesh_pits_r.shape[0])):
+        points_r[indexes_pits_r[0][pos]] = mesh_pits_r[pos].reshape(1, 3)
 
+# Compute scalar values on paracellations instead of folds
+# Extract coordinates from white/grey matter mesh in physical
+# morphological space and put them in NIFTI voxel space.
+if inputs["parcellationfiles"] is not None:
+    average = True
+    mesh_l, indexes_labels_l, names_labels_l = convert_mesh(
+        texture_file=inputs["parcellationfiles"][0],
+        mesh_file=inputs["meshfiles"][0],
+        t1_file=inputs["t1"],
+        outpattern=os.path.join(sid_outdir,
+                                "lh.{0}.".format(inputs["subject"])),
+        mgz_file=inputs["mgzfile"],
+        freesurfer_conformed=inputs["use_conformed_translation"],
+        freesurfer_native_t1_file=inputs["fsnative"])
+    mesh_r, indexes_labels_r, names_labels_r = convert_mesh(
+        texture_file=inputs["parcellationfiles"][1],
+        mesh_file=inputs["meshfiles"][1],
+        t1_file=inputs["t1"],
+        outpattern=os.path.join(sid_outdir,
+                                "rh.{0}.".format(inputs["subject"])),
+        mgz_file=inputs["mgzfile"],
+        freesurfer_conformed=inputs["use_conformed_translation"],
+        freesurfer_native_t1_file=inputs["fsnative"])
+    points_l = collections.OrderedDict()
+    for name, indices in zip(names_labels_l, indexes_labels_l):
+        points_l[name] = mesh_l[indices]
+    points_r = collections.OrderedDict()
+    for name, indices in zip(names_labels_r, indexes_labels_r):
+        points_r[name] = mesh_r[indices]
+
+# Compute scalar values on folds
 else:
+    average = False
     # Parse the Morphologist graph file to get the fold labels
     labels_l = parse_graph(inputs["graphfile"][0])
     labels_r = parse_graph(inputs["graphfile"][1])
@@ -287,51 +361,63 @@ else:
             points_r[ind] = folds_r[ind].vertices
 
 
-# Extract scalar values on folds/pits
-measures_l = sphere_integration(inputs["t1"], inputs["scalarfile"], points_l,
-                                seg_file=inputs["wgmfile"][0], radius=2)
-measures_r = sphere_integration(inputs["t1"], inputs["scalarfile"], points_r,
-                                seg_file=inputs["wgmfile"][1], radius=2)
+# Extract scalar values on folds/pits/paracellations
+if inputs["wgmfile"] is None:
+    wgm_l, wgm_r = (None, None)
+else:
+    wgm_l = inputs["wgmfile"][0]
+    wgm_r = inputs["wgmfile"][1]
+measures_l, scalar_names_l = sphere_integration(
+    t1_file=inputs["t1"],
+    scalars=inputs["scalarfile"],
+    points=points_l,
+    seg_file=wgm_l,
+    radius=inputs["radius"],
+    average=average,
+    outpattern=os.path.join(sid_outdir, "lh.{0}.".format(inputs["subject"])))
+measures_r, scalar_names_r = sphere_integration(
+    t1_file=inputs["t1"],
+    scalars=inputs["scalarfile"],
+    points=points_r,
+    seg_file=wgm_r,
+    radius=inputs["radius"],
+    average=average,
+    outpattern=os.path.join(sid_outdir, "rh.{0}.".format(inputs["subject"])))
+assert scalar_names_l == scalar_names_r
 
 # Write csv and json output
 if inputs["pitsfiles"] is not None:
-    out_file_l = os.path.join(inputs["outdir"],
-                              "Lh_{0}_pits_measure".format(inputs["subject"]))
-    out_file_r = os.path.join(inputs["outdir"],
-                              "Rh_{0}_pits_measure".format(inputs["subject"]))
+    out_file_l = os.path.join(
+        sid_outdir, "lh_{0}_pits_measure".format(inputs["subject"]))
+    out_file_r = os.path.join(
+        sid_outdir, "rh_{0}_pits_measure".format(inputs["subject"]))
+elif inputs["parcellationfiles"] is not None:
+    out_file_l = os.path.join(
+        sid_outdir, "lh_{0}_parcels_measure".format(inputs["subject"]))
+    out_file_r = os.path.join(
+        sid_outdir, "rh_{0}_parcels_measure".format(inputs["subject"]))
 else:
-    out_file_l = os.path.join(inputs["outdir"],
-                              "Lh_{0}_folds_measure".format(inputs["subject"]))
-    out_file_r = os.path.join(inputs["outdir"],
-                              "Rh_{0}_folds_measure".format(inputs["subject"]))
+    out_file_l = os.path.join(
+        sid_outdir, "lh_{0}_folds_measure".format(inputs["subject"]))
+    out_file_r = os.path.join(
+        sid_outdir, "rh_{0}_folds_measure".format(inputs["subject"]))
 out_files = {out_file_l: measures_l, out_file_r: measures_r}
 for out_file, measures in out_files.items():
-    with open("{0}.json".format(out_file), 'w') as f:
-        json.dump(measures, f)
-    with open("{0}.csv".format(out_file), 'w') as f:
-        random_index = measures.keys()[0]
-        random_point = measures[random_index].keys()[0]
-        features = []
-        if inputs["pitsfiles"] is None:
-            header = "Fold_index;PointCoord"
-        else:
-            header = "Pit_index;PointCoord"
-        for feat in measures[random_index][random_point].keys():
-            features.append(feat)
-            vals = measures[random_index][random_point][feat].keys()
-            for val in vals:
-                header = "{0};{1}_{2}".format(header, feat, val)
+    with open("{0}.json".format(out_file), "wt") as f:
+        json.dump(measures, f, indent=4)
+    with open("{0}.csv".format(out_file), "wt") as f:
+        header = "Index;VertexCoordinates"
+        for name in scalar_names_r:
+            for metric in SPHERE_INTEGRATION_METRICS:
+                header += ";{0}-{1}".format(name, metric)
         f.write(header)
         f.write("\n")
-
-        for index in measures.keys():
-            for point in measures[index].keys():
-                line = "{0};{1}".format(index, point)
-                for feat in features:
-                    vals = measures[index][point][feat].keys()
-                    for val in vals:
-                        line = "{0};{1}".format(line, measures[index][point]
-                                                              [feat][val])
+        for label in measures.keys():
+            for point, point_struct in measures[label].items():
+                line = "{0};{1}".format(label, point)
+                for name in scalar_names_r:
+                    for metric in SPHERE_INTEGRATION_METRICS:
+                        line += ";{0}".format(point_struct[name][metric])
                 f.write(line)
                 f.write("\n")
 
@@ -339,11 +425,15 @@ for out_file, measures in out_files.items():
 Update the outputs and save them and the inputs in a 'logs' directory.
 """
 
-outputs = {"measures_left_hemi": ["{0}.{1}".format(out_file_l, "csv"),
-                                  "{0}.{1}".format(out_file_l, "json")],
-           "measures_right_hemi": ["{0}.{1}".format(out_file_r, "csv"),
-                                   "{0}.{1}".format(out_file_r, "json")]}
-logdir = os.path.join(inputs["outdir"], "logs")
+outputs = {
+    "measures_left_hemi": [
+        "{0}.{1}".format(out_file_l, "csv"),
+        "{0}.{1}".format(out_file_l, "json")],
+    "measures_right_hemi": [
+        "{0}.{1}".format(out_file_r, "csv"),
+        "{0}.{1}".format(out_file_r, "json")]
+}
+logdir = os.path.join(sid_outdir, "logs")
 if not os.path.isdir(logdir):
     os.mkdir(logdir)
 params = locals()

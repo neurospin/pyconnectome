@@ -262,13 +262,18 @@ def display_pits_parcellation(
     # Create an actor for the white matter surface
     ren = pvtk.ren()
     ren.SetBackground(1, 1, 1)
-    image = gio.read(white_file)
-    nb_of_surfs = len(image.darrays)
-    if nb_of_surfs != 2:
-        raise ValueError("'{0}' does not a contain a valid white "
-                         "mesh.".format(white_file))
-    vertices = image.darrays[0].data
-    triangles = image.darrays[1].data
+    if white_file.endswith(".gii"):
+        image = gio.read(white_file)
+        nb_of_surfs = len(image.darrays)
+        if nb_of_surfs != 2:
+            raise ValueError("'{0}' does not a contain a valid white "
+                             "mesh.".format(white_file))
+        vertices = image.darrays[0].data
+        triangles = image.darrays[1].data
+    else:
+        _surf = TriSurface.load(white_file)
+        vertices = _surf.vertices
+        triangles = _surf.triangles
     if parcellation_as_annotation:
         annotations = fio.read_annot(parcellation_file)
         texture, _, labels = annotations
