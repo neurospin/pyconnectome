@@ -77,7 +77,8 @@ class Fslreorient2std(unittest.TestCase):
     @mock.patch("pyconnectome.utils.filetools.flirt2aff")
     @mock.patch("pyconnectome.utils.filetools.glob.glob")
     @mock.patch("pyconnectome.utils.filetools.os.path.isfile")
-    def test_normal_execution(self, mock_isfile, mock_glob, mock_aff, mock_open):
+    def test_normal_execution(self, mock_isfile, mock_glob, mock_aff,
+                              mock_open):
         """ Test the normal behaviour of the function.
         """
         # Set the mocked function returned values.
