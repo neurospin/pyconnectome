@@ -179,7 +179,6 @@ def __init__(self, suffix="", prefix=template, dir=None):
 Parse the command line.
 """
 inputs, verbose = get_cmd_line_args()
-params = locals()
 runtime = {
     "tool": "pyconnectome_scalars",
     "tool_version": version,

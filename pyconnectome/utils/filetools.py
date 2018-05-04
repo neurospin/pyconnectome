@@ -504,7 +504,7 @@ def apply_mask(input_file, output_fileroot, mask_file,
     mask_file: str
         the masked input image.
     """
-    # check the input parameter
+    # Check the input parameter
     for filename in (input_file, mask_file):
         if not os.path.isfile(filename):
             raise ValueError("'{0}' is not a valid input "
@@ -519,6 +519,40 @@ def apply_mask(input_file, output_fileroot, mask_file,
     fslprocess()
 
     return glob.glob(output_fileroot + ".*")[0]
+
+
+def erode(input_file, output_file, radius, fslconfig=DEFAULT_FSL_PATH):
+    """ Erode an image using a spherical kernel.
+
+    Parameters
+    ----------
+    input_file: str (mandatory)
+        The image to erode (binary or gray level).
+    output_file: str (mandatory)
+        The eroded image.
+    radius: float (optional, default 2)
+        The sphere kernel in mm.
+    fslconfig: str (optional, default DEFAULT_FSL_PATH)
+        The FSL configuration batch.
+
+    Returns
+    -------
+    output_file: str
+        The eroded image.
+    """
+    # Check the input parameter
+    if not os.path.isfile(input_file):
+        raise ValueError("'{0}' is not a valid input file.".format(input_file))
+
+    # Define the FSL command
+    cmd = ["fslmaths", input_file, "-kernel", "sphere", str(radius), "-ero",
+           output_file]
+
+    # Call fslmaths
+    fslprocess = FSLWrapper(cmd, shfile=fslconfig)
+    fslprocess()
+
+    return output_file
 
 
 def monkeypatch(klass, methodname=None):

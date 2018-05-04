@@ -15,9 +15,11 @@ python_version = sys.version_info
 if python_version[:2] <= (3, 3):
     import mock
     from mock import patch
+    mock_builtin = "__builtin__"
 else:
     import unittest.mock as mock
     from unittest.mock import patch
+    mock_builtin = "builtins"
 
 # Package import
 from pyconnectome.utils.filetools import fslreorient2std, apply_mask
@@ -71,14 +73,26 @@ class Fslreorient2std(unittest.TestCase):
         # Test execution
         self.assertRaises(ValueError, fslreorient2std, **self.kwargs)
 
+    @mock.patch("{0}.open".format(mock_builtin))
+    @mock.patch("pyconnectome.utils.filetools.flirt2aff")
     @mock.patch("pyconnectome.utils.filetools.glob.glob")
     @mock.patch("pyconnectome.utils.filetools.os.path.isfile")
-    def test_normal_execution(self, mock_isfile, mock_glob):
+    def test_normal_execution(self, mock_isfile, mock_glob, mock_aff, mock_open):
         """ Test the normal behaviour of the function.
         """
         # Set the mocked function returned values.
         mock_isfile.side_effect = [True]
         mock_glob.return_value = ["/my/path/mock_output"]
+        mock_context_manager = mock.Mock()
+        mock_open.return_value = mock_context_manager
+        mock_file = mock.Mock()
+        mock_file.read.return_value = "WRONG"
+        mock_enter = mock.Mock()
+        mock_enter.return_value = mock_file
+        mock_exit = mock.Mock()
+        setattr(mock_context_manager, "__enter__", mock_enter)
+        setattr(mock_context_manager, "__exit__", mock_exit)
+        mock_aff.flirt2aff.return_value = ""
 
         # Test execution
         fslreorient2std(**self.kwargs)
@@ -88,10 +102,15 @@ class Fslreorient2std(unittest.TestCase):
                       env={}, stderr=-1, stdout=-1),
             mock.call(["fslreorient2std",
                       self.kwargs["input_image"],
-                      self.kwargs["output_image"]],
+                      self.kwargs["output_image"] + ".nii.gz"],
+                      cwd=None, env={}, stderr=-1, stdout=-1),
+            mock.call(["which", "fslreorient2std"],
+                      env={}, stderr=-1, stdout=-1),
+            mock.call(["fslreorient2std",
+                      self.kwargs["input_image"]],
                       cwd=None, env={}, stderr=-1, stdout=-1)],
             self.mock_popen.call_args_list)
-        self.assertEqual(len(self.mock_env.call_args_list), 1)
+        self.assertEqual(len(self.mock_env.call_args_list), 2)
 
 
 class FslApplyMask(unittest.TestCase):

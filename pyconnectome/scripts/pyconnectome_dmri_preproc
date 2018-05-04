@@ -1,0 +1,633 @@
+#!/usr/bin/env python
+##########################################################################
+# NSAp - Copyright (C) CEA, 2018
+# Distributed under the terms of the CeCILL-B license, as published by
+# the CEA-CNRS-INRIA. Refer to the LICENSE file or to
+# http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html
+# for details.
+##########################################################################
+
+# System import
+import os
+import argparse
+import textwrap
+import re
+import json
+from datetime import datetime
+from argparse import RawTextHelpFormatter
+from datetime import datetime
+from pprint import pprint
+from packaging import version
+
+# Bredala import
+try:
+    import bredala
+    bredala.USE_PROFILER = False
+    bredala.register("pyconnectomist.utils.dwitools",
+                     names=["extract_dwi_shells"])
+    bredala.register("pyconnectomist.preproc.susceptibility",
+                     names=["susceptibility_correction_wo_fieldmap"])
+    bredala.register("pyconnectome.utils.segtools",
+                     names=["bet2", "robustfov"])
+    bredala.register("pyconnectome.utils.preproctools",
+                     names=["eddy", "fsl_prepare_fieldmap", "epi_reg"])
+    bredala.register("pyconnectome.models.tensor",
+                     names=["dtifit"])
+    bredala.register("pyconnectome.utils.filetools",
+                     names=["fslreorient2std", "apply_mask", "erode"])
+    bredala.register("pyconnectome.utils.regtools",
+                     names=["flirt"])
+except:
+    pass
+
+# Third-Party imports
+import nibabel
+import numpy
+
+# Pyconnectomist imports
+from pyconnectomist.preproc.susceptibility import (
+    susceptibility_correction_wo_fieldmap)
+from pyconnectomist.utils.dwitools import extract_dwi_shells
+
+# Pyconnectome imports
+import pyconnectome
+from pyconnectome.utils.segtools import bet2
+from pyconnectome.utils.regtools import flirt
+from pyconnectome.utils.segtools import robustfov
+from pyconnectome.utils.preproctools import eddy
+from pyconnectome.utils.preproctools import epi_reg
+from pyconnectome.utils.preproctools import fsl_prepare_fieldmap
+from pyconnectome.models.tensor import dtifit
+from pyconnectome.utils.filetools import fslreorient2std
+from pyconnectome.utils.filetools import apply_mask
+from pyconnectome.utils.filetools import erode
+from pyconnectome.wrapper import FSLWrapper
+from pyconnectome import DEFAULT_FSL_PATH
+
+
+# Script documentation
+DOC = """
+dMRI preprocessing steps
+------------------------
+
+Correct with brainsuite susceptibility artifact without fieldmap function and
+eddy current/movements/outliers with FSL.
+
+Requirements:
+    - T1 image file (required).
+    - DWI file (required).
+    - bval file (required).
+    - bvec file (required).
+    - phase encode direction (required).
+    - subject id (required).
+    - index file (see fsl eddy) (required).
+    - acqp file (see fsl eddy) (required).
+
+Steps:
+
+1- Reshape input data.
+2- Susceptibility correction.
+3- Eddy current and motion correction.
+4- Tensor fit.
+
+Command example on the MAPT data:
+
+python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_dmri_preproc \
+    -s 03990185BAI \
+    -d /tmp/mapt/03990185BAI/dwi.nii.gz \
+    -b /tmp/mapt/03990185BAI/dwi.bval \
+    -r /tmp/mapt/03990185BAI/dwi.bvec \
+    -t /neurospin/cati/cati_shared/MAPT/CONVERTED/0399/03990185BAI/M0/MRI/3DT1/03990185BAI_M0_3DT1_S003_PN_DIS2D.nii.gz \
+    -c /tmp/mapt/03990185BAI/acqp.txt \
+    -i /tmp/mapt/03990185BAI/index.txt \
+    -m /tmp/mapt/03990185BAI/info.json \
+    -o /tmp/mapt/03990185BAI \
+    -T 4 \
+    -V 2 \
+    -F /etc/fsl/5.0.11/fsl.sh \
+    -S
+
+Command example on the SENIOR data:
+
+python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_dmri_preproc \
+    -s ag160127 \
+    -d /tmp/senior/ag160127/dwi.nii.gz \
+    -b /tmp/senior/ag160127/dwi.bval \
+    -r /tmp/senior/ag160127/dwi.bvec \
+    -t /neurospin/senior/nsap/data/V0/nifti/ag160127/000002_3DT1/000002_3DT1.nii.gz \
+    -c /tmp/senior/ag160127/acqp.txt \
+    -i /tmp/senior/ag160127/index.txt \
+    -m /tmp/senior/ag160127/info.json \
+    -o /tmp/senior/ag160127 \
+    -Z 45 \
+    -V 2 \
+    -F /etc/fsl/5.0.11/fsl.sh
+
+python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_dmri_preproc \
+    -s ag160127 \
+    -d /tmp/senior/ag160127/dwi.nii.gz \
+    -b /tmp/senior/ag160127/dwi.bval \
+    -r /tmp/senior/ag160127/dwi.bvec \
+    -t /neurospin/senior/nsap/data/V0/nifti/ag160127/000002_3DT1/000002_3DT1.nii.gz \
+    -c /tmp/senior/ag160127/acqp.txt \
+    -i /tmp/senior/ag160127/index.txt \
+    -m /tmp/senior/ag160127/info.json \
+    -o /tmp/senior/ag160127 \
+    -Z 45 \
+    -V 2 \
+    -F /etc/fsl/5.0.11/fsl.sh \
+    -P /neurospin/senior/nsap/data/V0/nifti/ag160127/000018_B0MAP/000018_B0MAP.nii.gz \
+    -M /neurospin/senior/nsap/data/V0/nifti/ag160127/000017_B0MAP/000017_B0MAP.nii.gz \
+    -T 2.46 \
+    -A 2 \
+    -Q 0.55 \
+    -R 0.75
+"""
+
+
+def is_file(filepath):
+    """ Check file's existence - argparse 'type' argument.
+    """
+    if not os.path.isfile(filepath):
+        raise argparse.ArgumentError("File does not exist: %s" % filepath)
+    return filepath
+
+
+def is_directory(dirarg):
+    """ Type for argparse - checks that directory exists.
+    """
+    if not os.path.isdir(dirarg):
+        raise argparse.ArgumentError(
+            "The directory '{0}' does not exist!".format(dirarg))
+    return dirarg
+
+
+# Parse input arguments
+def get_cmd_line_args():
+    """
+    Create a command line argument parser and return a dict mapping
+    <argument name> -> <argument value>.
+    """
+    parser = argparse.ArgumentParser(
+        prog="python pyconnectome_preproc_steps",
+        description=textwrap.dedent(DOC),
+        formatter_class=RawTextHelpFormatter)
+
+    # Required arguments
+    # TODO: add the sequence parameters in the info file
+    # TODO: access the BET threshold parameter
+    # TODO: pass a custom brain/wmseg structural mask
+    required = parser.add_argument_group("required arguments")
+    required.add_argument(
+        "-s", "--subject",
+        required=True,
+        help="Subject ID.")
+    required.add_argument(
+        "-d", "--dwi",
+        type=is_file, required=True, metavar="<path>",
+        help="Path to the DWI image file.")
+    required.add_argument(
+        "-b", "--bval",
+        type=is_file, required=True, metavar="<path>",
+        help="Path to the bval file.")
+    required.add_argument(
+        "-r", "--bvec",
+        type=is_file, required=True, metavar="<path>",
+        help="Path to the bvec file.")
+    required.add_argument(
+        "-t", "--t1",
+        type=is_file, required=True, metavar="<path>",
+        help="Path to the T1 image file.")
+    required.add_argument(
+        "-c", "--acqp",
+        type=is_file, required=True, metavar="<path>",
+        help="Path to the FSL eddy acqp file.")
+    required.add_argument(
+        "-i", "--index",
+        type=is_file, required=True, metavar="<path>",
+        help="Path to the FSL eddy index file.")
+    required.add_argument(
+        "-m", "--info",
+        type=is_file, required=True, metavar="<path>",
+        help="Path to the DICOM JSON info file.")
+    required.add_argument(
+        "-o", "--outdir",
+        type=is_directory, required=True, metavar="<path>",
+        help="Path to the output directory.")
+
+    # Optional argument
+    parser.add_argument(
+        "-K", "--t1-mask",
+        type=is_file, metavar="<path>",
+        help="Path to the t1 brain mask image.")
+    parser.add_argument(
+        "-C", "--clean", action="store_true",
+        help="Delete brain suite susceptibility correction generated "
+             "intermediate files.")
+    required.add_argument(
+        "-N", "--nodif-mask",
+        type=is_file, metavar="<path>",
+        help="Path to the nodif brain mask image.")
+    required.add_argument(
+        "-Z", "--nthread",
+        type=int, default=1,
+        help="Number of thread for brainsuite.")
+    parser.add_argument(
+        "-V", "--verbose",
+        type=int, choices=[0, 1, 2], default=2,
+        help="Increase the verbosity level: 0 silent, [1, 2] verbose.")
+    parser.add_argument(
+        "-S", "--skip-susceptibility", action="store_true",
+        help="Do not perform susceptibility correction.")
+    parser.add_argument(
+        "-M", "--magnitude",
+        type=is_file, metavar="<path>",
+        help="Two magnitude fieldmap image from a SIEMENS scanner (one for "
+             "each echo time).")
+    parser.add_argument(
+        "-P", "--phase",
+        type=is_file, metavar="<path>",
+        help="Phase difference fieldmap image from a SIEMENS scanner.")
+    parser.add_argument(
+        "-F", "--fsl-config",
+        type=is_file, metavar="<path>",
+        help="Bash script initializing FSL's environment.")
+    parser.add_argument(
+        "-Q", "--echo-spacing",
+        type=float,
+        help=("the acquisition time in msec between 2 centers of 2 "
+              "consecutively acquired lines in k-space."))
+    parser.add_argument(
+        "-A", "--parallel-acceleration-factor",
+        type=float, default=1.,
+        help="the number of parallel acquisition in the k-space plane.")
+    parser.add_argument(
+        "-T", "--delta-te",
+        type=float,
+        help=("the difference in msec between the 2 echoes of the B0 magnitude "
+              "map."))
+    parser.add_argument(
+        "-R", "--partial-fourier-factor",
+        type=float, default=1.,
+        help="the percentage of k-space plane acquired (]0;1]).")
+
+    # Create a dict of arguments to pass to the 'main' function
+    args = parser.parse_args()
+    kwargs = vars(args)
+    verbose = kwargs.pop("verbose")
+    if kwargs["fsl_config"] is None:
+        kwargs["fsl_config"] = DEFAULT_FSL_PATH
+    return kwargs, verbose
+
+"""
+Parse the command line.
+"""
+inputs, verbose = get_cmd_line_args()
+runtime = {
+    "tool": "pyconnectome_dmri_preproc",
+    "tool_version": pyconnectome.__version__,
+    "timestamp": datetime.now().isoformat(),
+    "fsl_version": FSLWrapper([], shfile=inputs["fsl_config"]).version}
+outputs = {}
+if verbose > 0:
+    pprint("[info] Starting dMRI preprocessings...")
+    pprint("[info] Runtime:")
+    pprint(runtime)
+    pprint("[info] Inputs:")
+    pprint(inputs)
+if version.parse(runtime["fsl_version"]) < version.parse("5.0.11"):
+    raise ValueError("This script need FSL version >= 5.0.11 in order to "
+                     "work properly.")
+
+
+"""
+1 - Reshape input data.
+"""
+# Load the information file
+with open(inputs["info"], "rt") as open_file:
+    info = json.load(open_file)
+
+# Create preproc output dir
+reshape_outdir = os.path.join(inputs["outdir"], "1-Reshape")
+if not os.path.isdir(reshape_outdir):
+    os.mkdir(reshape_outdir)
+
+# Reorient input files
+for key in ("dwi", "t1"):
+    outfile = os.path.join(reshape_outdir, key + ".nii.gz")
+    fslreorient2std(
+        input_image=inputs[key],
+        output_image=outfile,
+        fslconfig=inputs["fsl_config"])
+    inputs[key] = outfile
+
+# Crop neck with FSL robust fov
+t1 = os.path.join(reshape_outdir, "robust_fov")
+cropped_trf = t1 + ".txt"
+robustfov(
+    input_file=inputs["t1"],
+    output_file=t1,
+    brain_size=170,
+    matrix_file=cropped_trf,
+    fsl_sh=inputs["fsl_config"])
+cropped_und_file = t1 + "_und.nii.gz"
+cropped_und_file, _ = flirt(
+    in_file=t1 + ".nii.gz",
+    ref_file=inputs["t1"],
+    out=cropped_und_file,
+    init=cropped_trf,
+    applyxfm=True,
+    verbose=verbose,
+    shfile=inputs["fsl_config"])
+t1 = cropped_und_file
+outputs["t1"] = t1
+
+
+# Split nodiff from diffusion weighted: one shell expected
+# TODO: use template b0 image
+nodiff_mean, dwis = extract_dwi_shells(
+    dwi_nii_path=inputs["dwi"],
+    bvals_path=inputs["bval"],
+    bvecs_path=inputs["bvec"],
+    outdir=reshape_outdir)
+if len(dwis) != 1:
+    raise ValueError("Only single shell acquisitions accepted.")
+outputs["nodif"] = nodiff_mean
+
+# Extract brain with bet2 from cropped t1
+t1_brain = re.sub(".nii.gz", "_brain.nii.gz", t1)
+brain_img, brain_mask, _, _, _, _, _, _, _, _, _ = bet2(
+    input_file=t1,
+    output_fileroot=reshape_outdir,
+    mask=True,
+    skull=False,
+    f=0.35,
+    shfile=inputs["fsl_config"])
+outputs["t1_brain"] = brain_img
+outputs["t1_brain_mask"] = brain_mask
+
+# Extract brain with bet2 from nidiff dwi volume
+nodif_brain, nodif_brain_mask, _, _, _, _, _, _, _, _, _ = bet2(
+    input_file=nodiff_mean,
+    output_fileroot=reshape_outdir,
+    mask=True,
+    skull=False,
+    f=0.25,
+    shfile=inputs["fsl_config"])
+outputs["nodif_brain"] = nodif_brain
+outputs["nodif_brain_mask"] = nodif_brain_mask
+
+
+"""
+2- Susceptibility correction.
+"""
+# Run susceptibility correction
+brainsuite_dir = os.path.join(inputs["outdir"], "2-Susceptibility")
+if not os.path.isdir(brainsuite_dir):
+    os.mkdir(brainsuite_dir)
+
+# Perform susceptibility correction: check carefully the result
+if not inputs["skip_susceptibility"]:
+
+    # FSL
+    if inputs["magnitude"] is not None and inputs["phase"] is not None:
+
+        # Deal with phase encoding direction
+        if info["PhaseEncodingDirection"] == "i":
+            phase_enc_dir = "x"
+        elif info["PhaseEncodingDirection"] == "i-":
+            phase_enc_dir = "-x"
+        elif info["PhaseEncodingDirection"] == "j":
+            phase_enc_dir = "y"
+        elif info["PhaseEncodingDirection"] == "j-":
+            phase_enc_dir = "-y"
+        else:
+            raise ValueError("Incorrect phase encode direction : {0}...".format(
+                             info["PhaseEncodingDirection"]))
+
+        # Create a mask for the magnitude image: strict threshol in order to
+        # avoid border outliers
+        mag_brain, mag_brain_mask, _, _, _, _, _, _, _, _, _ = bet2(
+            input_file=inputs["magnitude"],
+            output_fileroot=brainsuite_dir,
+            mask=True,
+            skull=False,
+            f=0.65,
+            shfile=inputs["fsl_config"])
+        erode_mask_file = os.path.join(
+            brainsuite_dir, "ero_" + os.path.basename(mag_brain_mask))
+        im = nibabel.load(mag_brain)
+        min_spacing = min(im.header.get_zooms()[:3])
+        erode(
+            input_file=mag_brain_mask,
+            output_file=erode_mask_file,
+            radius=min_spacing * 2,
+            fslconfig=inputs["fsl_config"])
+        erode_fileroot = os.path.join(
+            brainsuite_dir, "ero_" + os.path.basename(mag_brain).split(".")[0]) 
+        erode_file = apply_mask(
+            input_file=mag_brain,
+            output_fileroot=erode_fileroot,
+            mask_file=erode_mask_file,
+            fslconfig=inputs["fsl_config"])
+
+        # Prepare the fieldmap
+        fieldmap_file = os.path.join(brainsuite_dir, "fieldmap.nii.gz")
+        fsl_prepare_fieldmap(
+            manufacturer=info["Manufacturer"].upper(),
+            phase_file=inputs["phase"],
+            brain_magnitude_file=erode_file,
+            output_file=fieldmap_file,
+            delta_te=str(inputs["delta_te"]),
+            fsl_sh=inputs["fsl_config"])
+
+        # Simultaneous coregistration and fieldmap unwarping
+        # The shift image contains a value that represents the amount of
+        # translation (shift), in units of voxels, at each voxel that would
+        # need to be applied in the direction specified by the shiftdir.
+        # TODO: check effective echo spacing computation
+        dwi_corrected_fileroot = os.path.join(brainsuite_dir, "epi2struct")
+        echo_spacing = inputs["echo_spacing"] / (
+            1000 * inputs["parallel_acceleration_factor"])
+        corrected_epi_file, warp_file, distortion_map = epi_reg(
+            epi_file=inputs["dwi"],
+            structural_file=inputs["t1"],
+            brain_structural_file=t1_brain,
+            output_fileroot=dwi_corrected_fileroot,
+            fieldmap_file=fieldmap_file,
+            effective_echo_spacing=echo_spacing,
+            magnitude_file=inputs["magnitude"],
+            brain_magnitude_file=erode_file,
+            phase_encode_dir=phase_enc_dir,
+            wmseg_file=None,
+            fsl_sh=inputs["fsl_config"])
+
+    # Brainsuite
+    else:
+
+        # Deal with phase encoding direction
+        if info["PhaseEncodingDirection"] in ("i", "i-"):
+            phase_enc_dir = "x"
+        elif info["PhaseEncodingDirection"] in ("j", "j-"):
+            phase_enc_dir = "y"
+        else:
+            raise ValueError("Incorrect phase encode direction : {0}...".format(
+                             info["PhaseEncodingDirection"]))
+
+        # Start corection
+        (dwi_wo_susceptibility, bval, bvec, t1_in_dwi_space,
+         bo_in_t1_space, t1_brain) = susceptibility_correction_wo_fieldmap(
+            outdir=brainsuite_dir,
+            t1=inputs["t1"],
+            dwi=inputs["dwi"],
+            bval=inputs["bval"],
+            bvec=inputs["bvec"],
+            subject_id=inputs["subject"],
+            phase_enc_dir=phase_enc_dir,
+            t1_mask=brain_mask,
+            nodif_mask=nodif_brain_mask,
+            fsl_sh=inputs["fsl_config"],
+            nthread=inputs["nthread"])
+
+        # If necessary, clean intermediate outputs
+        if inputs["clean"]:
+            for basnename in [
+                    "{0}.bfc.biasfield.nii.gz",
+                    "{0}.bfc.D_coord.nii.gz",
+                    "{0}.bfc.D_coord.rigid_registration_result.mat",
+                    "{0}.bfc.nii.gz",
+                    "{0}.dwi.bmat",
+                    "{0}.dwi.RAS.bmat",
+                    "{0}.dwi.RAS.bvec",
+                    "{0}.dwi.RAS.less_csf.mask.nii.gz",
+                    "{0}.dwi.RAS.nii.gz",
+                    "{0}.BDPSummary.txt",
+                    "{0}.dwi_fov.D_coord.mask.nii.gz",
+                    "{0}.dwi_fov.T1_coord.mask.nii.gz",
+                    "{0}.dwi.RAS.correct.0_diffusion.T1_coord.nii.gz",
+                    "{0}.dwi.RAS.correct.axial.T1_coord.nii.gz",
+                    "{0}.dwi.RAS.correct.bfield.nii.gz",
+                    "{0}.dwi.RAS.correct.FA.color.T1_coord.nii.gz",
+                    "{0}.dwi.RAS.correct.FA.T1_coord.nii.gz",
+                    "{0}.dwi.RAS.correct.L2.T1_coord.nii.gz",
+                    "{0}.dwi.RAS.correct.L3.T1_coord.nii.gz",
+                    "{0}.dwi.RAS.correct.mADC.T1_coord.nii.gz",
+                    "{0}.dwi.RAS.correct.MD.T1_coord.nii.gz",
+                    "{0}.dwi.RAS.correct.nii.gz",
+                    "{0}.dwi.RAS.correct.radial.T1_coord.nii.gz",
+                    "{0}.dwi.RAS.correct.T1_coord.eig.nii.gz",
+                    "{0}.tensor.T1_coord.bst"]:
+                to_rm_file = os.path.join(
+                    brainsuite_dir, basename.format(inputs["subject"]))
+                os.remove(to_rm_file)
+        distortion_map = os.path.join(
+            brainsuite_dir, "{0}.dwi.RAS.correct.distortion.map.nii.gz".format(
+                            inputs["subject"]))
+
+    # Reorganize deformation field volume
+    if not os.path.isfile(distortion_map):
+        raise ValueError(
+            "Unavailable distortion map file: {0}".format(distortion_map))
+    distortion_img = nibabel.load(distortion_map)
+    distortion_img_data = distortion_img.get_data()
+    distortion_img_data.shape += (1,)
+    spacing = distortion_img.header.get_zooms()
+    zero_field = numpy.zeros(distortion_img_data.shape)
+    if phase_enc_dir in ("x", "-x"):
+        deformation_field = numpy.concatenate(
+            (distortion_img_data * spacing[0], zero_field, zero_field),
+            axis=3)
+    elif phase_enc_dir in ("y", "-y"):
+        deformation_field = numpy.concatenate(
+            (zero_field, distortion_img_data * spacing[1], zero_field),
+            axis=3)
+    else:
+        raise ValueError("Incorrect phase encode direction: {0}".format(
+                         phase_enc_dir))
+    deformation_field_img = nibabel.Nifti1Image(
+        deformation_field, distortion_img.affine)
+    deformation_field_file = os.path.join(brainsuite_dir, "field.nii.gz")
+    nibabel.save(deformation_field_img, deformation_field_file)
+
+# Create an zero deformation field
+else:
+    # Coregistration only
+    dwi_corrected_fileroot = os.path.join(brainsuite_dir, "epi2struct")
+    corrected_epi_file, _, _ = epi_reg(
+        epi_file=inputs["dwi"],
+        structural_file=inputs["t1"],
+        brain_structural_file=t1_brain,
+        output_fileroot=dwi_corrected_fileroot,
+        wmseg_file=None,
+        fsl_sh=inputs["fsl_config"])
+
+    # Create the null deformation field
+    im = nibabel.load(inputs["dwi"])
+    zero_field = numpy.zeros(im.get_data().shape[:3] + (3, ))
+    deformation_field_im = nibabel.Nifti1Image(zero_field, im.affine)
+    deformation_field_file = os.path.join(brainsuite_dir, "field.nii.gz")
+    nibabel.save(deformation_field_im, deformation_field_file)
+
+
+"""
+3- Eddy current and motion correction.
+"""
+# TODO: mask in non distorted space -> applywarp deformation_field_file
+eddy_outputdir = os.path.join(inputs["outdir"], "3-Eddy")
+if not os.path.isdir(eddy_outputdir):
+    os.mkdir(eddy_outputdir)
+eddy_outroot = os.path.join(
+    eddy_outputdir, "{0}_dwi_eddy_corrected".format(inputs["subject"]))
+corrected_dwi, corrected_bvec = eddy(
+    dwi=inputs["dwi"],
+    dwi_brain_mask=nodif_brain_mask,
+    acqp=inputs["acqp"],
+    index=inputs["index"],
+    bvecs=inputs["bvec"],
+    bvals=inputs["bval"],
+    deformation_field=deformation_field_file.replace(".nii.gz", ""),
+    outroot=eddy_outroot,
+    strategy="openmp",
+    fsl_sh=inputs["fsl_config"])
+outputs["corrected_dwi"] = corrected_dwi
+outputs["corrected_bvec"] = corrected_bvec
+
+
+"""
+4- Tensor fit
+"""
+tensor_outdir = os.path.join(inputs["outdir"], "4-Tensor")
+if not os.path.isdir(tensor_outdir):
+    os.mkdir(tensor_outdir)
+tensor_fileroot = os.path.join(tensor_outdir, "dtifit")
+(v1_file, v2_file, v3_file, l1_file, l2_file, l3_file, md_file,
+ fa_file, s0_file, tensor_file, m0_file) = dtifit(
+    corrected_dwi,
+    corrected_bvec,
+    inputs["bval"],
+    nodif_brain_mask,
+    tensor_fileroot,
+    fslconfig=inputs["fsl_config"])
+outputs["md_file"] = md_file
+outputs["fa_file"] = fa_file
+outputs["s0_file"] = s0_file
+outputs["tensor_file"] = tensor_file
+outputs["m0_file"] = m0_file
+
+
+"""
+Update the outputs and save them and the inputs in a 'logs' directory.
+"""
+logdir = os.path.join(inputs["outdir"], "logs")
+if not os.path.isdir(logdir):
+    os.mkdir(logdir)
+for name, final_struct in [("inputs", inputs), ("outputs", outputs),
+                           ("runtime", runtime)]:
+    log_file = os.path.join(logdir, "{0}.json".format(name))
+    with open(log_file, "wt") as open_file:
+        json.dump(final_struct, open_file, sort_keys=True, check_circular=True,
+                  indent=4)
+if verbose > 1:
+    print("[final]")
+    pprint(outputs)
+
