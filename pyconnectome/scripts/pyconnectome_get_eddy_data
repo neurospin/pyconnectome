@@ -284,7 +284,6 @@ with open(json_output, "wt") as open_file:
     json.dump(subject_data, open_file, indent=4)
 
 
-
 """
 Update the outputs and save them and the inputs in a 'logs' directory.
 """
