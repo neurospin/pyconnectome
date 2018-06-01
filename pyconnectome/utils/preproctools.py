@@ -428,7 +428,7 @@ def get_readout_time(dicom_img, dcm_info):
         # Generally nb of voxels in the phase encode direction multiplied by
         # Fourier partial ratio and divided by acceleration factor SENSE or
         # GRAPPA (iPAT)
-        fourier_partial_ratio = dicom_img[24, 147].value
+        fourier_partial_ratio = dicom_img[24, 147].value  # Percent sampling
         acceleration_factor = dicom_img[int("2005", 16),
                                         int("140f", 16)][0][24, 36969].value
         nb_phase_encoding_steps = dicom_img[24, 137].value
@@ -438,9 +438,9 @@ def get_readout_time(dicom_img, dcm_info):
             100)
         Ny = Ny / acceleration_factor
 
-        # Pixel bandwith (BW/Nx)
+        # Pixel bandwith (BW/Nx) Hz/pixel
         BW_Nx = float(dicom_img[24, 149].value)
-        water_shift_pixel = delta_b0 * Ny / BW_Nx
+        water_shift_pixel = delta_b0 * Ny / BW_Nx  # pixel
 
         # Water shift (Hz)
         # Haacke et al: 3.35ppm. Bernstein et al (pg. 960): Chemical shifts
@@ -451,6 +451,7 @@ def get_readout_time(dicom_img, dcm_info):
 
         # Resonance frequency (Hz/T)
         resonance_frequency = 42.576 * pow(10, 6)  # Haacke et al.
+        # water_shift_hertz (Hz)
         water_shift_hertz = b0 * water_fat_difference * resonance_frequency
 
         # Compute echo spacing
@@ -458,7 +459,8 @@ def get_readout_time(dicom_img, dcm_info):
         echo_spacing = water_shift_pixel / (water_shift_hertz * etl)  # s
 
         # Compute readout time
-        epi = float(dicom_img[8193, 4115].value)
+        # Compute number of phase encoding steps epi
+        epi = float(dicom_img[int("0018", 16), int("0089", 16)].value)
         readout_time = echo_spacing * (epi - 1)
 
     elif manufacturer == "SIEMENS":
