@@ -296,10 +296,8 @@ def concatenate_volumes(nii_files, bvals_files, bvecs_files, outdir, axis=-1):
         nodiff_to_delete = nodiff_indexes[1:len(nodiff_indexes)]
         cpt_delete = 0
         for i in nodiff_to_delete:
-            print(i)
             concatenated_volumes = numpy.delete(
                 concatenated_volumes, i - cpt_delete, 3)
-            print(concatenated_volumes.shape)
             cpt_delete += 1
 
     # Save the results
