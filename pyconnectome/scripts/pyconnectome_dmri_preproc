@@ -564,10 +564,14 @@ if not inputs["skip_susceptibility"]:
     else:
 
         # Deal with phase encoding direction
-        if inputs["phase_encode_dir"] in ("i", "i-"):
+        if inputs["phase_encode_dir"] == "i":
             phase_enc_dir = "x"
-        elif inputs["phase_encode_dir"] in ("j", "j-"):
+        elif inputs["phase_encode_dir"] == "i-":
+            phase_enc_dir = "x-"
+        elif inputs["phase_encode_dir"] == "j":
             phase_enc_dir = "y"
+        elif inputs["phase_encode_dir"] == "j-":
+            phase_enc_dir = "y-"
         else:
             raise ValueError("Incorrect phase encode direction: {0}...".format(
                              inputs["phase-encode-dir"]))

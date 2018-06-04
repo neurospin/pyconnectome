@@ -81,6 +81,7 @@ python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_get_eddy_data \
     -b /neurospin/cati/cati_shared/MAPT/CONVERTED/0399/03990185BAI/M0/MRI/DWI/03990185BAI_M0_DWI_1_S014.bval /neurospin/cati/cati_shared/MAPT/CONVERTED/0399/03990185BAI/M0/MRI/DWI/03990185BAI_M0_DWI_2_S019.bval \
     -r /neurospin/cati/cati_shared/MAPT/CONVERTED/0399/03990185BAI/M0/MRI/DWI/03990185BAI_M0_DWI_1_S014.bvec /neurospin/cati/cati_shared/MAPT/CONVERTED/0399/03990185BAI/M0/MRI/DWI/03990185BAI_M0_DWI_2_S019.bvec \
     -o /tmp/mapt \
+    -T M0 \
     -V 2
 
 Command example on the SENIOR data:
@@ -160,6 +161,11 @@ def get_cmd_line_args():
 
     # Optional argument
     parser.add_argument(
+        "-T", "--timepoint",
+        type=str,
+        help="Timepoint. If set, create a timepoint sub-directory in subject"
+             " directory.")
+    parser.add_argument(
         "-V", "--verbose",
         type=int, choices=[0, 1, 2], default=2,
         help="Increase the verbosity level: 0 silent, [1, 2] verbose.")
@@ -200,6 +206,9 @@ subject_data = {
 output_sub_dir = os.path.join(inputs["outdir"], inputs["subject"])
 if not os.path.isdir(output_sub_dir):
     os.mkdir(output_sub_dir)
+if inputs["timepoint"] is not None:
+    output_sub_dir = os.path.join(output_sub_dir, inputs["timepoint"])
+    os.mkdir(output_sub_dir)
 subject_data["output_dir"] = output_sub_dir
 
 # Concatenate the volume into new nii/bvec/bval files.
@@ -220,13 +229,13 @@ if os.path.isfile(inputs["dicom"]):
         if not os.path.isdir(output_dicom_dir):
             os.mkdir(output_dicom_dir)
         cmd = ["tar", "-xzf", inputs["dicom"], "-C", output_dicom_dir]
-        subprocess.check_call(cmd) 
+        subprocess.check_call(cmd)
     else:
         raise ValueError("Unexpected file format: '{0}'.".format(
             inputs["dicom"]))
 else:
     output_dicom_dir = inputs["dicom"]
-    
+
 # Load a dicom file
 dicom_files = glob.glob(os.path.join(output_dicom_dir, "*"))
 if len(dicom_files) == 0:
@@ -284,7 +293,6 @@ with open(json_output, "wt") as open_file:
     json.dump(subject_data, open_file, indent=4)
 
 
-
 """
 Update the outputs and save them and the inputs in a 'logs' directory.
 """
@@ -302,4 +310,3 @@ for name, final_struct in [("info_inputs", inputs), ("info_outputs", outputs),
 if verbose > 1:
     print("[info] Outputs:")
     pprint(outputs)
-
