@@ -363,7 +363,7 @@ def get_dcm_info(dicom_dir, outdir, dicom_img=None):
         dcm_info = {"PhaseEncodingDirection": phase_enc_dir}
 
     # Use dcm2niix
-    elif manufacturer == "SIEMENS":
+    elif manufacturer == "SIEMENS" or manufacturer == "GE":
         dcm_info_dir = os.path.join(outdir, "DCM_INFO")
         if os.path.isdir(dcm_info_dir):
             shutil.rmtree(dcm_info_dir)
@@ -374,8 +374,17 @@ def get_dcm_info(dicom_dir, outdir, dicom_img=None):
         dcm_info_json = glob.glob(os.path.join(dcm_info_dir, "*.json"))[0]
         with open(dcm_info_json, "rb") as open_file:
             dcm_info = json.load(open_file)
-        phase_enc_dir = dcm_info["PhaseEncodingDirection"]
-
+        if manufacturer == "SIEMENS":
+            phase_enc_dir = dcm_info["PhaseEncodingDirection"]
+        if manufacturer == "GE":
+            phase_enc_dir = dcm_info["InPlanePhaseEncodingDirectionDICOM"]
+            if phase_enc_dir == "COL":
+                phase_enc_dir = "j"
+            elif phase_enc_dir == "ROW":
+                phase_enc_dir = "i"
+            else:
+                raise ValueError("Unknown phase encode direction: "
+                                 "{0}".format(phase_enc_dir))
     else:
         raise ValueError("Unknown scanner: {0}...".format(manufacturer))
 
@@ -473,7 +482,7 @@ def get_readout_time(dicom_img, dcm_info):
         epi = float(dicom_img[int("0018", 16), int("0089", 16)].value)
         readout_time = echo_spacing * (epi - 1)
 
-    elif manufacturer == "SIEMENS":
+    elif manufacturer == "SIEMENS" or "GE":
         readout_time = dcm_info["TotalReadoutTime"]
 
     else:
