@@ -81,7 +81,6 @@ python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_get_eddy_data \
     -b /neurospin/cati/cati_shared/MAPT/CONVERTED/0399/03990185BAI/M0/MRI/DWI/03990185BAI_M0_DWI_1_S014.bval /neurospin/cati/cati_shared/MAPT/CONVERTED/0399/03990185BAI/M0/MRI/DWI/03990185BAI_M0_DWI_2_S019.bval \
     -r /neurospin/cati/cati_shared/MAPT/CONVERTED/0399/03990185BAI/M0/MRI/DWI/03990185BAI_M0_DWI_1_S014.bvec /neurospin/cati/cati_shared/MAPT/CONVERTED/0399/03990185BAI/M0/MRI/DWI/03990185BAI_M0_DWI_2_S019.bvec \
     -o /tmp/mapt \
-    -T M0 \
     -V 2
 
 Command example on the SENIOR data:
@@ -161,11 +160,6 @@ def get_cmd_line_args():
 
     # Optional argument
     parser.add_argument(
-        "-T", "--timepoint",
-        type=str,
-        help="Timepoint. If set, create a timepoint sub-directory in subject"
-             " directory.")
-    parser.add_argument(
         "-V", "--verbose",
         type=int, choices=[0, 1, 2], default=2,
         help="Increase the verbosity level: 0 silent, [1, 2] verbose.")
@@ -205,9 +199,6 @@ subject_data = {
 # Create output directory
 output_sub_dir = os.path.join(inputs["outdir"], inputs["subject"])
 if not os.path.isdir(output_sub_dir):
-    os.mkdir(output_sub_dir)
-if inputs["timepoint"] is not None:
-    output_sub_dir = os.path.join(output_sub_dir, inputs["timepoint"])
     os.mkdir(output_sub_dir)
 subject_data["output_dir"] = output_sub_dir
 
