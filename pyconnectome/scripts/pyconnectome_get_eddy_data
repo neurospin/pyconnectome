@@ -220,13 +220,13 @@ if os.path.isfile(inputs["dicom"]):
         if not os.path.isdir(output_dicom_dir):
             os.mkdir(output_dicom_dir)
         cmd = ["tar", "-xzf", inputs["dicom"], "-C", output_dicom_dir]
-        subprocess.check_call(cmd) 
+        subprocess.check_call(cmd)
     else:
         raise ValueError("Unexpected file format: '{0}'.".format(
             inputs["dicom"]))
 else:
     output_dicom_dir = inputs["dicom"]
-    
+
 # Load a dicom file
 dicom_files = glob.glob(os.path.join(output_dicom_dir, "*"))
 if len(dicom_files) == 0:
@@ -301,4 +301,3 @@ for name, final_struct in [("info_inputs", inputs), ("info_outputs", outputs),
 if verbose > 1:
     print("[info] Outputs:")
     pprint(outputs)
-
