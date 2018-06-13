@@ -42,7 +42,7 @@ def swap_affine(axes):
 
     Parameters
     ----------
-    axes: str (manadtory)
+    axes: str (mandatory)
         the given orientation of the axes.
 
     Returns
