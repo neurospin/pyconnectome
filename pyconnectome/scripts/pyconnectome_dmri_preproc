@@ -564,10 +564,14 @@ if not inputs["skip_susceptibility"]:
     else:
 
         # Deal with phase encoding direction
-        if inputs["phase_encode_dir"] in ("i", "i-"):
+        if inputs["phase_encode_dir"] == "i":
             phase_enc_dir = "x"
-        elif inputs["phase_encode_dir"] in ("j", "j-"):
+        elif inputs["phase_encode_dir"] == "i-":
+            phase_enc_dir = "x-"
+        elif inputs["phase_encode_dir"] == "j":
             phase_enc_dir = "y"
+        elif inputs["phase_encode_dir"] == "j-":
+            phase_enc_dir = "y-"
         else:
             raise ValueError("Incorrect phase encode direction: {0}...".format(
                              inputs["phase-encode-dir"]))
@@ -631,11 +635,11 @@ if not inputs["skip_susceptibility"]:
     distortion_img_data.shape += (1,)
     spacing = distortion_img.header.get_zooms()
     zero_field = numpy.zeros(distortion_img_data.shape)
-    if phase_enc_dir in ("x", "-x"):
+    if phase_enc_dir in ("x", "x-"):
         deformation_field = numpy.concatenate(
             (distortion_img_data * spacing[0], zero_field, zero_field),
             axis=3)
-    elif phase_enc_dir in ("y", "-y"):
+    elif phase_enc_dir in ("y", "y-"):
         deformation_field = numpy.concatenate(
             (zero_field, distortion_img_data * spacing[1], zero_field),
             axis=3)
