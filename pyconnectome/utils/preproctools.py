@@ -291,14 +291,20 @@ def concatenate_volumes(nii_files, bvals_files, bvecs_files, outdir, axis=-1):
         bvals_files, bvecs_files, min_bval=200)
 
     if nb_nodiff > 1:
-        nodiff_indexes = (numpy.argwhere(bvals == 0))
-        nodiff_indexes = nodiff_indexes.flatten().tolist()
-        nodiff_to_delete = nodiff_indexes[1:len(nodiff_indexes)]
+        nodiff_indexes = numpy.where(bvals == 0)[0].tolist()
+        b0_array = concatenated_volumes[..., nodiff_indexes[0]]
+        b0_array.shape += (1, )
         cpt_delete = 0
-        for i in nodiff_to_delete:
+        for i in nodiff_indexes:
             concatenated_volumes = numpy.delete(
-                concatenated_volumes, i - cpt_delete, 3)
+                concatenated_volumes, i - cpt_delete, axis=3)
+            bvals = numpy.delete(bvals, i - cpt_delete, axis=0)
+            bvecs = numpy.delete(bvecs, i - cpt_delete, axis=0)
             cpt_delete += 1
+        concatenated_volumes = numpy.concatenate(
+            (b0_array, concatenated_volumes), axis=3)
+        bvals = numpy.concatenate((numpy.array([0]), bvals), axis=0)
+        bvecs = numpy.concatenate((numpy.array([[0, 0, 0]]), bvecs), axis=0)
 
     # Save the results
     dwi_file = os.path.join(outdir, "dwi.nii.gz")
@@ -363,7 +369,7 @@ def get_dcm_info(dicom_dir, outdir, dicom_img=None):
         dcm_info = {"PhaseEncodingDirection": phase_enc_dir}
 
     # Use dcm2niix
-    elif manufacturer == "SIEMENS" or manufacturer == "GE":
+    elif manufacturer in ["SIEMENS", "GE", "GE MEDICAL SYSTEMS"]:
         dcm_info_dir = os.path.join(outdir, "DCM_INFO")
         if os.path.isdir(dcm_info_dir):
             shutil.rmtree(dcm_info_dir)
@@ -376,7 +382,7 @@ def get_dcm_info(dicom_dir, outdir, dicom_img=None):
             dcm_info = json.load(open_file)
         if manufacturer == "SIEMENS":
             phase_enc_dir = dcm_info["PhaseEncodingDirection"]
-        if manufacturer == "GE":
+        if manufacturer in ["GE", "GE MEDICAL SYSTEMS"]:
             phase_enc_dir = dcm_info["InPlanePhaseEncodingDirectionDICOM"]
             if phase_enc_dir == "COL":
                 phase_enc_dir = "j"
@@ -385,6 +391,7 @@ def get_dcm_info(dicom_dir, outdir, dicom_img=None):
             else:
                 raise ValueError("Unknown phase encode direction: "
                                  "{0}".format(phase_enc_dir))
+            dcm_info["PhaseEncodingDirection"] = phase_enc_dir
     else:
         raise ValueError("Unknown scanner: {0}...".format(manufacturer))
 
