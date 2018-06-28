@@ -14,28 +14,30 @@ import textwrap
 import glob
 import re
 import json
+import shutil
 from datetime import datetime
 from argparse import RawTextHelpFormatter
 from datetime import datetime
 from pprint import pprint
-
-# DTI-TK/TBSS imports
-from pyconnectome.tractography.dtitk_tbss import (
-    TVMean, generate_FA_map, skeletonize, fslmerge, binarize_4D_FA,
-    tbss_4_prestats)
-
-# Pyconnectome imports
-from pyconnectome.wrapper import FSLWrapper
 
 # Bredala import
 try:
     import bredala
     bredala.USE_PROFILER = False
     bredala.register("pyconnectome.tractography.dtitk_tbss",
-                     names=["TVMean", "generate_FA_map", "skeletonize",
-                            "fslmerge", "binarize_4D_FA", "tbss_4_prestats"])
+                     names=["bootstrap_template_from_dti", "generate_FA_map",
+                            "skeletonize", "fslmerge", "get_fa_stack_mask",
+                            "tbss_4_prestats"])
 except:
     pass
+
+# DTI-TK/TBSS imports
+from pyconnectome.tractography.dtitk_tbss import (
+    bootstrap_template_from_dti, generate_FA_map, skeletonize, fslmerge,
+    get_fa_stack_mask, tbss_4_prestats)
+
+# Pyconnectome imports
+from pyconnectome.wrapper import FSLWrapper
 
 # Script documentation
 DOC = """
@@ -54,10 +56,10 @@ Command example on the MAPT data :
 python $PROJECT/MAPT/pyconnectome_dtitk_generate_FA_map \
     -t 03990399MRO/dtifit_dtitk_diffeo.nii.gz \
         ...
-       /volatile/MAPT_TRACTS/data/M0/03990185BAI/dtifit_dtitk_diffeo.nii.gz \
-       /volatile/MAPT_TRACTS/data/M0/03990230CRE/dtifit_dtitk_diffeo.nii.gz \
-       /volatile/MAPT_TRACTS/data/M0/03990364BCL/dtifit_dtitk_diffeo.nii.gz \
-       /volatile/MAPT_TRACTS/data/M0/02990271GJO/dtifit_dtitk_diffeo.nii.gz \
+       03990185BAI/dtifit_dtitk_diffeo.nii.gz \
+       03990230CRE/dtifit_dtitk_diffeo.nii.gz \
+       03990364BCL/dtifit_dtitk_diffeo.nii.gz \
+       02990271GJO/dtifit_dtitk_diffeo.nii.gz \
     -o /volatile/MAPT_TRACTS/data/M0 \
     -V 2
 """
@@ -87,7 +89,7 @@ def get_cmd_line_args():
     <argument name> -> <argument value>.
     """
     parser = argparse.ArgumentParser(
-        prog="python pyconnectome_preproc_steps",
+        prog="python pyconnectome_dtitk_tbss",
         description=textwrap.dedent(DOC),
         formatter_class=RawTextHelpFormatter)
 
@@ -104,7 +106,18 @@ def get_cmd_line_args():
 
     # Optional argument
     parser.add_argument(
-        "-T", "--threshold-fa-skeleton", type=float, default=0.2,
+        "-T", "--template", type=is_file,
+        help="Directly give template to generate FA skeleton. If set to None,"
+             " template of isotropic dimensions will be created by"
+             " bootstrapping all the subjects tensor files.")
+    parser.add_argument(
+        "-F", "--template-fa", type=is_file,
+        help="Template FA map.")
+    parser.add_argument(
+        "-S", "--template-fa-skeleton", type=is_file,
+        help="Template FA skeleton.")
+    parser.add_argument(
+        "-K", "--threshold-fa-skeleton", type=float, default=0.2,
         help="Fa skeleton threshold for tbss_4_prestats.")
     parser.add_argument(
         "-V", "--verbose",
@@ -124,11 +137,11 @@ Parse the command line.
 
 
 inputs, verbose = get_cmd_line_args()
-tool = "pyconnectome_enigma_tbss"
-timestamp = datetime.now().isoformat()
 params = locals()
-runtime = dict([(name, params[name])
-               for name in ("tool", "timestamp")])
+runtime = {
+    "timestamp": datetime.now().isoformat(),
+    "tool": "pyconnectome_dtitk_tbss"
+}
 outputs = {}
 if verbose > 0:
     pprint("[info] Starting tbss with enigma template...")
@@ -136,32 +149,33 @@ if verbose > 0:
     pprint(runtime)
     pprint("[info] Inputs:")
     pprint(inputs)
+# Add dtitk + pyconnectome versions!
 
 
 """
-1 - Generate the population-specific DTI template with the isotropic 1mm3
-    spacing.
+1 - If necessary, generate the population-specific DTI template.
 """
 
-
-print("Generate the population-specific DTI template with the isotropic"
-      " 1mm3 spacing...")
-
-# List normalized dti files
-subjects_normalized_file = os.path.join(
-    inputs["outdir"], "subjects_normalized.txt")
-with open(subjects_normalized_file, 'w') as open_file:
-    for t in inputs["tensor_normalized"]:
-        open_file.write(t)
-        open_file.write("\n")
-high_res_template = os.path.join(
-    inputs["outdir"], "mean_final_high_res.nii.gz")
-TVMean(
-    subjects=subjects_normalized_file,
-    out_template=high_res_template,
-    typep="ORIGINAL",
-    interp="LEI")
-outputs["mean_high_resolution_template"] = high_res_template
+if inputs["template"] is None:
+    print("Generate the population-specific DTI template with the isotropic"
+          " 1mm3 spacing...")
+    # List normalized dti files
+    subjects_normalized_file = os.path.join(
+        inputs["outdir"], "subjects_normalized.txt")
+    with open(subjects_normalized_file, 'w') as open_file:
+        for t in inputs["tensor_normalized"]:
+            open_file.write(t)
+            open_file.write("\n")
+    template = os.path.join(
+        inputs["outdir"], "mean_final_high_res.nii.gz")
+    bootstrap_template_from_dti(
+        subjects=subjects_normalized_file,
+        out_template=template,
+        typep="ORIGINAL",
+        interp="LEI")
+else:
+    template = inputs["template"]
+outputs["template"] = template
 
 
 """
@@ -169,33 +183,38 @@ outputs["mean_high_resolution_template"] = high_res_template
     template.
 """
 
+if inputs["template_FA"] is None:
+    print("Generate template FA map...")
+    template_fa = os.path.join(inputs["outdir"], "mean_FA.nii.gz")
+    generate_FA_map(
+        dti_file=template,
+        output_fa=template_fa)
+else:
+    template_fa = inputs["template_fa"]
+outputs["template_fa"] = template_fa
 
-print("Generate template FA map...")
-high_res_template = os.path.join(
-    inputs["outdir"], "mean_final_high_res.nii.gz")
-mean_fa_map = os.path.join(inputs["outdir"], "mean_FA.nii.gz")
-fa_map = generate_FA_map(
-    dti_file=high_res_template,
-    output_fa=mean_fa_map)
-outputs["mean_FA_map"] = mean_fa_map
 
 """
 3 - Generate the white matter skeleton from the high-resolution FA map of
     the DTI template.
 """
-print("Generate skeleton from template FA map...")
-fa_skeleton = os.path.join(inputs["outdir"], "mean_FA_skeleton.nii.gz")
-skeletonize(
-    input_file=fa_map,
-    output_file=fa_skeleton)
-outputs["mean_FA_skeleton"] = fa_skeleton
+
+if inputs["template_FA_skeleton"] is None:
+    print("Generate skeleton from template FA map...")
+    template_fa_skeleton = os.path.join(
+        inputs["outdir"], "mean_FA_skeleton.nii.gz")
+    skeletonize(
+        input_file=template_fa,
+        output_file=template_fa_skeleton)
+else:
+    template_fa_skeleton = inputs["template_FA_skeleton"]
+outputs["mean_FA_skeleton"] = template_fa_skeleton
 
 
 """
-4 - Generate the FA map of the spatially normalized high-resolution DTI
+4 - Generate the FA maps of the spatially normalized high-resolution DTI
     data.
 """
-
 
 print("Generate FA maps of DTI data...")
 subjects_fa_map = []
@@ -204,24 +223,24 @@ for sub in inputs["tensor_normalized"]:
         dti_file=sub,
         output_fa=sub.replace(".nii.gz", "_FA.nii.gz"))
     subjects_fa_map.append(sub_fa_map)
-allfa = os.path.join(inputs["outdir"], "all_FA.nii.gz")
-allfa = fslmerge(
+fa_stack = os.path.join(inputs["outdir"], "all_FA.nii.gz")
+fa_stack = fslmerge(
     images=subjects_fa_map,
-    concatenated_output=allfa,
+    concatenated_output=fa_stack,
     time=True)
-outputs["all_FA"] = allfa
+outputs["all_FA"] = fa_stack
 
 mean_fa_mask = os.path.join(inputs["outdir"], "mean_FA_mask.nii.gz")
-binarize_4D_FA(
-    fa_4D=allfa,
+get_fa_stack_mask(
+    fa_4D=fa_stack,
     output=mean_fa_mask)
 outputs["mean_FA_mask"] = mean_fa_mask
 
 
 """
-5 - Process to tbss procedure.
+5 - Process to tbss procedure with tbss_4_prestats and project all subjects'
+    FA data onto the mean FA skeleton.
 """
-
 
 # Place the TBSS relevant files into a folder that TBSS expects
 # Create a directory called tbss with a subdirectory called stats.
@@ -233,11 +252,9 @@ if not os.path.isdir(tbss_dir):
 tbss_stat_dir = os.path.join(tbss_dir, "stats")
 if not os.path.isdir(tbss_stat_dir):
     os.mkdir(tbss_stat_dir)
-tbss_stat_files = [mean_fa_map, fa_skeleton, allfa, mean_fa_mask]
+tbss_stat_files = [mean_fa_map, fa_skeleton, fa_stack, mean_fa_mask]
 for f in tbss_stat_files:
-    cmd = ["cp", f, tbss_stat_dir]
-    cmd = " ".join(cmd)
-    os.system(cmd)
+    shutil.copy(f, tbss_stat_dir]
 outputs["tbss_dir"] = tbss_dir
 outputs["tbss_stats_dir"] = tbss_stat_dir
 
@@ -258,7 +275,7 @@ if not os.path.isdir(logdir):
 for name, final_struct in [("inputs", inputs), ("outputs", outputs),
                            ("runtime", runtime)]:
     log_file = os.path.join(
-        logdir, "pyconnectome_dtitk_create_templates_{0}.json".format(name))
+        logdir, "pyconnectome_dtitk_tbss_{0}.json".format(name))
     with open(log_file, "wt") as open_file:
         json.dump(final_struct, open_file, sort_keys=True, check_circular=True,
                   indent=4)

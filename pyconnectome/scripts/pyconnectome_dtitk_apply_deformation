@@ -38,20 +38,18 @@ except:
 
 # Script documentation
 DOC = """
-DTI-TK subject mapping to template
-----------------------------------
+DTI-TK apply deformation to subject tensor file.
+------------------------------------------------
 
-Wraps subject to template space and resample to isotropic voxels.
+Wraps subject to template space and resample to given voxels dimensions
+(isotropic by default).
 
 Command example on the MAPT data :
 
 python $PROJECT/MAPT/pyconnectome_dtitk_subject_mapping \
     -t /volatile/test_enigma_dtitk_tbss_v2/M0/01310036DAR/dtifit_dtitk.nii.gz \
     -s 01310036DAR \
-    -r /volatile/test_enigma_dtitk_tbss_v2/M0/mean_rigid3.nii.gz \
-    -a /volatile/test_enigma_dtitk_tbss_v2/M0/mean_affine3.nii.gz \
-    -d /volatile/test_enigma_dtitk_tbss_v2/M0/mean_diffeomorphic6.nii.gz \
-    -m /volatile/test_enigma_dtitk_tbss_v2/M0/mean_affine3_tr.nii.gz \
+    -e /volatile/test_enigma_dtitk_tbss_v2/M0/mean_diffeomorphic6.nii.gz \
     -o /volatile/test_enigma_dtitk_tbss_v2/M0/ \
     -D 1 1 1 \
     -V 2
@@ -82,7 +80,7 @@ def get_cmd_line_args():
     <argument name> -> <argument value>.
     """
     parser = argparse.ArgumentParser(
-        prog="python pyconnectome_dtitk_subject_mapping",
+        prog="python pyconnectome_dtitk_apply_deformation",
         description=textwrap.dedent(DOC),
         formatter_class=RawTextHelpFormatter)
 
@@ -95,17 +93,11 @@ def get_cmd_line_args():
         "-s", "--subject", required=True,
         help="Subject ID.")
     required.add_argument(
-        "-r", "--rigid-template", type=is_file, required=True,
-        help="Path to DTI-TK rigid template.")
+        "-e", "--template", type=is_file, required=True,
+        help="Path to registration template.")
     required.add_argument(
-        "-a", "--affine-template", type=is_file, required=True,
-        help="Path to DTI-TK affine template.")
-    required.add_argument(
-        "-d", "--diffeo-template", type=is_file, required=True,
-        help="Path to DTI-TK diffeomorphic template.")
-    required.add_argument(
-        "-m", "--mean-affine-tr-mask", type=is_file, required=True,
-        help="Path to the trace map of the affine template image.")
+        "-b", "--template-brain-mask", type=is_file, required=True,
+        help="Path to registration template brain mask.")
     required.add_argument(
         "-o", "--outdir",
         type=is_directory, required=True, metavar="<path>",
@@ -132,7 +124,7 @@ def get_cmd_line_args():
 Parse the command line.
 """
 inputs, verbose = get_cmd_line_args()
-tool = "pyconnectome_dtitk_subject_mapping"
+tool = "pyconnectome_dtitk_apply_deformation"
 timestamp = datetime.now().isoformat()
 params = locals()
 runtime = dict([(name, params[name])
@@ -147,29 +139,14 @@ if verbose > 0:
 
 
 """
-1 - Register the subject to rigid, then affine, then diffeomorphic template
+1 - Register the subject to template
 """
-
-
-# Rigid registration
-print("{0} -> {1} : Rigid registration...".format(
-    inputs["tensor"], inputs["rigid_template"]))
-rigid_tensor, rigid_transformation = dti_rigid_reg(
-    template=inputs["rigid_template"],
-    subject=inputs["tensor"],
-    output_dir=inputs["outdir"],
-    SMoption="EDS",
-    sep=[4.0, 4.0, 4.0],
-    ftol=0.01,
-    useInTrans=False)
-outputs["rigidly_registered_subject"] = rigid_tensor
-outputs["rigid_transformation"] = rigid_transformation
 
 # Affine registration
 print("{0} -> {1} : Affine registration...".format(
-    inputs["tensor"], inputs["affine_template"]))
+    inputs["tensor"], inputs["template"]))
 affine_tensor, affine_transformation = dti_affine_reg(
-    template=inputs["affine_template"],
+    template=inputs["template"],
     subject=inputs["tensor"],
     output_dir=inputs["outdir"],
     SMoption="EDS",
@@ -181,11 +158,11 @@ outputs["affine_transformation"] = affine_transformation
 
 # Diffeomorphic registration
 print("{0} -> {1} : Diffeomorphic registration...".format(
-    inputs["tensor"], inputs["diffeo_template"]))
+    inputs["tensor"], inputs["template"]))
 diffeo_tensor, diffeo_transformation = dti_diffeomorphic_reg(
-    template=inputs["diffeo_template"],
+    template=inputs["template"],
     subject=affine_tensor,
-    mask=inputs["mean_affine_tr_mask"],
+    mask=inputs["template_brain_mask"],
     output_dir=inputs["outdir"],
     no_of_iter=6,
     ftol=0.002)
@@ -194,15 +171,14 @@ outputs["diffeo_transformation"] = diffeo_transformation
 
 
 """
-2 - Generate the spatially normalized DTI data with the isotropic 1mm3
-    resolution.
+2 - Generate the spatially normalized DTI data.
     1) Combine affine and diffeomorphic transformation.
-    2) Normalize data to isotropic 1mm3 resolution
+    2) Normalize data to given resolution (default isotropic)
 """
 
 
 print("Combine affine + diffeormorphic transformation and normalize data"
-      " to isotropic 1mm3 resolution...")
+      " to resolution {0}...".format(voxel_dim))
 if inputs["voxel_dim"] is None:
     voxel_dim = [1, 1, 1]
 elif len(inputs["voxel_dim"]) < 3:
@@ -212,7 +188,7 @@ else:
 warped_subject, combined_transformation = dti_warp_to_template(
     subject=inputs["tensor"],
     template=inputs["diffeo_template"],
-    voxel_dim=[1, 1, 1])
+    voxel_dim=voxel_dim)
 outputs["tensor_template_space"] = warped_subject
 outputs["combined_transformation"] = combined_transformation
 
@@ -230,7 +206,7 @@ if not os.path.isdir(logdir):
 for name, final_struct in [("inputs", inputs), ("outputs", outputs),
                            ("runtime", runtime)]:
     log_file = os.path.join(
-        logdir, "{0}_pyconnectome_dtitk_subject_mapping_{1}.json".format(
+        logdir, "{0}_pyconnectome_dtitk_apply_deformation_{1}.json".format(
             inputs["subject"], name))
     with open(log_file, "wt") as open_file:
         json.dump(final_struct, open_file, sort_keys=True, check_circular=True,

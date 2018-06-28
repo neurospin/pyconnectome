@@ -16,8 +16,9 @@ DTI-Tk Preprocessing
 """
 
 
-def dtitk_preprocessing(basename, output_dir, tool="FSL",
-                        outliers=True, spd=True, origin=True, isotropic=False):
+def dtitk_import_tensors(basename, output_dir, tool="FSL",
+                         outliers=True, spd=True, origin=True,
+                         isotropic=False):
     """ Runs dti-tk preprocessing steps on a tensor file:
     1) Convert file to dti-tk nifti tensor format.
     2) Put image file origin to [0, 0, 0].
@@ -263,7 +264,8 @@ def dti_template_bootstrap(template, subjects_file):
     return output_template
 
 
-def TVMean(subjects, out_template, typep="ORIGINAL", interp="LEI"):
+def bootstrap_template_from_dti(subjects, out_template, typep="ORIGINAL",
+                                interp="LEI"):
     """Wraps DTI-TK TVMean command and create a boostrap template from dti
        files.
     Parameters
@@ -313,7 +315,7 @@ def dtitk_create_mean_template(subject_list, out_path,
     """
     # Create the boostrap template
     template = os.path.join(out_path, "mean_initial.nii.gz")
-    template = TVMean(subject_list, template)
+    template = bootstrap_template_from_dti(subject_list, template)
 
     # Resample the template into a voxel space with the voxel dimensions being
     # powers of 2 (DTI-TK mandatory step).
@@ -384,8 +386,8 @@ def rigid_alignment_population(template, subjects, output_dir, SMOption,
     return output
 
 
-def affine_alignment_population(template, subjects, output_dir, SMOption,
-                                no_of_iterations):
+def affine_alignment_population(template, subjects_dti_file, output_dir,
+                                SMOption, no_of_iterations):
     """ Wraps DTI-TK script dti_affine_population and affinely align a set of
     DTI volume (subjects) to a template. The optimized templates will be
     saved as mean_affine{1,2,..,no_of_iterations}.nii.gz. The aligned
@@ -394,7 +396,7 @@ def affine_alignment_population(template, subjects, output_dir, SMOption,
     ----------
     template: str
         the path to the template.
-    subjects: str
+    subjects_dti_file: str
         the path to the text file list of DTI-TK nii files.
     output_dir: str
         the path to the output directory.
@@ -408,19 +410,22 @@ def affine_alignment_population(template, subjects, output_dir, SMOption,
         process.
     Returns
     -------
-    output: str
+    affine_template: str
         the path to the generated affine template.
+    subjects_dti_aff_file: str
+        the path to the list of subjects dti volumes registered to the affine
+        template.
     """
     if not os.getcwd() == output_dir:
         os.chdir(output_dir)
-    cmd = "dti_affine_population {0} {1} {2} {3}".format(template, subjects,
-                                                         SMOption,
-                                                         no_of_iterations)
+    cmd = "dti_affine_population {0} {1} {2} {3}".format(
+        template, subjects_dti_file, SMOption, no_of_iterations)
     os.system(cmd)
-    output_dir = os.path.dirname(subjects)
-    output = os.path.join(output_dir,
-                          "mean_affine{0}.nii.gz".format(no_of_iterations))
-    return output
+    output_dir = os.path.dirname(subjects_dti_file)
+    affine_template = os.path.join(
+        output_dir, "mean_affine{0}.nii.gz".format(no_of_iterations))
+    subjects_dti_aff_file = subjects_dti_file.replace(".txt", "_aff.txt")
+    return affine_template, subjects_dti_aff_file
 
 
 def deformable_alignment_population(affine_template, subjects_affine,
@@ -794,7 +799,7 @@ def fslmerge(images, concatenated_output, time=True, x=False, y=False, z=False,
     return concatenated_output
 
 
-def binarize_4D_FA(fa_4D, output, fsl_sh=DEFAULT_FSL_PATH):
+def get_fa_stack_mask(fa_4D, output, fsl_sh=DEFAULT_FSL_PATH):
     """Wraps fslmaths command and create a combined binary mask volume from a
        FA 4D data of multiple subjects.
     Parameters
