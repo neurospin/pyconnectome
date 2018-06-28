@@ -1,0 +1,232 @@
+#!/usr/bin/env python
+##########################################################################
+# NSAp - Copyright (C) CEA, 2018
+# Distributed under the terms of the CeCILL-B license, as published by
+# the CEA-CNRS-INRIA. Refer to the LICENSE file or to
+# http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html
+# for details.
+##########################################################################
+
+# System import
+import os
+import argparse
+import textwrap
+import glob
+import re
+import json
+from datetime import datetime
+from argparse import RawTextHelpFormatter
+from datetime import datetime
+from pprint import pprint
+
+# DTI-TK imports
+from pyconnectome.tractography.dtitk_tbss import (
+    dti_rigid_reg, dti_affine_reg, dti_diffeomorphic_reg, dti_warp_to_template)
+
+# Pyconnectome imports
+from pyconnectome.wrapper import FSLWrapper
+
+# Bredala import
+try:
+    import bredala
+    bredala.USE_PROFILER = False
+    bredala.register("pyconnectome.tractography.dtitk_tbss",
+                     names=["dti_rigid_reg", "dti_affine_reg",
+                            "dti_diffeomorphic_reg", "dti_warp_to_template"])
+except:
+    pass
+
+# Script documentation
+DOC = """
+DTI-TK subject mapping to template
+----------------------------------
+
+Wraps subject to template space and resample to isotropic voxels.
+
+Command example on the MAPT data :
+
+python $PROJECT/MAPT/pyconnectome_dtitk_subject_mapping \
+    -t /volatile/test_enigma_dtitk_tbss_v2/M0/01310036DAR/dtifit_dtitk.nii.gz \
+    -r /volatile/test_enigma_dtitk_tbss_v2/M0/mean_rigid3.nii.gz \
+    -a /volatile/test_enigma_dtitk_tbss_v2/M0/mean_affine3.nii.gz \
+    -d /volatile/test_enigma_dtitk_tbss_v2/M0/mean_diffeomorphic6.nii.gz \
+    -m /volatile/test_enigma_dtitk_tbss_v2/M0/mean_affine3_tr.nii.gz \
+    -D 1 1 1 \
+    -V 2
+"""
+
+
+def is_file(filepath):
+    """ Check file's existence - argparse 'type' argument.
+    """
+    if not os.path.isfile(filepath):
+        raise argparse.ArgumentError("File does not exist: %s" % filepath)
+    return filepath
+
+
+def is_directory(dirarg):
+    """ Type for argparse - checks that directory exists.
+    """
+    if not os.path.isdir(dirarg):
+        raise argparse.ArgumentError(
+            "The directory '{0}' does not exist!".format(dirarg))
+    return dirarg
+
+
+# Parse input arguments
+def get_cmd_line_args():
+    """
+    Create a command line argument parser and return a dict mapping
+    <argument name> -> <argument value>.
+    """
+    parser = argparse.ArgumentParser(
+        prog="python pyconnectome_dtitk_subject_mapping",
+        description=textwrap.dedent(DOC),
+        formatter_class=RawTextHelpFormatter)
+
+    # Required arguments
+    required = parser.add_argument_group("required arguments")
+    required.add_argument(
+        "-t", "--tensor", type=is_file, required=True,
+        help="Path to subject tensor file.")
+    required.add_argument(
+        "-s", "--subject", required=True,
+        help="Subject ID.")
+    required.add_argument(
+        "-r", "--rigid-template", type=is_file, required=True,
+        help="Path to DTI-TK rigid template.")
+    required.add_argument(
+        "-a", "--affine-template", type=is_file, required=True,
+        help="Path to DTI-TK affine template.")
+    required.add_argument(
+        "-d", "--diffeo-template", type=is_file, required=True,
+        help="Path to DTI-TK diffeomorphic template.")
+    required.add_argument(
+        "-m", "--mean-affine-tr-mask", type=is_file, required=True,
+        help="Path to the trace map of the affine template image.")
+    required.add_argument(
+        "-o", "--outdir",
+        type=is_directory, required=True, metavar="<path>",
+        help="Path to the output directory.")
+
+    # Optional arguments
+    parser.add_argument(
+        "-D", "--voxel-dim",
+        type=float, nargs='+',
+        help="Voxel dimensions for image resampling.")
+    parser.add_argument(
+        "-V", "--verbose",
+        type=int, choices=[0, 1, 2], default=2,
+        help="Increase the verbosity level: 0 silent, [1, 2] verbose.")
+
+    # Create a dict of arguments to pass to the 'main' function
+    args = parser.parse_args()
+    kwargs = vars(args)
+    verbose = kwargs.pop("verbose")
+    return kwargs, verbose
+
+
+"""
+Parse the command line.
+"""
+inputs, verbose = get_cmd_line_args()
+tool = "pyconnectome_dtitk_subject_mapping"
+timestamp = datetime.now().isoformat()
+params = locals()
+runtime = dict([(name, params[name])
+               for name in ("tool", "timestamp")])
+outputs = {}
+if verbose > 0:
+    pprint("[info] Starting mapping of subject into template space...")
+    pprint("[info] Runtime:")
+    pprint(runtime)
+    pprint("[info] Inputs:")
+    pprint(inputs)
+
+
+"""
+1 - Register the subject to rigid, then affine, then diffeomorphic template
+"""
+
+
+# Rigid registration
+print("{0} -> {1} : Rigid registration...".format(
+    inputs["tensor"], inputs["rigid_template"]))
+rigid_tensor, rigid_transformation = dti_rigid_reg(
+    template=inputs["rigid_template"],
+    subject=inputs["tensor"],
+    output_dir=inputs["outdir"],
+    SMoption="EDS",
+    sep=[4.0, 4.0, 4.0],
+    ftol=0.01,
+    useInTrans=False)
+outputs["rigidly_registered_subject"] = rigid_tensor
+outputs["rigid_transformation"] = rigid_transformation
+
+# Affine registration
+print("{0} -> {1} : Affine registration...".format(
+    inputs["tensor"], inputs["affine_template"]))
+affine_tensor, affine_transformation = dti_affine_reg(
+    template=inputs["affine_template"],
+    subject=inputs["tensor"],
+    output_dir=inputs["outdir"],
+    SMoption="EDS",
+    sep=[4.0, 4.0, 4.0],
+    ftol=0.01,
+    useInTrans=False)
+outputs["affinely_registered_subject"] = affine_tensor
+outputs["affine_transformation"] = affine_transformation
+
+# Diffeomorphic registration
+print("{0} -> {1} : Diffeomorphic registration...".format(
+    inputs["tensor"], inputs["diffeo_template"]))
+diffeo_tensor, diffeo_transformation = dti_diffeomorphic_reg(
+    template=inputs["diffeo_template"],
+    subject=affine_tensor,
+    mask=inputs["mean_affine_tr_mask"],
+    output_dir=inputs["outdir"],
+    no_of_iter=6,
+    ftol=0.002)
+outputs["diffeo_registered_subject"] = diffeo_tensor
+outputs["diffeo_transformation"] = diffeo_transformation
+
+
+"""
+2 - Generate the spatially normalized DTI data with the isotropic 1mm3
+    resolution.
+    1) Combine affine and diffeomorphic transformation.
+    2) Normalize data to isotropic 1mm3 resolution
+"""
+
+
+print("Combine affine + diffeormorphic transformation and normalize data"
+      " to isotropic 1mm3 resolution...")
+if inputs["voxel_dim"] is None:
+    voxel_dim = [1, 1, 1]
+elif len(inputs["voxel_dim"]) < 3:
+    raise ValueError("Please enter 3 dimensions for voxel dimensions.")
+else:
+    voxel_dim = inputs["voxel_dim"]
+warped_subject, combined_transformation = dti_warp_to_template(
+    subject=inputs["tensor"],
+    template=inputs["diffeo_template"],
+    voxel_dim=[1, 1, 1])
+outputs["tensor_template_space"] = warped_subject
+outputs["combined_transformation"] = combined_transformation
+
+
+"""
+Update the outputs and save them and the inputs in a 'logs' directory.
+"""
+
+logdir = os.path.join(inputs["outdir"], "logs")
+if not os.path.isdir(logdir):
+    os.mkdir(logdir)
+for name, final_struct in [("inputs", inputs), ("outputs", outputs),
+                           ("runtime", runtime)]:
+    log_file = os.path.join(
+        logdir, "{0}_pyconnectome_dtitk_subject_mapping_{1}.json".format(
+            inputs["subject"], name))
+    with open(log_file, "wt") as open_file:
+        json.dump(final_struct, open_file, sort_keys=True, check_circular=True,
+                  indent=4)

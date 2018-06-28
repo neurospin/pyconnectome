@@ -1,0 +1,178 @@
+#!/usr/bin/env python
+##########################################################################
+# NSAp - Copyright (C) CEA, 2018
+# Distributed under the terms of the CeCILL-B license, as published by
+# the CEA-CNRS-INRIA. Refer to the LICENSE file or to
+# http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html
+# for details.
+##########################################################################
+
+# System import
+import os
+import argparse
+import textwrap
+import glob
+import re
+import json
+from datetime import datetime
+from argparse import RawTextHelpFormatter
+from datetime import datetime
+from pprint import pprint
+
+# TBSS import
+from pyconnectome.tractography.dtitk_tbss import tbss_pipeline
+
+# Pyconnectome imports
+from pyconnectome.wrapper import FSLWrapper
+
+# Bredala import
+try:
+    import bredala
+    bredala.USE_PROFILER = False
+    bredala.register("pyconnectome.tractography.dtitk_tbss",
+                     names=["tbss_pipeline"])
+except:
+    pass
+
+# Script documentation
+DOC = """
+TBSS pipeline analysis.
+-----------------------
+
+Run TBSS pipeline to generate subjects' FA skeletons.
+
+Requirements:
+    - path to subjects FA files.
+    - output directory.
+
+Command example on the MAPT data :
+python $PROJECT/MAPT/pyconnectome_enigma_tbss \
+    -s 02990191LSI 02990236RMO 02990247CCO \
+    -f /volatile/test_dmri_preproc/MAPT_subjects/02990191LSI/4-Tensor/dtifit/dtifit_FA.nii.gz \
+       /volatile/test_dmri_preproc/MAPT_subjects/02990236RMO/4-Tensor/dtifit/dtifit_FA.nii.gz \
+       /volatile/test_dmri_preproc/MAPT_subjects/02990247CCO/4-Tensor/dtifit/dtifit_FA.nii.gz \
+    -o /volatile/test_enigma_tbss_pipeline \
+    -U \
+    -R \
+    -F /volatile/fsl.5.0.11/etc/fslconf/fsl.sh \
+    -V 2
+"""
+
+
+def is_file(filepath):
+    """ Check file's existence - argparse 'type' argument.
+    """
+    if not os.path.isfile(filepath):
+        raise argparse.ArgumentError("File does not exist: %s" % filepath)
+    return filepath
+
+
+def is_directory(dirarg):
+    """ Type for argparse - checks that directory exists.
+    """
+    if not os.path.isdir(dirarg):
+        raise argparse.ArgumentError(
+            "The directory '{0}' does not exist!".format(dirarg))
+    return dirarg
+
+
+# Parse input arguments
+def get_cmd_line_args():
+    """
+    Create a command line argument parser and return a dict mapping
+    <argument name> -> <argument value>.
+    """
+    parser = argparse.ArgumentParser(
+        prog="python pyconnectome_tbss",
+        description=textwrap.dedent(DOC),
+        formatter_class=RawTextHelpFormatter)
+
+    # Required arguments
+    required = parser.add_argument_group("required arguments")
+    required.add_argument(
+        "-s", "--subjects", required=True, nargs='+',
+        help="Subjects ids.")
+    required.add_argument(
+        "-f", "--fa-files", type=is_file, required=True, nargs='+', 
+        help="Subjects fa files in the same order than the subjects ids.")
+    required.add_argument(
+        "-o", "--outdir",
+        type=is_directory, required=True, metavar="<path>",
+        help="Path to the output directory.")
+
+    # Optional argument
+    required.add_argument(
+        "-C", "--clean", action="store_true",
+        help="Delete existing files in output directory.")
+    required.add_argument(
+        "-R", "--rename-fa", action="store_true",
+        help="Rename fa files by adding subjects'id.")
+    required.add_argument(
+        "-B", "--tbss-find-best-target", action="store_true",
+        help="Use best target image for TBSS registration.")
+    required.add_argument(
+        "-U", "--tbss-use-fmrib58-fa", action="store_true",
+        help="Use fmrib58 template for TBSS registration.")
+    required.add_argument(
+        "-I", "--tbss-use-target-img", type=is_file, metavar="<path>",
+        help="Use target image for TBSS registration.")    
+    parser.add_argument(
+        "-T", "--threshold-fa-skeleton", type=float, default=0.2,
+        help="Threshold for the mean fa skeleton.")
+    parser.add_argument(
+        "-F", "--fsl-config", metavar="<path>",
+        help="Path to fsl sh config file.")
+    parser.add_argument(
+        "-V", "--verbose",
+        type=int, choices=[0, 1, 2], default=2,
+        help="Increase the verbosity level: 0 silent, [1, 2] verbose.")
+
+    # Create a dict of arguments to pass to the 'main' function
+    args = parser.parse_args()
+    kwargs = vars(args)
+    verbose = kwargs.pop("verbose")
+    return kwargs, verbose
+
+"""
+Parse the command line.
+"""
+inputs, verbose = get_cmd_line_args()
+tool = "pyconnectome_tbss"
+timestamp = datetime.now().isoformat()
+params = locals()
+runtime = dict([(name, params[name])
+               for name in ("tool", "timestamp")])
+outputs = {}
+if verbose > 0:
+    pprint("[info] Starting tbss analysis...")
+    pprint("[info] Runtime:")
+    pprint(runtime)
+    pprint("[info] Inputs:")
+    pprint(inputs)
+
+if (not inputs["tbss_find_best_target"] 
+    and not inputs["tbss_use_fmrib58_fa"] and
+    inputs["tbss_use_target_img"] is None):
+    raise ValueError(
+        "Please enter at least one parameter, -B, -F, -I for tbss"
+        " registration.")          
+tbss_dir = os.path.join(inputs["outdir"], "tbss")
+if not os.path.isdir(tbss_dir):
+    os.mkdir(tbss_dir)
+for i, f in enumerate(inputs["fa_files"]):
+    cmd = ["cp", f, tbss_dir]
+    cmd = " ".join(cmd)
+    os.system(cmd)
+    if inputs["rename_fa"]:
+        out_fa = os.path.join(
+            tbss_dir, inputs["subjects"][i] + "_" + os.path.basename(f))
+        cmd = ["mv", os.path.join(tbss_dir, os.path.basename(f)), out_fa]
+        cmd = " ".join(cmd)
+        os.system(cmd)
+tbss_pipeline(
+    tbss_dir=tbss_dir,
+    find_best_target=inputs["tbss_find_best_target"],
+    use_fmrib58_fa_1mm=inputs["tbss_use_fmrib58_fa"],
+    target_img=inputs["tbss_use_target_img"],
+    skel_threshold=inputs["threshold_fa_skeleton"],
+    fsl_sh=inputs["fsl_config"])

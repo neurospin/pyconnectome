@@ -1,0 +1,302 @@
+#!/usr/bin/env python
+##########################################################################
+# NSAp - Copyright (C) CEA, 2018
+# Distributed under the terms of the CeCILL-B license, as published by
+# the CEA-CNRS-INRIA. Refer to the LICENSE file or to
+# http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html
+# for details.
+##########################################################################
+
+# System import
+import os
+import argparse
+import textwrap
+import glob
+import re
+import json
+from datetime import datetime
+from argparse import RawTextHelpFormatter
+from datetime import datetime
+from pprint import pprint
+
+# DTI-TK imports
+from pyconnectome.tractography.dtitk_tbss import (
+    dti_template_bootstrap, dtitk_create_mean_template,
+    rigid_alignment_population, affine_alignment_population,
+    deformable_alignment_population)
+
+# Pyconnectome imports
+from pyconnectome.wrapper import FSLWrapper
+
+# Bredala import
+try:
+    import bredala
+    bredala.USE_PROFILER = False
+    bredala.register("pyconnectome.tractography.dtitk_tbss",
+                     names=["dti_template_bootstrap",
+                            "dtitk_create_mean_template",
+                            "rigid_alignment_population",
+                            "affine_alignment_population",
+                            "deformable_alignment_population"])
+except:
+    pass
+
+# Script documentation
+DOC = """
+DTI-TK template creation
+------------------------
+
+Create rigid, affine and diffeomorphic templates from a population subset.
+
+Steps:
+    0) Write DTI-TK data files
+    1) Bootstrap input tensor template/ Create initial mean template from
+       population subset.
+    2) Create affine template from the final refined template estimate from
+       a rigid alignment.
+    3) Create diffeomorphic template from the final refined template estimate
+       from affine alignment.
+
+Command example on the MAPT data :
+python $PROJECT/MAPT/pyconnectome_dtitk_create_templates \
+    -t  M0/03990230CRE/dtifit_dtitk.nii.gz \
+        M0/03990364BCL/dtifit_dtitk.nii.gz \
+        M0/02990271GJO/dtifit_dtitk.nii.gz \
+        M0/01990438BEL/dtifit_dtitk.nii.gz \
+        M0/01990256DTH/dtifit_dtitk.nii.gz \
+        M0/01990419MPA/dtifit_dtitk.nii.gz \
+        M0/02990187GSY/dtifit_dtitk.nii.gz \
+        M0/02990212MSA/dtifit_dtitk.nii.gz \
+        M0/02990242RDA/dtifit_dtitk.nii.gz \
+        M0/01990383MJA/dtifit_dtitk.nii.gz \
+        M0/01990451FJO/dtifit_dtitk.nii.gz \
+        M0/02990215DMI/dtifit_dtitk.nii.gz \
+        M0/01990444PAN/dtifit_dtitk.nii.gz \
+        M0/01990420JMO/dtifit_dtitk.nii.gz \
+        M0/01310054CJE/dtifit_dtitk.nii.gz \
+        M0/01990404CRE/dtifit_dtitk.nii.gz \
+        M0/02990246FGU/dtifit_dtitk.nii.gz \
+        M0/02990274DJE/dtifit_dtitk.nii.gz \
+        M0/02990265PFR/dtifit_dtitk.nii.gz \
+        M0/01310047FHE/dtifit_dtitk.nii.gz \
+        M0/02990214BGI/dtifit_dtitk.nii.gz \
+        M0/01310049BOD/dtifit_dtitk.nii.gz \
+        M0/01990355FCO/dtifit_dtitk.nii.gz \
+        M0/01990277RMA/dtifit_dtitk.nii.gz \
+        M0/02990177CJA/dtifit_dtitk.nii.gz \
+        M0/01990403RJA/dtifit_dtitk.nii.gz \
+        M0/02990267PMA/dtifit_dtitk.nii.gz \
+        M0/01310042TJA/dtifit_dtitk.nii.gz \
+        M0/02990193CCH/dtifit_dtitk.nii.gz \
+        M0/01310036DAR/dtifit_dtitk.nii.gz \
+        M0/01310053CJA/dtifit_dtitk.nii.gz \
+        M0/01990448BMA/dtifit_dtitk.nii.gz \
+        M0/01310041TCL/dtifit_dtitk.nii.gz \
+        M0/01990356ECL/dtifit_dtitk.nii.gz \
+        M0/01990347RSU/dtifit_dtitk.nii.gz \
+        M0/01310044CCL/dtifit_dtitk.nii.gz \
+        M0/02990233BRE/dtifit_dtitk.nii.gz \
+        M0/01990342MAL/dtifit_dtitk.nii.gz \
+        M0/01990440BJE/dtifit_dtitk.nii.gz \
+        M0/02990247CCO/dtifit_dtitk.nii.gz \
+        M0/01310046CRO/dtifit_dtitk.nii.gz \
+        M0/02990186LDE/dtifit_dtitk.nii.gz \
+        M0/02990239LLI/dtifit_dtitk.nii.gz \
+        M0/01990439RHE/dtifit_dtitk.nii.gz \
+        M0/01990382GJU/dtifit_dtitk.nii.gz \
+        M0/02990168VJE/dtifit_dtitk.nii.gz \
+    -o /volatile/test_enigma_dtitk_tbss_v2 \
+    -S 5 \
+    -V 2
+"""
+
+
+def is_file(filepath):
+    """ Check file's existence - argparse 'type' argument.
+    """
+    if not os.path.isfile(filepath):
+        raise argparse.ArgumentError("File does not exist: %s" % filepath)
+    return filepath
+
+
+def is_directory(dirarg):
+    """ Type for argparse - checks that directory exists.
+    """
+    if not os.path.isdir(dirarg):
+        raise argparse.ArgumentError(
+            "The directory '{0}' does not exist!".format(dirarg))
+    return dirarg
+
+
+# Parse input arguments
+def get_cmd_line_args():
+    """
+    Create a command line argument parser and return a dict mapping
+    <argument name> -> <argument value>.
+    """
+    parser = argparse.ArgumentParser(
+        prog="python pyconnectome_dtitk_create_templates",
+        description=textwrap.dedent(DOC),
+        formatter_class=RawTextHelpFormatter)
+
+    # Required arguments
+    required = parser.add_argument_group("required arguments")
+    required.add_argument(
+        "-t", "--dtitk-tensors", required=True, nargs='+',
+        help="Basename pattern FSL-generated DTI eigensystem files"
+             " (e.g: dtifit) for each subject.")
+    required.add_argument(
+        "-o", "--outdir",
+        type=is_directory, required=True, metavar="<path>",
+        help="Path to the output directory.")
+
+    # Optional argument
+    required.add_argument(
+        "-E", "--template", type=is_file, metavar="<path>",
+        help="Path to the template file.")
+    required.add_argument(
+        "-S", "--subjects-subset", type=int,
+        help="Number of subjects used for template creation and registration.")
+    parser.add_argument(
+        "-V", "--verbose",
+        type=int, choices=[0, 1, 2], default=2,
+        help="Increase the verbosity level: 0 silent, [1, 2] verbose.")
+
+    # Create a dict of arguments to pass to the 'main' function
+    args = parser.parse_args()
+    kwargs = vars(args)
+    verbose = kwargs.pop("verbose")
+    return kwargs, verbose
+
+
+"""
+Parse the command line.
+"""
+
+
+inputs, verbose = get_cmd_line_args()
+tool = "pyconnectome_dtitk_create_templates"
+timestamp = datetime.now().isoformat()
+params = locals()
+runtime = dict([(name, params[name])
+               for name in ("tool", "timestamp")])
+outputs = {}
+if verbose > 0:
+    pprint("[info] Starting templates computation...")
+    pprint("[info] Runtime:")
+    pprint(runtime)
+    pprint("[info] Inputs:")
+    pprint(inputs)
+
+
+"""
+0 - Write DTI-TK data files
+"""
+
+
+if (inputs["subjects_subset"] is not None and
+        inputs["subjects_subset"] > len(inputs["dtitk_tensors"])):
+    raise ValueError(
+        "Please give a subset of subjects inferior or equal to the number of"
+        " subjects.")
+elif inputs["subjects_subset"] is not None:
+    tensor_dtitk_files_subset = inputs["dtitk_tensors"][
+        :inputs["subjects_subset"]]
+else:
+    tensor_dtitk_files_subset = inputs["dtitk_tensors"]
+
+# List corrected dti files
+subset_subjects_file = os.path.join(
+    inputs["outdir"], "subjects_subset.txt")
+subjects_file = os.path.join(inputs["outdir"], "subjects.txt")
+with open(subset_subjects_file, 'w') as open_file:
+    for t in tensor_dtitk_files_subset:
+        open_file.write(t)
+        open_file.write("\n")
+with open(subjects_file, 'w') as open_file:
+    for t in inputs["dtitk_tensors"]:
+        open_file.write(t)
+        open_file.write("\n")
+outputs["subjects_file"] = subjects_file
+outputs["subset_subjects_file"] = subset_subjects_file
+
+
+"""
+1 - Bootstrap input tensor template/ Create initial mean template.
+"""
+
+
+print("\nGenerating template...\n")
+if inputs["template"] is not None:
+    initial_template = dti_template_bootstrap(
+        inputs["template"], subset_subjects_file)
+else:
+    initial_template = dtitk_create_mean_template(
+        subject_list=subset_subjects_file,
+        out_path=inputs["outdir"])
+outputs["initial_template"] = initial_template
+
+
+"""
+2 - Create affine template from the final refined template estimate from rigid
+    alignment.
+"""
+
+
+print("Rigid alignment...\n")
+rigid_template = rigid_alignment_population(
+    template=initial_template,
+    subjects=subset_subjects_file,
+    output_dir=inputs["outdir"],
+    SMOption="EDS",
+    no_of_iterations=3,
+    optimized=False)
+outputs["rigid_template"] = rigid_template
+
+print("Affine alignment...\n")
+affine_template = affine_alignment_population(
+    template=rigid_template,
+    subjects=subset_subjects_file,
+    output_dir=inputs["outdir"],
+    SMOption="EDS",
+    no_of_iterations=3)
+outputs["affine_template"] = affine_template
+
+
+"""
+3 - Create diffeomorphic template from the final refined template estimate from
+    affine alignment.
+"""
+
+
+print("Deformable alignment...\n")
+subset_subjects_aff_file = os.path.join(
+    inputs["outdir"], subset_subjects_file.replace(
+        ".txt", "_aff.txt"))
+diffeo_template, mean_affine_tr_mask = deformable_alignment_population(
+    affine_template=affine_template,
+    subjects_affine=subset_subjects_aff_file,
+    output_dir=inputs["outdir"],
+    ftol=0.002)
+outputs["subset_subjects_aff_file"] = subset_subjects_aff_file
+outputs["diffeo_template"] = diffeo_template
+outputs["mean_affine_tr_mask"] = mean_affine_tr_mask
+
+
+"""
+Update the outputs and save them and the inputs in a 'logs' directory.
+"""
+
+logdir = os.path.join(inputs["outdir"], "logs")
+if not os.path.isdir(logdir):
+    os.mkdir(logdir)
+for name, final_struct in [("inputs", inputs), ("outputs", outputs),
+                           ("runtime", runtime)]:
+    log_file = os.path.join(
+        logdir, "pyconnectome_dtitk_create_templates_{0}.json".format(name))
+    with open(log_file, "wt") as open_file:
+        json.dump(final_struct, open_file, sort_keys=True, check_circular=True,
+                  indent=4)
+if verbose > 0:
+    pprint("[info] Outputs:")
+    pprint(outputs)
