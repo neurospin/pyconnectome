@@ -143,7 +143,7 @@ outputs["preprocessed_tensor"] = tensor_dtitk
 Update the outputs and save them and the inputs in a 'logs' directory.
 """
 
-logdir = os.path.join(inputs["outdir"], "logs")
+logdir = os.path.join(sub_dir, "logs")
 if not os.path.isdir(logdir):
     os.mkdir(logdir)
 for name, final_struct in [("inputs", inputs), ("outputs", outputs),

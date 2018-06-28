@@ -47,10 +47,12 @@ Command example on the MAPT data :
 
 python $PROJECT/MAPT/pyconnectome_dtitk_subject_mapping \
     -t /volatile/test_enigma_dtitk_tbss_v2/M0/01310036DAR/dtifit_dtitk.nii.gz \
+    -s 01310036DAR \
     -r /volatile/test_enigma_dtitk_tbss_v2/M0/mean_rigid3.nii.gz \
     -a /volatile/test_enigma_dtitk_tbss_v2/M0/mean_affine3.nii.gz \
     -d /volatile/test_enigma_dtitk_tbss_v2/M0/mean_diffeomorphic6.nii.gz \
     -m /volatile/test_enigma_dtitk_tbss_v2/M0/mean_affine3_tr.nii.gz \
+    -o /volatile/test_enigma_dtitk_tbss_v2/M0/ \
     -D 1 1 1 \
     -V 2
 """
@@ -219,7 +221,10 @@ outputs["combined_transformation"] = combined_transformation
 Update the outputs and save them and the inputs in a 'logs' directory.
 """
 
-logdir = os.path.join(inputs["outdir"], "logs")
+subdir = os.path.join(inputs["outdir"], inputs["subject"])
+if not os.path.isdir(subdir):
+    os.mkdir(subdir)
+logdir = os.path.join(subdir, "logs")
 if not os.path.isdir(logdir):
     os.mkdir(logdir)
 for name, final_struct in [("inputs", inputs), ("outputs", outputs),
