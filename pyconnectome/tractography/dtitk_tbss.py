@@ -735,8 +735,9 @@ def skeletonize(input_file, output_file, skel_threshold=None,
     if alternative_skeleton is not None:
         cmd.append("-s")
         cmd.append(alternative_skeleton)
-    cmd.append("-o")
-    cmd.append(output_file)
+    if output_file is not None:
+        cmd.append("-o")
+        cmd.append(output_file)
     fslprocess = FSLWrapper(cmd, shfile=fsl_sh)
     fslprocess()
 
@@ -829,15 +830,19 @@ TBSS
 
 
 def tbss_pipeline(tbss_dir, find_best_target=True, use_fmrib58_fa_1mm=False,
-                  target_img=None, skel_threshold=0.2,
-                  fsl_sh=DEFAULT_FSL_PATH):
-    """Wraps tbss commands to execute tbss pipeline and generate FA skeleton.
+                  target_img=None, use_fmrib58_fa_mean_and_skel=False,
+                  skel_threshold=0.2, fsl_sh=DEFAULT_FSL_PATH):
+    """Wraps tbss commands to execute tbss pipeline and generate subjects' FA
+       skeletons.
+       See https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/TBSS/UserGuide for further
+       information.
        Steps:
-        1) Preproc
-        2) Register FA images to standard space.
-        3) Applies the nonlinear transforms found in the previous stage to all
-           subjects to bring them into standard space.
-        4) Thresholds the mean FA skeleton image
+        1) Prepare the FA data in the TBSS working directory in the right
+           format.
+        2) Register FA images to standard space (nonlinear registration).
+        3) Apply transformation to FA images and create and skeletonize the
+           mean FA image.
+        4) Project all subjects' FA data onto the mean FA skeleton.
 
     Parameters
     ----------
@@ -852,6 +857,9 @@ def tbss_pipeline(tbss_dir, find_best_target=True, use_fmrib58_fa_1mm=False,
     target_img: str
         target image that will be used for registration to standard space if
         find_best_target and use_fmrib58_fa_1mm parameters are set to False.
+    use_fmrib58_fa_mean_and_skel: bool
+        use the FMRIB58_FA mean FA image and its derived skeleton, instead of
+        the mean of the subjects for tbss_3_postreg.
     skel_threshold: float
         threshold for the mean FA skeleton image thresholding.
     fsl_sh: str
@@ -863,42 +871,57 @@ def tbss_pipeline(tbss_dir, find_best_target=True, use_fmrib58_fa_1mm=False,
         path to the subjects corrected FA files.
     orig_dir: str
         path to the copied subjects original FA files.
+    all_FA: str
+        path to the concatenated subjects FA files in template space.
+    mean_FA: str
+        path to the subjects' mean FA.
+    mean_FA_mask: str
+        path to the brain mask of mean_FA.
+    mean_FA_skel: str
+        path to the skeletonized mean FA.
+    all_FA_skeletonized: str
+        path to the concatenated subjects skeletonized FA.
+    mean_FA_skel_mask: str
+        binary skeleton mask.
+    mean_FA_skel_mask_dst: str
+        distance map created from the skeleton mask.
+    thresh_file: str
+        text file indicating threshold used.
     """
 
     os.chdir(tbss_dir)
     print("TBSS preprocessing...")
     fa_dir, orig_dir = tbss_1_preproc(
-        output_dir=tbss_dir,
+        tbss_dir=tbss_dir,
         fsl_sh=fsl_sh)
 
     print("TBSS registration...")
     tbss_2_reg(
-        output_dir=tbss_dir,
+        tbss_dir=tbss_dir,
         use_fmrib58_fa_1mm=use_fmrib58_fa_1mm,
         target_img=target_img,
         find_best_target=find_best_target,
         fsl_sh=fsl_sh)
 
-    if find_best_target or target_img is not None:
-        mean_study = True
-    else:
-        mean_study = False
-
     print("TBSS post-registration...")
-    tbss_3_postreg(
-        output_dir=tbss_dir,
-        mean_study=mean_study,
-        use_fmrib58_fa=use_fmrib58_fa_1mm,
+    all_FA, mean_FA, mean_FA_mask, mean_FA_skel = tbss_3_postreg(
+        tbss_dir=tbss_dir,
+        use_fmrib58_fa_mean_and_skel=use_fmrib58_fa_mean_and_skel,
         fsl_sh=fsl_sh)
 
     print("TBSS pre-stats...")
-    tbss_4_prestats(
-        output_dir=tbss_dir,
+    (all_FA_skeletonized, mean_FA_skel_mask, mean_FA_skel_mask_dst,
+     thresh_file) = tbss_4_prestats(
+        tbss_dir=tbss_dir,
         threshold=skel_threshold,
         fsl_sh=fsl_sh)
 
+    return (fa_dir, orig_dir, all_FA, mean_FA, mean_FA_mask, mean_FA_skel,
+            all_FA_skeletonized, mean_FA_skel_mask, mean_FA_skel_mask_dst,
+            thresh_file)
 
-def tbss_1_preproc(output_dir, fsl_sh=DEFAULT_FSL_PATH):
+
+def tbss_1_preproc(tbss_dir, fsl_sh=DEFAULT_FSL_PATH):
     """ Wraps fsl tbss_1_preproc command to erode the FA images slightly and
         zero the end slices (to remove likely outliers from the diffusion
         tensor fitting).
@@ -907,9 +930,8 @@ def tbss_1_preproc(output_dir, fsl_sh=DEFAULT_FSL_PATH):
 
     Parameters
     ----------
-    output_dir: str (required)
-        path to output directory where orig and FA directories will be created
-        and where FA files are stored.
+    tbss_dir: str (required)
+        path to tbss root directory.
     fsl_sh: str
         path to fsl setup sh file.
 
@@ -937,17 +959,19 @@ def tbss_1_preproc(output_dir, fsl_sh=DEFAULT_FSL_PATH):
     return fa_dir, orig_dir
 
 
-def tbss_2_reg(output_dir, use_fmrib58_fa_1mm=False, target_img=None,
+def tbss_2_reg(tbss_dir, use_fmrib58_fa_1mm=False, target_img=None,
                find_best_target=True, fsl_sh=DEFAULT_FSL_PATH):
     """ Wraps fsl tbss_2_reg command to non-linearly register the FA images
-        to a 1x1x1mm standard space.
+        to a 1x1x1mm standard space or a template image or the best target from
+        all FA images.
+
     For more information, refer to :
     https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/TBSS/UserGuide
 
     Parameters
     ----------
-    output_dir: str (required)
-        path to output directory.
+    tbss_dir: str (required)
+        path to tbss root directory.
     use_fmrib58_fa_1mm: bool (optional, default True)
         use FMRIB58_FA_1mm as target for nonlinear registrations (recommended).
     target_img: str (optional, default None)
@@ -974,43 +998,60 @@ def tbss_2_reg(output_dir, use_fmrib58_fa_1mm=False, target_img=None,
     fslprocess()
 
 
-def tbss_3_postreg(output_dir, mean_study=True, use_fmrib58_fa=False,
+def tbss_3_postreg(tbss_dir, use_fmrib58_fa_mean_and_skel=True,
                    fsl_sh=DEFAULT_FSL_PATH):
     """ Wraps fsl tbss_3_postreg command to apply the nonlinear transforms
         found in the previous stage to all subjects to bring them into
         standard space. Merge results into a single 4D image.
-        Compute a mean FA image and the corresponding skeletonisation.
+        Compute a mean FA image and skeletonize it.
     For more information, refer to :
     https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/TBSS/UserGuide
 
     Parameters
     ----------
-    output_dir: str (required)
-        path to output directory.
-    mean_study: bool (optional, default True)
-        derive mean_FA and mean_FA_skeleton from mean of all subjects in study
-        (recommended).
-    use_fmrib58_fa: bool (optional, default False)
-        use FMRIB58_FA and its skeleton instead of study-derived mean and
-        skeleton.
+    tbss_dir: str (required)
+        path to tbss root directory.
+    use_fmrib58_fa_mean_and_skel: bool (optional, default True)
+        use the FMRIB58_FA mean FA image and its derived skeleton, instead of
+        the mean of the subjects.
     fsl_sh: str
         path to fsl setup sh file.
+
+    Returns
+    -------
+    all_FA: str
+        path to the concatenated subjects FA files in template space.
+    mean_FA: str
+        path to the subjects' mean FA.
+    mean_FA_mask: str
+        path to the brain mask of mean_FA.
+    mean_FA_skel: str
+        path to the skeletonized mean FA.
     """
-    if not os.getcwd() == output_dir:
-        os.chdir(output_dir)
+    if not os.getcwd() == tbss_dir:
+        os.chdir(tbss_dir)
     cmd = ["tbss_3_postreg"]
-    if mean_study:
-        cmd.append("-S")
-    elif use_fmrib58_fa:
+    if use_fmrib58_fa_mean_and_skel:
         cmd.append("-T")
     else:
-        raise ValueError("Please enter valid parameters for function"
-                         " tbss_3_postreg.")
+        cmd.append("-S")
     fslprocess = FSLWrapper(cmd, shfile=fsl_sh)
     fslprocess()
 
+    # Check that output files have been correctly created.
+    all_FA = os.path.join(tbss_dir, "stats", "all_FA.nii.gz")
+    mean_FA = os.path.join(tbss_dir, "stats", "mean_FA.nii.gz")
+    mean_FA_mask = os.path.join(tbss_dir, "stats", "mean_FA_mask.nii.gz")
+    mean_FA_skel = os.path.join(tbss_dir, "stats", "mean_FA_skeleton.nii.gz")
+    output_files = [all_FA, mean_FA, mean_FA_mask, mean_FA_skel]
+    for out_file in output_files:
+        if not os.path.isfile(out_file):
+            raise ValueError("tbss_3_postreg outputs : {0} does not exist"
+                             "...".format(out_file))
+    return all_FA, mean_FA, mean_FA_mask, mean_FA_skel
 
-def tbss_4_prestats(output_dir, threshold=0.2, fsl_sh=DEFAULT_FSL_PATH):
+
+def tbss_4_prestats(tbss_dir, threshold=0.2, fsl_sh=DEFAULT_FSL_PATH):
     """ Wraps fsl tbss_4_prestats command to thresholds the mean FA skeleton
         image at the chosen threshold, create a distance map, and project the
         FA data onto the mean FA skeleton.
@@ -1021,14 +1062,36 @@ def tbss_4_prestats(output_dir, threshold=0.2, fsl_sh=DEFAULT_FSL_PATH):
 
     Parameters
     ----------
-    output_dir: str (required)
-        path to output directory.
+    tbss_dir: str (required)
+        path to tbss root directory.
     threshold: float (required, default 0.2)
     fsl_sh: str
         path to fsl setup sh file.
+
+    Returns
+    -------
+    all_FA_skeletonized: str
+        path to the concatenated subjects skeletonized FA.
+    mean_FA_skel_mask: str
+        binary skeleton mask.
+    mean_FA_skel_mask_dst: str
+        distance map created from the skeleton mask.
+    thresh_file: str
+        text file indicating threshold used.
     """
-    if not os.getcwd() == output_dir:
-        os.chdir(output_dir)
+    if not os.getcwd() == tbss_dir:
+        os.chdir(tbss_dir)
     cmd = ["tbss_4_prestats", str(threshold)]
     fslprocess = FSLWrapper(cmd, shfile=fsl_sh)
     fslprocess()
+
+    # Check that output files have been correctly created.
+    all_FA_skeletonized = os.path.join(
+        tbss_dir, "stats", "all_FA_skeletonised.nii.gz")
+    mean_FA_skel_mask = os.path.join(
+        tbss_dir, "stats", "mean_FA_skeleton_mask.nii.gz")
+    mean_FA_skel_mask_dst = os.path.join(
+        tbss_dir, "stats", "mean_FA_skeleton_mask_dst.nii.gz")
+    thresh_file = os.path.join(tbss_dir, "stats", "thresh.txt")
+    return (all_FA_skeletonized, mean_FA_skel_mask, mean_FA_skel_mask_dst,
+            thresh_file)
