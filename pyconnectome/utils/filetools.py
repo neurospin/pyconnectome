@@ -406,7 +406,8 @@ def extract_image(in_file, index, out_file=None):
     return out_file
 
 
-def fslreorient2std(input_image, output_image, fslconfig=DEFAULT_FSL_PATH):
+def fslreorient2std(input_image, output_image, save_trf=True,
+                    fslconfig=DEFAULT_FSL_PATH):
     """ Reorient an image to match the approximate orientation of the standard
     template image (MNI152).
 
@@ -426,6 +427,8 @@ def fslreorient2std(input_image, output_image, fslconfig=DEFAULT_FSL_PATH):
         The image to reorient.
     output_image: str (mandatory)
         The reoriented image.
+    save_trf: bool, default True
+        If set save the reorientation matrix.
     fslconfig: str (optional, default DEFAULT_FSL_PATH)
         The FSL configuration batch.
     """
@@ -443,13 +446,15 @@ def fslreorient2std(input_image, output_image, fslconfig=DEFAULT_FSL_PATH):
     # Call fslreorient2std
     fslprocess = FSLWrapper(cmd1, shfile=fslconfig)
     fslprocess()
-    fslprocess = FSLWrapper(cmd2, shfile=fslconfig)
-    fslprocess()
-    fsl_trf_file = output_image + ".fsl.trf"
-    with open(fsl_trf_file, "wt") as open_file:
-        open_file.write(fslprocess.stdout)
-    trf_file = output_image + ".trf"
-    numpy.savetxt(trf_file, flirt2aff(fsl_trf_file, output_image, input_image))
+    if save_trf:
+        fslprocess = FSLWrapper(cmd2, shfile=fslconfig)
+        fslprocess()
+        fsl_trf_file = output_image.split(".")[0] + ".fsl.trf"
+        with open(fsl_trf_file, "wt") as open_file:
+            open_file.write(fslprocess.stdout)
+        trf_file = output_image + ".trf"
+        numpy.savetxt(trf_file, flirt2aff(fsl_trf_file, output_image,
+                                          input_image))
 
     return output_image
 

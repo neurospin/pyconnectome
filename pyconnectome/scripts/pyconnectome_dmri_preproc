@@ -328,6 +328,7 @@ def get_cmd_line_args():
         kwargs["fsl_config"] = DEFAULT_FSL_PATH
     return kwargs, verbose
 
+
 """
 Parse the command line.
 """
@@ -371,6 +372,7 @@ for key in files_to_reorient:
     fslreorient2std(
         input_image=inputs[key],
         output_image=outfile,
+        save_trf=False,
         fslconfig=inputs["fsl_config"])
     inputs[key] = outfile
 
@@ -670,6 +672,7 @@ else:
     deformation_field_file = os.path.join(brainsuite_dir, "field.nii.gz")
     nibabel.save(deformation_field_im, deformation_field_file)
 
+
 """
 3- Eddy current and motion correction.
 """
@@ -703,6 +706,7 @@ corrected_dwi, corrected_bvec = eddy(
 outputs["corrected_dwi"] = corrected_dwi
 outputs["corrected_bvec"] = corrected_bvec
 
+
 """
 4- Tensor fit
 """
@@ -724,6 +728,7 @@ outputs["fa_file"] = fa_file
 outputs["s0_file"] = s0_file
 outputs["tensor_file"] = tensor_file
 outputs["m0_file"] = m0_file
+
 
 """
 5- Create QC report
@@ -857,9 +862,11 @@ if not inputs["skip_susceptibility"]:
                  "Susceptibility QC reporting", filename)
     outputs["QC_susceptibility_pdf"] = filename
 
+
 """
 Update the outputs and save them and the inputs in a 'logs' directory.
 """
+
 logdir = os.path.join(inputs["outdir"], "logs")
 if not os.path.isdir(logdir):
     os.mkdir(logdir)
