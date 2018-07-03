@@ -1,0 +1,223 @@
+#!/usr/bin/env python
+##########################################################################
+# NSAp - Copyright (C) CEA, 2018
+# Distributed under the terms of the CeCILL-B license, as published by
+# the CEA-CNRS-INRIA. Refer to the LICENSE file or to
+# http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html
+# for details.
+##########################################################################
+
+# System import
+import os
+import argparse
+import textwrap
+import glob
+import re
+import json
+from datetime import datetime
+from argparse import RawTextHelpFormatter
+from datetime import datetime
+from pprint import pprint
+
+# Bredala import
+try:
+    import bredala
+    bredala.USE_PROFILER = False
+    bredala.register("pyconnectome.tractography.dtitk_tbss",
+                     names=["dti_template_bootstrap",
+                            "dtitk_create_mean_template",
+                            "rigid_alignment_population",
+                            "affine_alignment_population",
+                            "deformable_alignment_population"])
+except:
+    pass
+
+# DTI-TK imports
+from pyconnectome.tractography.dtitk_tbss import (
+    dti_template_bootstrap, dtitk_create_mean_template,
+    rigid_alignment_population, affine_alignment_population,
+    deformable_alignment_population)
+
+# Pyconnectome imports
+from pyconnectome.wrapper import FSLWrapper
+
+# Script documentation
+DOC = """
+DTI-TK template creation
+------------------------
+
+Create rigid, affine and diffeomorphic templates from a population subset.
+
+Steps:
+    0) Write DTI-TK data files
+    1) Bootstrap input tensor template/ Create initial mean template from
+       population subset.
+    2) Create affine template from the final refined template estimate from
+       a rigid alignment.
+    3) Create diffeomorphic template from the final refined template estimate
+       from affine alignment.
+
+Command example on the MAPT data :
+python $PROJECT/MAPT/pyconnectome_dtitk_create_templates \
+    -t  M0/03990230CRE/dtifit_dtitk.nii.gz \
+        M0/03990364BCL/dtifit_dtitk.nii.gz \
+        M0/02990271GJO/dtifit_dtitk.nii.gz \
+        M0/01990438BEL/dtifit_dtitk.nii.gz \
+        M0/01990256DTH/dtifit_dtitk.nii.gz \
+    -o /volatile/test_enigma_dtitk_tbss_v2 \
+    -V 2
+"""
+
+
+def is_file(filepath):
+    """ Check file's existence - argparse 'type' argument.
+    """
+    if not os.path.isfile(filepath):
+        raise argparse.ArgumentError("File does not exist: %s" % filepath)
+    return filepath
+
+
+def is_directory(dirarg):
+    """ Type for argparse - checks that directory exists.
+    """
+    if not os.path.isdir(dirarg):
+        raise argparse.ArgumentError(
+            "The directory '{0}' does not exist!".format(dirarg))
+    return dirarg
+
+
+# Parse input arguments
+def get_cmd_line_args():
+    """
+    Create a command line argument parser and return a dict mapping
+    <argument name> -> <argument value>.
+    """
+    parser = argparse.ArgumentParser(
+        prog="python pyconnectome_dtitk_create_templates",
+        description=textwrap.dedent(DOC),
+        formatter_class=RawTextHelpFormatter)
+
+    # Required arguments
+    required = parser.add_argument_group("required arguments")
+    required.add_argument(
+        "-t", "--dtitk-tensors", required=True, nargs='+',
+        help="Basename pattern for DTI-TK converted DTI eigensystem files"
+             " (e.g: dtifit) for each subject. These subjects are a subset"
+             " from the population and must be representative.")
+    required.add_argument(
+        "-o", "--outdir",
+        type=is_directory, required=True, metavar="<path>",
+        help="Path to the output directory.")
+
+    # Optional argument
+    required.add_argument(
+        "-E", "--template", type=is_file, metavar="<path>",
+        help="Path to the template file.")
+    parser.add_argument(
+        "-V", "--verbose",
+        type=int, choices=[0, 1, 2], default=2,
+        help="Increase the verbosity level: 0 silent, [1, 2] verbose.")
+
+    # Create a dict of arguments to pass to the 'main' function
+    args = parser.parse_args()
+    kwargs = vars(args)
+    verbose = kwargs.pop("verbose")
+    return kwargs, verbose
+
+
+"""
+Parse the command line.
+"""
+
+inputs, verbose = get_cmd_line_args()
+params = locals()
+runtime = {
+    "timestamp": datetime.now().isoformat(),
+    "tool": "pyconnectome_dtitk_create_templates"
+}
+outputs = {}
+if verbose > 0:
+    pprint("[info] Starting templates computation...")
+    pprint("[info] Runtime:")
+    pprint(runtime)
+    pprint("[info] Inputs:")
+    pprint(inputs)
+# Add pyconnectome and DTI-TK tools version!
+
+
+"""
+0 - Write DTI-TK data files
+"""
+
+# List corrected dti files
+subjects_dti_file = os.path.join(inputs["outdir"], "subjects_dti.txt")
+with open(subjects_dti_file, 'w') as open_file:
+    for tensor in inputs["dtitk_tensors"]:
+        open_file.write(tensor)
+        open_file.write("\n")
+outputs["subjects_file"] = subjects_tensor_file
+
+
+"""
+1 - Bootstrap input tensor template/ Create initial mean template.
+"""
+
+print("\nGenerating template...\n")
+if inputs["template"] is not None:
+    initial_template = dti_template_bootstrap(
+        template=inputs["template"],
+        subjects_file=subjects_dti_file)
+else:
+    initial_template = dtitk_create_mean_template(
+        subject_list=subjects_dti_file,
+        out_path=inputs["outdir"])
+outputs["initial_template"] = initial_template
+
+
+"""
+2 - Create affine template.
+"""
+
+print("Affine alignment...\n")
+affine_template, subjects_dti_aff_file = affine_alignment_population(
+    template=rigid_template,
+    subjects=subjects_dti_file,
+    output_dir=inputs["outdir"],
+    SMOption="EDS",
+    no_of_iterations=3)
+outputs["affine_template"] = affine_template
+
+
+"""
+3 - Create diffeomorphic template from the final refined template estimate from
+    affine alignment.
+"""
+
+print("Deformable alignment...\n")
+diffeo_template, mean_affine_tr_mask = deformable_alignment_population(
+    affine_template=affine_template,
+    subjects_affine=subjects_dti_aff_file,
+    output_dir=inputs["outdir"],
+    ftol=0.002)
+outputs["subjects_dti_aff_file"] = subjects_dti_aff_file
+outputs["diffeo_template"] = diffeo_template
+outputs["mean_affine_tr_mask"] = mean_affine_tr_mask
+
+
+"""
+Update the outputs and save them and the inputs in a 'logs' directory.
+"""
+
+logdir = os.path.join(inputs["outdir"], "logs")
+if not os.path.isdir(logdir):
+    os.mkdir(logdir)
+for name, final_struct in [("inputs", inputs), ("outputs", outputs),
+                           ("runtime", runtime)]:
+    log_file = os.path.join(
+        logdir, "pyconnectome_dtitk_create_templates_{0}.json".format(name))
+    with open(log_file, "wt") as open_file:
+        json.dump(final_struct, open_file, sort_keys=True, check_circular=True,
+                  indent=4)
+if verbose > 0:
+    pprint("[info] Outputs:")
+    pprint(outputs)
