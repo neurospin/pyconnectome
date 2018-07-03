@@ -124,11 +124,10 @@ def get_cmd_line_args():
 Parse the command line.
 """
 inputs, verbose = get_cmd_line_args()
-tool = "pyconnectome_dtitk_apply_deformation"
-timestamp = datetime.now().isoformat()
-params = locals()
-runtime = dict([(name, params[name])
-               for name in ("tool", "timestamp")])
+runtime = {
+    "timestamp": datetime.now().isoformat(),
+    "tool": "pyconnectome_dtitk_apply_deformation"
+}
 outputs = {}
 if verbose > 0:
     pprint("[info] Starting mapping of subject into template space...")
