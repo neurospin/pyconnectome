@@ -1,0 +1,190 @@
+#!/usr/bin/env python
+##########################################################################
+# NSAp - Copyright (C) CEA, 2018
+# Distributed under the terms of the CeCILL-B license, as published by
+# the CEA-CNRS-INRIA. Refer to the LICENSE file or to
+# http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html
+# for details.
+##########################################################################
+
+# System imports
+import os
+import glob
+import re
+import argparse
+import textwrap
+import json
+from datetime import datetime
+from argparse import RawTextHelpFormatter
+from pprint import pprint
+from collections import OrderedDict
+
+# Third party imports
+import progressbar
+from pyconnectome.plotting.slicer import triplanar
+import nibabel
+import numpy
+from pyconnectomist.utils.pdftools import generate_pdf
+
+
+DOC="""
+Create a summary pdf with all the subjects FA in template space.
+
+Example on SENIOR data:
+
+python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_tbss_report \
+    -d /neurospin/nsap/research/tbss/senior/tbss/FA \
+    -o /neurospin/nsap/research/tbss/senior/tbss \
+    -V 2
+
+"""
+
+def is_file(filepath):
+    """ Check file's existence - argparse 'type' argument.
+    """
+    if not os.path.isfile(filepath):
+        raise argparse.ArgumentError("File does not exist: %s" % filepath)
+    return filepath
+
+
+def is_directory(dirarg):
+    """ Type for argparse - checks that directory exists.
+    """
+    if not os.path.isdir(dirarg):
+        raise argparse.ArgumentError(
+            "The directory '{0}' does not exist!".format(dirarg))
+    return dirarg
+
+
+# Parse input arguments
+def get_cmd_line_args():
+    """
+    Create a command line argument parser and return a dict mapping
+    <argument name> -> <argument value>.
+    """
+    parser = argparse.ArgumentParser(
+        prog="python pyconnectome_tbss_report",
+        description=textwrap.dedent(DOC),
+        formatter_class=RawTextHelpFormatter)
+
+    # Required arguments
+    required = parser.add_argument_group("required arguments")
+    required.add_argument(
+        "-d", "--datapath", type=is_directory, required=True, 
+        help="Path to directory of subjects' FA data (tbss FA dir).")
+    required.add_argument(
+        "-o", "--outdir",
+        type=is_directory, required=True, metavar="<path>",
+        help="Path to the output directory.")
+
+    # Optional argument
+    parser.add_argument(
+        "-V", "--verbose",
+        type=int, choices=[0, 1, 2], default=2,
+        help="Increase the verbosity level: 0 silent, [1, 2] verbose.")
+
+    # Create a dict of arguments to pass to the 'main' function
+    args = parser.parse_args()
+    kwargs = vars(args)
+    verbose = kwargs.pop("verbose")
+    return kwargs, verbose
+
+
+"""
+Parse the command line.
+"""
+inputs, verbose = get_cmd_line_args()
+outputs = {}
+if verbose > 0:
+    pprint("[info] Inputs:")
+    pprint(inputs)
+
+
+"""
+Generate FA png snaps
+"""
+subjects_file = glob.glob(os.path.join(inputs["datapath"], "*_target.nii.gz"))
+png_outdir = os.path.join(inputs["outdir"], "snaps")
+if not os.path.isdir(png_outdir):
+    os.mkdir(png_outdir)
+pdfstruct = os.path.join(inputs["outdir"], "pdf_struct.json")
+pdfstruct_json = OrderedDict()
+pdfstruct_json["cover"] = {
+    "type": "cover"
+}
+out_png_files = []
+with progressbar.ProgressBar(max_value=len(subjects_file),
+                             redirect_stdout=True) as bar:
+    page_pngs = []
+    cpt = 0
+    pg_nb = 0
+    for cnt, path in enumerate(subjects_file):
+        sub_id = os.path.basename(path).split("_")[0]
+        out_png = os.path.join(png_outdir, "{0}_FA".format(sub_id))
+        if not os.path.isfile(out_png + "_ortho.png"):
+            out_png = triplanar(
+                input_file=path,
+                output_fileroot=out_png,
+                title=sub_id,
+                overlays=[os.path.join(inputs["datapath"], "target.nii.gz")],
+                overlays_colors=None,
+                overlay_opacities=[0.7],
+                contours=True,
+                edges=False,
+                marker_coords=(5, -9, 7),
+                resolution=300)
+            page_pngs.append([out_png])
+        else:
+            page_pngs.append([out_png + "_ortho.png"])
+
+        cpt += 1
+        if cpt == 3:
+            page_struct = {
+                "type": "triplanar",
+                "style": "OneCol",
+                "images": page_pngs,
+                "texts": [
+                    "FA snaps with template contours"
+                ],
+                "topmargin": 0.05,
+                "linecount": 120
+            }
+            pdfstruct_json["page{0}".format(pg_nb + 1)] = page_struct
+            cpt = 0
+            pg_nb += 1
+            page_pngs = []
+
+        bar.update(cnt)
+
+
+"""
+Generate the report
+"""
+with open(pdfstruct, "wt") as open_file:
+    json.dump(pdfstruct_json, open_file, indent=4)
+tic = datetime.now()
+out_pdf = os.path.join(inputs["outdir"], "tbss_reporting.pdf")
+generate_pdf(
+    datapath=png_outdir,
+    struct_file=pdfstruct,
+    author="NA",
+    client="NA",
+    poweredby="NA",
+    project="NA",
+    timepoint="NA",
+    subject="All subjects",
+    date=tic,
+    title="TBSS Reporting",
+    filename=out_pdf,
+    pagesize=None,
+    left_margin=10,
+    right_margin=10,    
+    top_margin=20,
+    bottom_margin=20,
+    show_boundary=False,
+    verbose=1)
+outputs["FA_PDF"] = out_pdf
+
+if verbose > 0:
+    print("[Info] : Outputs")
+    print(outputs)

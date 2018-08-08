@@ -1,0 +1,189 @@
+#!/usr/bin/env python
+##########################################################################
+# NSAp - Copyright (C) CEA, 2018
+# Distributed under the terms of the CeCILL-B license, as published by
+# the CEA-CNRS-INRIA. Refer to the LICENSE file or to
+# http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html
+# for details.
+##########################################################################
+
+# System import
+import os
+import argparse
+import textwrap
+import shutil
+import json
+from datetime import datetime
+from argparse import RawTextHelpFormatter
+from pprint import pprint
+from packaging import version
+
+# Bredala import
+try:
+    import bredala
+    bredala.USE_PROFILER = False
+    bredala.register("pyconnectome.wrapper",
+                     names=["FSLWrapper.__init__", "FSLWrapper.__call__"])
+except:
+    pass
+
+# Pyconnectome imports
+import pyconnectome
+from pyconnectome.wrapper import FSLWrapper
+from pyconnectome import DEFAULT_FSL_PATH
+
+
+# Script documentation
+DOC = """
+Run TBSS analysis on non FA data.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Steps:
+1 - Copy diffusion modality file in tbss modality directory.
+2 - Run TBSS non FA data
+
+Example on mapt data:
+python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_tbss_non_fa \
+    -n MD \
+    -s /neurospin/nsap/processed/mapt/scripts/subjects_info_MAPT_TBSS_MD_M0.txt \
+    -t /neurospin/nsap/processed/mapt/data_brainsuite/tbss/M0/tbss \
+    -F /neurospin/nsap/local/fsl-5.0.11.sh \
+    -V 2
+"""
+
+
+def is_file(filepath):
+    """ Check file's existence - argparse 'type' argument.
+    """
+    if not os.path.isfile(filepath):
+        raise argparse.ArgumentError("File does not exist: %s" % filepath)
+    return filepath
+
+
+def is_directory(dirarg):
+    """ Type for argparse - checks that directory exists.
+    """
+    if not os.path.isdir(dirarg):
+        raise argparse.ArgumentError(
+            "The directory '{0}' does not exist!".format(dirarg))
+    return dirarg
+
+
+# Parse input arguments
+def get_cmd_line_args():
+    """
+    Create a command line argument parser and return a dict mapping
+    <argument name> -> <argument value>.
+    """
+    parser = argparse.ArgumentParser(
+        prog="python pyconnectome_tbss_non_fa",
+        description=textwrap.dedent(DOC),
+        formatter_class=RawTextHelpFormatter)
+
+    # Required arguments
+    required = parser.add_argument_group("required arguments")
+    required.add_argument(
+        "-n", "--modality-name",
+        required=True, type=str, help="Modality name (e.g MD).")
+    required.add_argument(
+        "-s", "--subjects-info",
+        type=is_file, required=True, metavar="<path>",
+        help="First column must be subjects' IDS, "
+             "second column must contain paths to files and third column must "
+             "contain basename of subjects' FA files in TBSS orig data. "
+             "Expected separator is a comma.")
+    required.add_argument(
+        "-t", "--tbss-dir",
+        type=is_directory, required=True, metavar="<path>",
+        help="Path to TBSS root directory.")
+
+    # Optional argument
+    parser.add_argument(
+        "-F", "--fsl-config",
+        type=is_file, metavar="<path>",
+        help="Bash script initializing FSL's environment.")
+    parser.add_argument(
+        "-V", "--verbose",
+        type=int, choices=[0, 1, 2], default=2,
+        help="Increase the verbosity level: 0 silent, [1, 2] verbose.")
+
+    # Create a dict of arguments to pass to the 'main' function
+    args = parser.parse_args()
+    kwargs = vars(args)
+    verbose = kwargs.pop("verbose")
+    if kwargs["fsl_config"] is None:
+        kwargs["fsl_config"] = DEFAULT_FSL_PATH
+    return kwargs, verbose
+
+"""
+Parse the command line.
+"""
+inputs, verbose = get_cmd_line_args()
+runtime = {
+    "tool": "pyconnectome_tbss_non_fa",
+    "tool_version": pyconnectome.__version__,
+    "timestamp": datetime.now().isoformat(),
+    "fsl_version": FSLWrapper([], shfile=inputs["fsl_config"]).version}
+outputs = {}
+if verbose > 0:
+    pprint("[info] Starting TBSS on {0}...".format(inputs["modality_name"]))
+    pprint("[info] Runtime:")
+    pprint(runtime)
+    pprint("[info] Inputs:")
+    pprint(inputs)
+if version.parse(runtime["fsl_version"]) < version.parse("5.0.11"):
+    raise ValueError("This script need FSL version >= 5.0.11 in order to "
+                     "work properly.")
+
+
+"""
+0 -  Check that TBSS has been run on FA data.
+"""
+
+fa_dir = os.path.join(inputs["tbss_dir"], "FA")
+if not os.path.isdir(fa_dir):
+    raise ValueError("Please first run tbss on FA before running it on any "
+                     "other diffusion modality.")
+
+"""
+1 -  Copy diffusion modality file in tbss modality directory.
+"""
+
+modality_dir = os.path.join(inputs["tbss_dir"], inputs["modality_name"])
+if not os.path.isdir(modality_dir):
+    os.mkdir(modality_dir)
+outputs["outdir"] = modality_dir
+with open(inputs["subjects_info"], "rt") as open_file:
+    for line in open_file.readlines():
+        sub_id, sub_mod_data, sub_fa_orig = line.rstrip("\n").split(",")
+        sub_data_copy = os.path.join(modality_dir, sub_fa_orig)
+        if not os.path.isfile(sub_data_copy):
+            shutil.copy(sub_mod_data, sub_data_copy)
+
+
+"""
+2 - TBSS non FA
+"""
+
+cmd = ["tbss_non_FA", inputs["modality_name"]]
+fslprocess = FSLWrapper(cmd, shfile=inputs["fsl_config"])
+fslprocess(cwdir=inputs["tbss_dir"])
+
+
+"""
+Update the outputs and save them and the inputs in a 'logs' directory.
+"""
+
+logdir = os.path.join(inputs["tbss_dir"], "logs")
+if not os.path.isdir(logdir):
+    os.mkdir(logdir)
+for name, final_struct in [("inputs", inputs), ("outputs", outputs),
+                           ("runtime", runtime)]:
+    log_file = os.path.join(
+        logdir, "{0}_{1}.json".format(name, inputs["modality_name"]))
+    with open(log_file, "wt") as open_file:
+        json.dump(final_struct, open_file, sort_keys=True, check_circular=True,
+                  indent=4)
+if verbose > 1:
+    print("[final]")
+    pprint(outputs)

@@ -1,0 +1,184 @@
+#!/usr/bin/env python
+##########################################################################
+# NSAp - Copyright (C) CEA, 2018
+# Distributed under the terms of the CeCILL-B license, as published by
+# the CEA-CNRS-INRIA. Refer to the LICENSE file or to
+# http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html
+# for details.
+##########################################################################
+
+# System imports
+from __future__ import print_function, division
+import os
+import re
+import glob
+import json
+import textwrap
+from datetime import datetime
+import argparse
+from argparse import RawTextHelpFormatter
+from pprint import pprint
+
+# Third party import
+import nibabel
+import progressbar
+import numpy
+import matplotlib.pyplot as plt
+
+# Package import
+import pyconnectome
+
+
+# Script documentation
+DOC = """
+Detect the TBSS alignment outliers.
+It is important to run this script if the mean FA mask if too small.
+
+This script has two behaviours:
+1- without a threshold, compute all the overlays and display a histogram to
+   select a threshold.
+2- apply a threshold to the precomputed overlays.
+
+Command example:
+
+python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_tbss_outliers \
+    -d /neurospin/nsap/research/tbss/imagen/tbss/FA \
+    -o /neurospin/nsap/research/tbss/imagen/tbss
+
+
+python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_tbss_outliers \
+    -d /neurospin/nsap/research/tbss/imagen/tbss \
+    -o /neurospin/nsap/research/tbss/imagen/tbss/FA_error \
+    -T 98
+    -V 2
+"""
+
+def is_file(filearg):
+    """ Type for argparse - checks that file exists but does not open.
+    """
+    if not os.path.isfile(filearg):
+        raise argparse.ArgumentError(
+            "The file '{0}' does not exist!".format(filearg))
+    return filearg
+
+
+def is_directory(dirarg):
+    """ Type for argparse - checks that directory exists.
+    """
+    if not os.path.isdir(dirarg):
+        raise argparse.ArgumentError(
+            "The directory '{0}' does not exist!".format(dirarg))
+    return dirarg
+
+
+def get_cmd_line_args():
+    """
+    Create a command line argument parser and return a dict mapping
+    <argument name> -> <argument value>.
+    """
+    parser = argparse.ArgumentParser(
+        prog="pyconnectome_tbss_outliers",
+        description=textwrap.dedent(DOC),
+        formatter_class=RawTextHelpFormatter)
+
+    # Required arguments
+    required = parser.add_argument_group("required arguments")
+    required.add_argument(
+        "-d", "--datadir", type=is_directory,
+        help="Path to the TBSS FA directory.")
+    required.add_argument(
+        "-o", "--outdir", type=is_directory,
+        help="Path to the output directory.")
+
+    # Optional arguments
+    parser.add_argument(
+        "-T", "--thres",
+        type=float,
+        help="The overlays cutting threshold [0, 100].")
+    parser.add_argument(
+        "-V", "--verbose",
+        type=int, choices=[0, 1, 2], default=0,
+        help="increase the verbosity level: 0 silent, [1, 2] verbose.")
+
+    # Create a dict of arguments to pass to the 'main' function
+    args = parser.parse_args()
+    kwargs = vars(args)
+    verbose = kwargs.pop("verbose")
+
+    return kwargs, verbose
+
+
+"""
+Parse the command line.
+"""
+inputs, verbose = get_cmd_line_args()
+runtime = {
+    "tool": "pyconnectome_tbss_outliers",
+    "tool_version": pyconnectome.__version__,
+    "timestamp": datetime.now().isoformat()}
+target_file = os.path.join(inputs["datadir"], "target.nii.gz")
+fa_files = glob.glob(os.path.join(inputs["datadir"], "*_FA_to_target.nii.gz"))
+outputs = {}
+if verbose > 0:
+    pprint("[info] Starting registration ...")
+    pprint("[info] Runtime:")
+    pprint(runtime)
+    pprint("[info] Inputs:")
+    pprint(inputs)
+
+
+"""
+Compute overlays.
+"""
+if inputs["thres"] is None:
+
+    target = nibabel.load(target_file).get_data()
+    mask_target = numpy.where(target > 0)
+    nb_target_points = len(mask_target[0])
+    data = {}
+    with progressbar.ProgressBar(max_value=len(fa_files)) as bar:
+        for cnt, path in enumerate(fa_files):
+            fa = nibabel.load(path).get_data()
+            mask_fa = numpy.where(numpy.logical_and(target >0, fa > 0))
+            nb_mask_points = len(mask_fa[0])
+            ratio = (nb_target_points - nb_mask_points) / nb_target_points
+            ratio = (1 - ratio) * 100.
+            bar.update(cnt)
+            data[path] = ratio
+    out_file = os.path.join(inputs["outdir"], "overlays.json")
+    with open(out_file, "wt") as open_file:
+        json.dump(data, open_file, indent=4)
+    outputs["overlays"] = out_file
+
+    out_file = os.path.join(inputs["outdir"], "overlays.png")
+    overlay_values = data.values()
+    n, bins, patches = plt.hist(overlay_values, 50, facecolor="g", alpha=0.75)
+    plt.xlabel("Smarts")
+    plt.ylabel("Count")
+    plt.title("Histogram of overlays")
+    plt.grid(True)
+    plt.savefig(out_file)
+    outputs["overlays_hist"] = out_file
+
+# Apply threshold.
+else:
+    overlay_file = os.path.join(inputs["datadir"], "overlays.json")
+    with open(overlay_file, "rt") as open_file:
+        data = json.load(open_file)
+    cmds = []
+    nb_errors = 0
+    for path, ratio in data.items():
+        if ratio < inputs["thres"]:
+            name = path.replace("_to_target.nii.gz", "")
+            cmds.append("mv {0}* {1}".format(name, inputs["outdir"]))
+            nb_errors += 1
+    print("&\n".join(cmds))
+    outputs["nb_errors"] = nb_errors
+
+
+"""
+Update the outputs.
+"""
+if verbose > 1:
+    print("[info] Outputs:")
+    pprint(outputs)
