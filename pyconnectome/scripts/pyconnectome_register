@@ -150,10 +150,6 @@ def get_cmd_line_args():
         help="the analysis output directory where <outdir>/<sid> will be "
              "generated.")
     required.add_argument(
-        "-s", "--sid",
-        required=True,
-        help="the subject identifier.")
-    required.add_argument(
         "-i", "--inputfile",
         required=True, type=is_file,
         help="the input MRI volume to be registered.")
@@ -164,6 +160,9 @@ def get_cmd_line_args():
              "registration.")
 
     # Optional arguments
+    parser.add_argument(
+        "-s", "--sid",
+        help="the subject identifier.")
     parser.add_argument(
         "-C", "--nosearch", 
         action="store_true",
@@ -284,7 +283,10 @@ params = locals()
 runtime = dict([(name, params[name])
                for name in ("tool", "tool_version", "fsl_version",
                             "timestamp")])
-subjdir = os.path.join(inputs["outdir"], inputs["sid"])
+if inputs["sid"] is not None:
+    subjdir = os.path.join(inputs["outdir"], inputs["sid"])
+else:
+    subjdir = inputs["outdir"]
 if inputs["erase"] and os.path.isdir(subjdir):
     shutil.rmtree(subjdir)
 if not os.path.isdir(subjdir):
