@@ -104,8 +104,8 @@ def freesurfer_bbregister_t1todif(
 
 
 def mcflirt(in_file, out_fileroot, cost="normcorr", bins=256, dof=6,
-            reg_to_mean=True, mats=False, plots=True, verbose=0,
-            shfile=DEFAULT_FSL_PATH):
+            refvol=None, reffile=None, reg_to_mean=True, mats=False,
+            plots=True, verbose=0, shfile=DEFAULT_FSL_PATH):
     """ Wraps command mcflirt.
 
     MCFLIRT is an intra-modal motion correction tool designed for use on
@@ -127,6 +127,10 @@ def mcflirt(in_file, out_fileroot, cost="normcorr", bins=256, dof=6,
         Number of histogram bins.
     dof: int (optional, default 6)
         Number of transform degrees of freedom.
+    refvol: int (optional, default None)
+        the reference volume index, default is no_vols/2.
+    reffile: str (optional, default None)
+        use a separate 3d image file as the target for registration.
     reg_to_mean: bool (optional, default True)
         If set, register to mean, otherwise to middle volume of the serie.
     mats: bool (optional, default False)
@@ -164,6 +168,10 @@ def mcflirt(in_file, out_fileroot, cost="normcorr", bins=256, dof=6,
            "-bins", str(bins),
            "-dof", str(dof),
            "-verbose", str(verbose)]
+    if refvol is not None:
+        cmd.extend(["-refvol", str(refvol)])
+    if reffile is not None:
+        cmd.extend(["-reffile", reffile])
     if reg_to_mean:
         cmd.append("-meanvol")
     if mats:
@@ -182,9 +190,14 @@ def mcflirt(in_file, out_fileroot, cost="normcorr", bins=256, dof=6,
         raise ValueError(
             "Expect only one mcflirt output file, not {0}.".format(func_files))
     func_file = func_files[0]
-    mean_file = None
     if reg_to_mean:
         mean_file = glob.glob(out_fileroot + "_mean_reg.*")[0]
+    else:
+        im = nibabel.load(func_file)
+        mean_data = numpy.mean(im.get_data(), axis=-1)
+        im_mean = nibabel.Nifti1Image(mean_data, im.affine)
+        mean_file = out_fileroot + "_mean_reg.nii.gz"
+        nibabel.save(im_mean, mean_file)
     par_file = None
     if plots:
         par_file = out_fileroot + ".par"
@@ -282,7 +295,7 @@ def flirt(in_file, ref_file, omat=None, out=None, init=None, cost="corratio",
     if init is not None:
         cmd += ["-init", init]
     if applyisoxfm is not None:
-        cmd += ["-applyisoxfm", applyisoxfm]
+        cmd += ["-applyisoxfm", str(applyisoxfm)]
 
     dirname = os.path.dirname(in_file)
     basename = os.path.basename(in_file).split(".")[0]

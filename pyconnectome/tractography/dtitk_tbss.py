@@ -1,14 +1,25 @@
+##########################################################################
+# NSAp - Copyright (C) CEA, 2018
+# Distributed under the terms of the CeCILL-B license, as published by
+# the CEA-CNRS-INRIA. Refer to the LICENSE file or to
+# http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html
+# for details.
+##########################################################################
+
 # System import
 import os
 import glob
 import re
+import shutil
+import multiprocessing
 
-# Third-Party imports
+# Third-Party import
 import nibabel
 
 # Package import
 from pyconnectome.wrapper import FSLWrapper
 from pyconnectome import DEFAULT_FSL_PATH
+from joblib import Parallel, delayed
 
 
 """
@@ -101,8 +112,8 @@ def dtitk_import_tensors(basename, output_dir, tool="FSL",
 
 def convert_fsl_to_nifti_tensor_format(basename, out_dir, tool="FSL"):
     """ Wraps DTI-TK commands and Convert FSL-formatted tensor outputs
-        (*_V{1,2,3}.nii.gz and *_L{1,2,3}.nii.gz) to NIfTI tensor format
-        and preprocess appropriately
+    (*_V{1,2,3}.nii.gz and *_L{1,2,3}.nii.gz) to NIfTI tensor format
+    and preprocess appropriately
 
     Parameters
     ----------
@@ -143,7 +154,7 @@ def convert_fsl_to_nifti_tensor_format(basename, out_dir, tool="FSL"):
 
 def remove_outliers(tensor_dtitk, norm_outlier_threshold=100):
     """ Wraps DTI-TK commands to identify outliers voxels and remove them by
-        masking.
+    masking.
 
     Parameters
     ----------
@@ -186,7 +197,7 @@ def remove_outliers(tensor_dtitk, norm_outlier_threshold=100):
 
 def check_spd(tensor_dtitk):
     """ Wraps DTI-TK command TVtool to check if diffusion tensor has a
-        symmetric and positive-definite matrix, or SPD.
+    symmetric and positive-definite matrix, or SPD.
 
     Parameters
     ----------
@@ -216,7 +227,7 @@ def TVAdjustVoxelspace(img, out_file, origin):
 
 def TVResample(img_file, vsize, size, out_file):
     """ Wraps DTI-TK command TVResample to resample an image given a voxel
-        size.
+    size.
 
     Parameters
     ----------
@@ -242,7 +253,7 @@ DTI-Tk template creation
 
 def dti_template_bootstrap(template, subjects_file):
     """ Wraps DTI-TK script dti_template_bootstrap which bootstrap an initial
-        template estimate from a set of DTI volumes.
+    template estimate from a set of DTI volumes.
 
     Parameters
     ----------
@@ -266,8 +277,9 @@ def dti_template_bootstrap(template, subjects_file):
 
 def bootstrap_template_from_dti(subjects, out_template, typep="ORIGINAL",
                                 interp="LEI"):
-    """Wraps DTI-TK TVMean command and create a boostrap template from dti
-       files.
+    """ Wraps DTI-TK TVMean command and create a boostrap template from dti
+    files.
+
     Parameters
     ----------
     subjects: str
@@ -296,8 +308,8 @@ def bootstrap_template_from_dti(subjects, out_template, typep="ORIGINAL",
 def dtitk_create_mean_template(subject_list, out_path,
                                template_dim=[128, 128, 64]):
     """ Uses DTI-TK command TVMean and create a template from a list of
-        DTI NIFTI files and resample it with voxel dimensions being powers of
-        2.
+    DTI NIFTI files and resample it with voxel dimensions being powers of
+    2.
 
     Parameters
     ----------
@@ -343,9 +355,10 @@ def dtitk_create_mean_template(subject_list, out_path,
 def rigid_alignment_population(template, subjects, output_dir, SMOption,
                                no_of_iterations, optimized=False):
     """ Wraps DTI-TK script dti_rigid_population and rigidly align a set of
-        DTI volume (subjects) to a template. The optimized templates will be
-        saved as mean_rigid{1,2,..,no_of_iterations}.nii.gz. The aligned
-        volumes are computed and their filenames are stored in "subjs_aff.txt".
+    DTI volume (subjects) to a template. The optimized templates will be
+    saved as mean_rigid{1,2,..,no_of_iterations}.nii.gz. The aligned
+    volumes are computed and their filenames are stored in "subjs_aff.txt".
+
     Parameters
     ----------
     template: str
@@ -392,6 +405,7 @@ def affine_alignment_population(template, subjects_dti_file, output_dir,
     DTI volume (subjects) to a template. The optimized templates will be
     saved as mean_affine{1,2,..,no_of_iterations}.nii.gz. The aligned
     volumes are computed and their filenames are stored in "subjs_aff.txt".
+
     Parameters
     ----------
     template: str
@@ -408,6 +422,7 @@ def affine_alignment_population(template, subjects_dti_file, output_dir,
     no_of_iterations: int
         the number of iterations to optimize the template over the whole
         process.
+
     Returns
     -------
     affine_template: str
@@ -431,8 +446,9 @@ def affine_alignment_population(template, subjects_dti_file, output_dir,
 def deformable_alignment_population(affine_template, subjects_affine,
                                     output_dir, ftol):
     """ Wraps DTI-TK script dti_diffeomorphic_population which improves
-        alignment by removing size or shape differences between local
-        structures.
+    alignment by removing size or shape differences between local
+    structures.
+
     Parameters
     ----------
     affine_template: str
@@ -443,6 +459,7 @@ def deformable_alignment_population(affine_template, subjects_affine,
         the path to the output directory.
     ftol: float
         the minimum amount of change in the cost function.
+
     Returns
     -------
     deformable_template: str
@@ -484,6 +501,7 @@ def dti_rigid_reg(template, subject, output_dir, SMoption="EDS",
                   sep=[4.0, 4.0, 4.0], ftol=0.01, useInTrans=False):
     """ Wraps DTI-TK script dti_rigid_reg and rigidly align a subject
     DTI volume to a template.
+
     Parameters
     ----------
     template: str
@@ -533,6 +551,7 @@ def dti_affine_reg(template, subject, output_dir, SMoption="EDS",
                    sep=[4.0, 4.0, 4.0], ftol=0.01, useInTrans=False):
     """ Wraps DTI-TK script dti_affine_reg and affinely align a subject
     DTI volume to a template.
+
     Parameters
     ----------
     template: str
@@ -582,6 +601,7 @@ def dti_diffeomorphic_reg(template, subject, mask, output_dir, no_of_iter=6,
                           ftol=0.002):
     """ Wraps DTI-TK script dti_diffeomorphic_reg and align a DTI volume
     to a template.
+
     Parameters
     ----------
     template: str
@@ -622,6 +642,7 @@ def dti_warp_to_template(subject, template, voxel_dim):
     one single displacement field and brings the subject's original data
     from raw space to the space of the template using a single
     interpolation.
+
     Parameters
     ----------
     subject: str
@@ -653,13 +674,15 @@ DTI-Tk FA skeleton creation
 
 
 def generate_FA_map(dti_file, output_fa):
-    """Use DTI-TK TVtool command to generate the FA map of a dti file.
+    """ Use DTI-TK TVtool command to generate the FA map of a dti file.
+
     Parameters
     ----------
     dti_file: str
         path to the dti volume file.
     output_fa: str
         path to the output fa file.
+
     Returns
     -------
     output_fa_file: str
@@ -684,7 +707,7 @@ def skeletonize(input_file, output_file, skel_threshold=None,
                 distance_map=None, search_rule_mask=None, data_4D=None,
                 projected_4Ddata=None, alternative_4Ddata=None,
                 alternative_skeleton=None, fsl_sh=DEFAULT_FSL_PATH):
-    """Wraps tbss_skeleton commands and skeletonize FA image.
+    """ Wraps tbss_skeleton commands and skeletonize FA image.
 
     Parameters
     ----------
@@ -746,7 +769,7 @@ def skeletonize(input_file, output_file, skel_threshold=None,
 
 def fslmerge(images, concatenated_output, time=True, x=False, y=False, z=False,
              auto_choose=False, tr=False, fsl_sh=DEFAULT_FSL_PATH):
-    """Wraps fslmerge commands and concatenate different nifti files.
+    """ Wraps fslmerge commands and concatenate different nifti files.
 
     Parameters
     ----------
@@ -801,8 +824,9 @@ def fslmerge(images, concatenated_output, time=True, x=False, y=False, z=False,
 
 
 def get_fa_stack_mask(fa_4D, output, fsl_sh=DEFAULT_FSL_PATH):
-    """Wraps fslmaths command and create a combined binary mask volume from a
-       FA 4D data of multiple subjects.
+    """ Wraps fslmaths command and create a combined binary mask volume from a
+   FA 4D data of multiple subjects.
+
     Parameters
     ----------
     fa_4D: str
@@ -832,17 +856,19 @@ TBSS
 def tbss_pipeline(tbss_dir, find_best_target=True, use_fmrib58_fa_1mm=False,
                   target_img=None, use_fmrib58_fa_mean_and_skel=False,
                   skel_threshold=0.2, fsl_sh=DEFAULT_FSL_PATH):
-    """Wraps tbss commands to execute tbss pipeline and generate subjects' FA
-       skeletons.
-       See https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/TBSS/UserGuide for further
-       information.
-       Steps:
-        1) Prepare the FA data in the TBSS working directory in the right
-           format.
-        2) Register FA images to standard space (nonlinear registration).
-        3) Apply transformation to FA images and create and skeletonize the
-           mean FA image.
-        4) Project all subjects' FA data onto the mean FA skeleton.
+    """ Wraps tbss commands to execute tbss pipeline and generate subjects' FA
+    skeletons.
+
+    See https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/TBSS/UserGuide for further
+    information.
+
+    Steps:
+    1) Prepare the FA data in the TBSS working directory in the right
+       format.
+    2) Register FA images to standard space (nonlinear registration).
+    3) Apply transformation to FA images and create and skeletonize the
+       mean FA image.
+    4) Project all subjects' FA data onto the mean FA skeleton.
 
     Parameters
     ----------
@@ -888,7 +914,6 @@ def tbss_pipeline(tbss_dir, find_best_target=True, use_fmrib58_fa_1mm=False,
     thresh_file: str
         text file indicating threshold used.
     """
-
     os.chdir(tbss_dir)
     print("TBSS preprocessing...")
     fa_dir, orig_dir = tbss_1_preproc(
@@ -923,9 +948,10 @@ def tbss_pipeline(tbss_dir, find_best_target=True, use_fmrib58_fa_1mm=False,
 
 def tbss_1_preproc(tbss_dir, fsl_sh=DEFAULT_FSL_PATH):
     """ Wraps fsl tbss_1_preproc command to erode the FA images slightly and
-        zero the end slices (to remove likely outliers from the diffusion
-        tensor fitting).
-    For more information, refer to :
+    zero the end slices (to remove likely outliers from the diffusion
+    tensor fitting).
+
+    For more information, refer to:
     https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/TBSS/UserGuide
 
     Parameters
@@ -942,14 +968,14 @@ def tbss_1_preproc(tbss_dir, fsl_sh=DEFAULT_FSL_PATH):
     orig_dir: str
         path to the copied subjects original FA files.
     """
-    if not os.path.isdir(output_dir):
-        os.mkdir(output_dir)
-    os.chdir(output_dir)
+    if not os.path.isdir(tbss_dir):
+        os.mkdir(tbss_dir)
+    os.chdir(tbss_dir)
     cmd = ["tbss_1_preproc", "*.nii.gz"]
     fslprocess = FSLWrapper(cmd, shfile=fsl_sh)
     fslprocess()
-    fa_dir = os.path.join(output_dir, "FA")
-    orig_dir = os.path.join(output_dir, "origdata")
+    fa_dir = os.path.join(tbss_dir, "FA")
+    orig_dir = os.path.join(tbss_dir, "origdata")
     if not os.path.isdir(fa_dir):
         raise ValueError(
             "tbss_1_preproc did not create FA dir : {0}...".format(fa_dir))
@@ -959,13 +985,35 @@ def tbss_1_preproc(tbss_dir, fsl_sh=DEFAULT_FSL_PATH):
     return fa_dir, orig_dir
 
 
-def tbss_2_reg(tbss_dir, use_fmrib58_fa_1mm=False, target_img=None,
-               find_best_target=True, fsl_sh=DEFAULT_FSL_PATH):
-    """ Wraps fsl tbss_2_reg command to non-linearly register the FA images
-        to a 1x1x1mm standard space or a template image or the best target from
-        all FA images.
+def fsl_reg(fa_basename, tbss_dir, fsl_sh):
+    """ Run the FSL registration step.
 
-    For more information, refer to :
+    Wrapping around the 'fsl_reg' command.
+
+    Parameters
+    ----------
+    fa_basename: str
+        the FA file base name.
+    tbss_dir: str
+        path to tbss root directory.
+    fsl_sh: str
+        path to fsl setup sh file.
+    """
+    cmd = ["fsl_reg", fa_basename, "target", fa_basename + "_to_target", "-e",
+           "-FA"]
+    print("Executing: " + " ".join(cmd))
+    fslprocess = FSLWrapper(cmd, shfile=fsl_sh)
+    fslprocess(cwdir=os.path.join(tbss_dir, "FA"))
+
+
+def tbss_2_reg(tbss_dir, use_fmrib58_fa_1mm=False, target_img=None,
+               find_best_target=True, nb_cpus=None,
+               fsl_sh=DEFAULT_FSL_PATH):
+    """ Wraps fsl tbss_2_reg command to non-linearly register the FA images
+    to a 1x1x1mm standard space or a template image or the best target from
+    all FA images.
+
+    For more information, refer to:
     https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/TBSS/UserGuide
 
     Parameters
@@ -978,33 +1026,48 @@ def tbss_2_reg(tbss_dir, use_fmrib58_fa_1mm=False, target_img=None,
         path to a target image to use for nonlinear registration.
     find_best_target: bool (default False)
         option to find best target from all FA images.
+    nb_cpus: int, default None
+        the number of cpus to use, default all - 1.
     fsl_sh: str
         path to fsl setup sh file.
     """
-    if not os.getcwd() == output_dir:
-        os.chdir(output_dir)
+    if not (os.getcwd() == tbss_dir):
+        os.chdir(tbss_dir)
     cmd = ["tbss_2_reg"]
     if use_fmrib58_fa_1mm:
-        cmd.append("-T")
+        # cmd.append("-T")
+        process = FSLWrapper([], shfile=fsl_sh)
+        shutil.copy2(
+            os.path.join(process.environment["FSLDIR"], "data", "standard",
+                         "FMRIB58_FA_1mm.nii.gz"),
+            os.path.join(tbss_dir, "FA", "target.nii.gz"))
     elif target_img is not None:
-        cmd.append("-t")
-        cmd.append(target_img)
+        # cmd.extend(["-t", target_img])
+        shutil.copy2(target_img, os.path.join(tbss_dir, "FA", "target.nii.gz"))
     elif find_best_target:
         cmd.append("-n")
+        fslprocess = FSLWrapper(cmd, shfile=fsl_sh)
+        fslprocess()
+        return
     else:
-        raise ValueError("Please enter valid parameters for function"
-                         " tbss_2_reg.")
-    fslprocess = FSLWrapper(cmd, shfile=fsl_sh)
-    fslprocess()
+        raise ValueError(
+            "Please enter valid parameters for function tbss_2_reg.")
+    if nb_cpus is None:
+        nb_cpus = multiprocessing.cpu_count() - 1
+    fa_basenames = glob.glob1(os.path.join(tbss_dir, "FA"), "*_FA.nii.gz")
+    fa_basenames = [name.split(".")[0] for name in fa_basenames]
+    Parallel(n_jobs=nb_cpus)(delayed(fsl_reg)(name, tbss_dir, fsl_sh)
+                             for name in fa_basenames)
 
 
 def tbss_3_postreg(tbss_dir, use_fmrib58_fa_mean_and_skel=True,
                    fsl_sh=DEFAULT_FSL_PATH):
     """ Wraps fsl tbss_3_postreg command to apply the nonlinear transforms
-        found in the previous stage to all subjects to bring them into
-        standard space. Merge results into a single 4D image.
-        Compute a mean FA image and skeletonize it.
-    For more information, refer to :
+    found in the previous stage to all subjects to bring them into
+    standard space. Merge results into a single 4D image.
+    Compute a mean FA image and skeletonize it.
+
+    For more information, refer to:
     https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/TBSS/UserGuide
 
     Parameters
@@ -1046,18 +1109,19 @@ def tbss_3_postreg(tbss_dir, use_fmrib58_fa_mean_and_skel=True,
     output_files = [all_FA, mean_FA, mean_FA_mask, mean_FA_skel]
     for out_file in output_files:
         if not os.path.isfile(out_file):
-            raise ValueError("tbss_3_postreg outputs : {0} does not exist"
-                             "...".format(out_file))
+            raise ValueError(
+                "tbss_3_postreg outputs : {0} does not exist! FSL error: "
+                "{1}".format(out_file, fslprocess.stderr))
     return all_FA, mean_FA, mean_FA_mask, mean_FA_skel
 
 
 def tbss_4_prestats(tbss_dir, threshold=0.2, fsl_sh=DEFAULT_FSL_PATH):
     """ Wraps fsl tbss_4_prestats command to thresholds the mean FA skeleton
-        image at the chosen threshold, create a distance map, and project the
-        FA data onto the mean FA skeleton.
-        To be used before any voxelwise cross-subject stats.
+    image at the chosen threshold, create a distance map, and project the
+    FA data onto the mean FA skeleton.
+    To be used before any voxelwise cross-subject stats.
 
-    For more information, refer to :
+    For more information, refer to:
     https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/TBSS/UserGuide
 
     Parameters

@@ -26,6 +26,106 @@ from pyconnectome import DEFAULT_FSL_PATH
 from pyconnectomist.utils.dwitools import read_bvals_bvecs
 
 
+def topup(
+        b0s,
+        phase_enc_dirs,
+        readout_time,
+        outroot,
+        fsl_sh=DEFAULT_FSL_PATH):
+    """ Wraps FSL topup tool to estimate the susceptibility induced
+    off-resonance field.
+
+    Parameters
+    ----------
+    b0s: list of str
+        path to b0 file acquired in opposite phase enc. directions.
+    phase_enc_dirs: list of str
+        the phase enc. directions.
+    readout_time: float
+        the readout time.
+    outroot: str
+        fileroot name for output.
+    fsl_sh: str, optional default 'DEFAULT_FSL_PATH'
+        path to fsl setup sh file.
+
+    Returns
+    -------
+    fieldmap: str
+        path to the fieldmap in Hz.
+    corrected_b0s: str
+        path to the unwarped b0 images.
+    mean_corrected_b0s: str
+        path to the mean unwarped b0 images.
+    """
+
+    # Write topup acqp
+    # https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/eddy/UsersGuide
+    if len(b0s) != len(phase_enc_dirs):
+        raise ValueError("Please specify properly the topup input data.")
+    acqp_file = os.path.join(outroot, "acqp.txt")
+    data = []
+    affine = None
+    with open(acqp_file, "wt") as open_file:
+        for enc_dir, path in zip(phase_enc_dirs, b0s):
+            im = nibabel.load(path)
+            if affine is None:
+                affine = im.affine
+            else:
+                assert numpy.allclose(affine, im.affine)
+            arr = im.get_data()
+            for cnt, size in enumerate(arr.shape[:3]):
+                if size % 2 == 1:
+                    print("[warn] reducing TOPUP B0 image size.")
+                    arr = numpy.delete(arr, -1, axis=cnt)
+            if arr.ndim == 3:
+                arr.shape += (1, )
+            data.append(arr)
+            nvol = arr.shape[-1]
+            if enc_dir == "i":
+                row = "1 0 0 {0}".format(readout_time)
+            elif enc_dir == "i-":
+                row = "-1 0 0 {0}".format(readout_time)
+            elif enc_dir == "j":
+                row = "0 1 0 {0}".format(readout_time)
+            elif enc_dir == "j-":
+                row = "0 -1 0 {0}".format(readout_time)
+            else:
+                raise ValueError("Unknown encode phase direction : "
+                                 "{0}...".format(enc_dir))
+            for indx in range(nvol):
+                open_file.write(row + "\n")
+    concatenated_b0s_file = os.path.join(outroot, "concatenated_b0s.nii.gz")
+    concatenated_b0s = numpy.concatenate(data, axis=-1)
+    concatenated_b0s_im = nibabel.Nifti1Image(concatenated_b0s, affine)
+    nibabel.save(concatenated_b0s_im, concatenated_b0s_file)
+
+    # The topup command
+    fieldmap = os.path.join(outroot, "fieldmap.nii.gz")
+    corrected_b0s = os.path.join(outroot, "unwarped_b0s.nii.gz")
+    cmd = [
+        "topup",
+        "--imain={0}".format(concatenated_b0s_file),
+        "--datain={0}".format(acqp_file),
+        "--config=b02b0.cnf",
+        "--out={0}".format(os.path.join(outroot, "topup")),
+        "--fout={0}".format(fieldmap),
+        "--iout={0}".format(corrected_b0s),
+        "-v"]
+    fslprocess = FSLWrapper(cmd, shfile=fsl_sh)
+    fslprocess()
+
+    # Average b0s
+    mean_corrected_b0s = os.path.join(outroot, "mean_unwarped_b0s.nii.gz")
+    cmd = [
+        "fslmaths",
+        corrected_b0s,
+        "-Tmean", mean_corrected_b0s]
+    fslprocess = FSLWrapper(cmd, shfile=fsl_sh)
+    fslprocess()
+
+    return fieldmap, corrected_b0s, mean_corrected_b0s
+
+
 def epi_reg(
         epi_file, structural_file, brain_structural_file, output_fileroot,
         fieldmap_file=None, effective_echo_spacing=None, magnitude_file=None,
@@ -147,12 +247,16 @@ def fsl_prepare_fieldmap(
     Returns
     -------
     output_file: str
-        The generated fieldmap image.
+        The generated fieldmap image in rad/s.
+    output_hz_file: str
+        The generated fieldmap image in Hz.
     """
     # Check the input parameter
     for path in (phase_file, brain_magnitude_file):
         if not os.path.isfile(path):
             raise ValueError("'{0}' is not a valid input file.".format(path))
+    if not output_file.endswith(".nii.gz"):
+        output_file += ".nii.gz"
 
     # Define the FSL command
     cmd = ["fsl_prepare_fieldmap", manufacturer, phase_file,
@@ -162,7 +266,13 @@ def fsl_prepare_fieldmap(
     fslprocess = FSLWrapper(cmd, shfile=fsl_sh)
     fslprocess()
 
-    return output_file
+    # Convert the fieldmap in rad/s to Hz
+    output_hz_file = output_file.replace(".nii.gz", "_hz.nii.gz")
+    cmd = ["fslmaths", output_file, "-div", "6.28", output_hz_file]
+    fslprocess = FSLWrapper(cmd, shfile=fsl_sh)
+    fslprocess()
+
+    return output_file, output_hz_file
 
 
 def eddy(
@@ -172,8 +282,8 @@ def eddy(
         index,
         bvecs,
         bvals,
-        deformation_field,
         outroot,
+        field=None,
         strategy="openmp",
         fsl_sh=DEFAULT_FSL_PATH):
     """ Wraps FSL eddy tool to correct eddy currents and movements in
@@ -204,10 +314,10 @@ def eddy(
         path to the bvecs file.
     bvals: str
         path to the bvals file.
-    deformation_field: str
-        path to the deformation field.
     outroot: str
         fileroot name for output.
+    field: str, default None
+        path to the field map in Hz.
     strategy: str, default 'openmp'
         the execution strategy: 'openmp' or 'cuda'.
     fsl_sh: str, optional default 'DEFAULT_FSL_PATH'
@@ -229,10 +339,11 @@ def eddy(
         "--index={0}".format(index),
         "--bvecs={0}".format(bvecs),
         "--bvals={0}".format(bvals),
-        "--field={0}".format(deformation_field),
         "--repol",
         "--out={0}".format(outroot),
         "-v"]
+    if field is not None:
+        cmd += ["--field={0}".format(field)]
 
     # Run the Eddy correction
     fslprocess = FSLWrapper(cmd, shfile=fsl_sh)
@@ -496,3 +607,159 @@ def get_readout_time(dicom_img, dcm_info):
         raise ValueError("Unknown manufacturer : {0}".format(manufacturer))
 
     return readout_time
+
+
+def get_dwell_time(dicom_img, dcm_info):
+    """ Get the dwell time or effective echo spacing.
+
+    Parameters
+    ----------
+    dicom_img: dicom.dataset.FileDataset object
+        one of the dicom image loaded by pydicom.
+    dcm_info: dict
+        array containing dicom data.
+
+    Returns
+    -------
+    dwell_time: float
+        effective echo spacing.
+    """
+    bandwidth_per_pixel_phase_encode = float(dicom_img[0x0019, 0x1028])
+    if dcm_info["PhaseEncodingDirection"] in ("i", "i-"):
+        pe_index = 0
+    else:
+        pe_index = 1
+    acquisition_matrix = float(dicom_img[0x0018, 0x1310][pe_index])
+    echo_spacing = 1. / (bandwidth_per_pixel_phase_encode * acquisition_matrix)
+    return echo_spacing
+
+
+def pixel_shift_to_fieldmap(pixel_shift_file, dwell_time, output_file,
+                            fsl_sh=DEFAULT_FSL_PATH):
+    """ Convert a pixel shift map to a FSL field map.
+
+    Parameters
+    ----------
+    pixel_shift_file: str
+        the pixel shift map.
+    dwell_time: float
+        the dwell time in s.
+    output_file: str
+        The generated fieldmap image.
+    fsl_sh: str, optional default 'DEFAULT_FSL_PATH'
+        path to fsl setup sh file.
+
+    Returns
+    -------
+    fieldmap_file: str
+        the FSL fieldmap in rad/s.
+    fieldmap_hz_file: str
+        the FSL fieldmap in Hz.
+    """
+    # Check the input parameter
+    if not os.path.isfile(pixel_shift_file):
+        raise ValueError("'{0}' is not a valid input file.".format(
+            pixel_shift_file))
+    if not output_file.endswith(".nii.gz"):
+        output_file += ".nii.gz"
+
+    # Convert the fieldmap
+    cmd = [
+        "fugue",
+        "--dwell={0}".format(dwell_time),
+        "--loadshift={0}".format(pixel_shift_file),
+        "--savefmap={0}".format(output_file)]
+    fslprocess = FSLWrapper(cmd, shfile=fsl_sh)
+    fslprocess()
+
+    # Convert the fieldmap in rad/s to Hz
+    output_hz_file = output_file.replace(".nii.gz", "_hz.nii.gz")
+    cmd = ["fslmaths", output_file, "-div", "6.28", output_hz_file]
+    fslprocess = FSLWrapper(cmd, shfile=fsl_sh)
+    fslprocess()
+
+    return output_file, output_hz_file
+
+
+def smooth_fieldmap(fieldmap, dwell_time, output_file, sigma=2,
+                    fsl_sh=DEFAULT_FSL_PATH):
+    """ Smooth a field map using FSL using a Gaussian 3D kernel.
+
+    Parameters
+    ----------
+    fieldmap_file: str
+        the FSL fieldmap.
+    dwell_time: float
+        the dwell time in s.
+    output_file: str
+        The generated smoothed fieldmap image.
+    sigma: float, default 2
+        The Gaussian smoothing kernel sigma.
+    fsl_sh: str, optional default 'DEFAULT_FSL_PATH'
+        path to fsl setup sh file.
+    """
+    cmd = [
+        "fugue",
+        "--dwell={0}".format(dwell_time),
+        "--loadfmap={0}".format(fieldmap),
+        "--savefmap={0}".format(output_file),
+        "-s", str(sigma)]
+    fslprocess = FSLWrapper(cmd, shfile=fsl_sh)
+    fslprocess()
+
+
+def fieldmap_reflect(fieldmap, phase_enc_dir, output_file):
+    """ Replace the zero values in the fieldmap by the last non null value in
+    the phase encoding direction.
+
+    Parameters
+    ----------
+    fieldmap_file: str
+        the FSL fieldmap.
+    phase_enc_dir: str
+        the phase encoding direction.
+    output_file: str
+        The generated reflected fieldmap.
+
+    Returns
+    -------
+    reflect_fieldmap: str
+        the filled fieldmap.
+    """
+    # Check input parameters
+    if phase_enc_dir not in ("i", "i-"):
+        axis = 0
+    elif phase_enc_dir not in ("j", "j-"):
+        axis = 1
+    else:
+        raise ValueError("Unsupported phase encoded direction '{0}'.".format(
+            phase_enc_dir))
+
+    # Load field map
+    im = nibabel.load(fieldmap)
+    arr = im.get_data()
+    if arr.ndim != 3:
+        raise ValueError("A 3d array is expected!")
+
+    # Reflection
+    transpose = [0, 1, 2]
+    transpose.pop(axis)
+    transpose.insert(0, axis)
+    arr = arr.transpose(transpose)
+    for indx_slice in range(arr.shape[2]):
+        for indx_pedir in range(arr.shape[0]):
+            indices = sorted(numpy.where(
+                arr[indx_pedir, :, indx_slice] != 0)[0])
+            if len(indices) == 0:
+                continue
+            min_index = indices[0]
+            min_value = arr[indx_pedir, min_index, indx_slice]
+            arr[indx_pedir, :min_index, indx_slice] = min_value
+            max_index = indices[-1]
+            max_value = arr[indx_pedir, max_index, indx_slice]
+            arr[indx_pedir, max_index:, indx_slice] = max_value
+    arr = arr.transpose(transpose)
+
+    # Save result
+    im_reflect = nibabel.Nifti1Image(arr, im.affine)
+    nibabel.save(im_reflect, output_file)

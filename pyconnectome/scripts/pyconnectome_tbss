@@ -35,6 +35,7 @@ from pyconnectome.tractography.dtitk_tbss import (
     tbss_1_preproc, tbss_2_reg, tbss_3_postreg, tbss_4_prestats)
 
 # Pyconnectome imports
+import pyconnectome
 from pyconnectome.wrapper import FSLWrapper
 from pyconnectome import DEFAULT_FSL_PATH
 
@@ -46,10 +47,47 @@ TBSS pipeline analysis.
 Run TBSS pipeline to generate subjects' FA skeletons in a single 4D file that
 can be used for voxelwise statistics.
 
-Requirements: path to subjects FA files.
+To generate the statistics, first create the design and the contrast matrices.
+Note that the order of the entries (rows) in your design matrix must match the
+alphabetical order of your original FA images, as that determines the order of
+the aligned FA images in the final 4D file all_FA_skeletonised; check this with:
+
+cd FA
+imglob *_FA.*
+
+For the design matix, one column for each EV, and one row for each subject.
+
+1 0
+1 0
+0 1
+
+All you need to do is save this data as design.txt, then run:
+
+Text2Vest design.txt design.mat
+
+For the contrasts, one row for each contrast, and column for each EV. For
+example, we have four EVs in our design matrix above. A contrast matrix for
+this design might look like this (tw0 contrasts, each giving the mean
+activation for one of the groups in the study):
+
+1 0
+0 1
+
+If you save this as contrasts.txt, simply run this:
+
+Text2Vest contrasts.txt design.con
+
+For the statistics, simply run this:
+
+randomise -i all_FA_skeletonised -o tbss -m mean_FA_skeleton_mask -d design.mat -t design.con -n 500 --T2 -D
+or
+randomise_parallel with SGE
+
+fslview $FSLDIR/data/standard/MNI152_T1_1mm mean_FA_skeleton -l Green -b 0.2,0.8 tbss_tstat1 -l Red-Yellow -b 3,6 tbss_tstat2 -l Blue-Lightblue -b 3,6
 
 Command example on the MAPT data :
-python $PROJECT/MAPT/pyconnectome_tbss \
+
+python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_tbss \
     -s 02990191LSI 02990236RMO 02990247CCO \
     -f 02990191LSI/4-Tensor/dtifit/dtifit_FA.nii.gz \
        02990236RMO/4-Tensor/dtifit/dtifit_FA.nii.gz \
@@ -61,6 +99,20 @@ python $PROJECT/MAPT/pyconnectome_tbss \
     -R \
     -G \
     -S \
+    -F /neurospin/nsap/local/fsl-5.0.11.sh \
+    -V 2
+
+Command example on SENIOR:
+
+python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_tbss \
+    -s aa140422 ab100207 ab120348 \
+    -f /neurospin/senior/nsap/data/V0/connectomist/aa140422/dtifit/dti_fa.nii.gz \
+       /neurospin/senior/nsap/data/V0/connectomist/ab100207/dtifit/dti_fa.nii.gz \
+       /neurospin/senior/nsap/data/V0/connectomist/ab120348/dtifit/dti_fa.nii.gz \
+    -o /neurospin/nsap/research/tbss/senior \
+    -S \
+    -U \
+    -M \
     -F /neurospin/nsap/local/fsl-5.0.11.sh \
     -V 2
 """
@@ -97,56 +149,58 @@ def get_cmd_line_args():
     # Required arguments
     required = parser.add_argument_group("required arguments")
     required.add_argument(
-        "-s", "--subjects", required=True, nargs='+',
-        help="Subjects ids.")
+        "-s", "--subjects", type=is_file, required=True,
+        help="Subjects ids: one line per subject.")
     required.add_argument(
-        "-f", "--fa-files", type=is_file, required=True, nargs='+',
-        help="Subjects fa files in the same order than the subjects ids.")
+        "-f", "--fa-files", type=is_file, required=True,
+        help="Subjects fa files in the same order than the subjects ids: one "
+             "line per subject.")
     required.add_argument(
         "-o", "--outdir",
         type=is_directory, required=True, metavar="<path>",
         help="Path to the output directory.")
 
     # Optional argument
-    required.add_argument(
+    parser.add_argument(
         "-C", "--clean", action="store_true",
         help="Delete existing files in output directory.")
-    required.add_argument(
+    parser.add_argument(
         "-N", "--init", action="store_true",
         help="Copy FA files into the tbss directory.")
-    required.add_argument(
-        "-P", "--preproc", action="store_true",
-        help="Does TBSS procedure first step : preprocessing.")
-    required.add_argument(
-        "-R", "--registration", action="store_true",
-        help="Does TBSS procedure second step : subjects registration.")
-    required.add_argument(
-        "-G", "--postreg", action="store_true",
-        help="Does TBSS procedure third step : post registration.")
-    required.add_argument(
-        "-S", "--pre-stats", action="store_true",
-        help="Does TBSS procedure fourth step : prestats.")
-    required.add_argument(
+    parser.add_argument(
         "-A", "--rename-fa", action="store_true",
-        help="Rename fa files by adding subjects'id.")
-    required.add_argument(
+        help="Rename FA files during the init copy step using the subjects' "
+             "ids.")
+    parser.add_argument(
+        "-P", "--preproc", action="store_true",
+        help="Run TBSS first step: preprocessing.")
+    parser.add_argument(
+        "-R", "--registration", action="store_true",
+        help="Run TBSS second step: subjects registration.")
+    parser.add_argument(
+        "-G", "--postreg", action="store_true",
+        help="Run TBSS third step: post registration.")
+    parser.add_argument(
+        "-S", "--pre-stats", action="store_true",
+        help="Run TBSS fourth step: prestats.")
+    parser.add_argument(
         "-B", "--find-best-target", action="store_true",
         help="Use best target image for TBSS registration.")
-    required.add_argument(
+    parser.add_argument(
         "-U", "--use-fmrib58-fa", action="store_true",
         help="Use fmrib58 template for TBSS registration.")
-    required.add_argument(
-        "-M", "--use-fmrib58-fa-mean-and-skel", action="store_true",
-        help="use the FMRIB58_FA mean FA image and its derived skeleton,"
-             "instead of the mean of the subjects.")
-    required.add_argument(
+    parser.add_argument(
         "-I", "--use-target-img", type=is_file, metavar="<path>",
         help="Use target image for TBSS registration.")
     parser.add_argument(
-        "-T", "--threshold-fa-skeleton", type=float, default=0.2,
-        help="Threshold for the mean fa skeleton.")
+        "-M", "--use-fmrib58-fa-mean-and-skel", action="store_true",
+        help="use the FMRIB58 mean FA image and its derived skeleton, "
+             "instead of the mean of the subjects.")
     parser.add_argument(
-        "-F", "--fsl-config", metavar="<path>", default=DEFAULT_FSL_PATH,
+        "-T", "--threshold-fa-skeleton", type=float, default=0.2,
+        help="Threshold for the mean FA skeleton.")
+    parser.add_argument(
+        "-F", "--fsl-config", metavar="<path>", type=is_file,
         help="Path to fsl sh config file.")
     parser.add_argument(
         "-V", "--verbose",
@@ -157,6 +211,8 @@ def get_cmd_line_args():
     args = parser.parse_args()
     kwargs = vars(args)
     verbose = kwargs.pop("verbose")
+    if kwargs["fsl_config"] is None:
+        kwargs["fsl_config"] = DEFAULT_FSL_PATH
     return kwargs, verbose
 
 
@@ -165,39 +221,57 @@ Parse the command line.
 """
 
 inputs, verbose = get_cmd_line_args()
-params = locals()
 runtime = {
     "timestamp": datetime.now().isoformat(),
-    "tool": "pyconnectome_tbss"
+    "tool": "pyconnectome_tbss",
+    "tool_version": pyconnectome.__version__,
+    "fsl_version": FSLWrapper([], shfile=inputs["fsl_config"]).version
 }
 outputs = {}
 if verbose > 0:
-    pprint("[info] Starting tbss analysis...")
+    pprint("[info] Starting TBSS analysis...")
     pprint("[info] Runtime:")
     pprint(runtime)
     pprint("[info] Inputs:")
     pprint(inputs)
 
+
+"""
+Check/load input parameters
+"""
 if (inputs["registration"] and not inputs["find_best_target"]
         and not inputs["use_fmrib58_fa"] and inputs["use_target_img"] is None):
     raise ValueError(
-        "Please enter at least one parameter, -B, -F, -I for tbss"
-        " registration.")
+        "Please enter at least one parameter, -B, -F, -I for TBSS "
+        "registration.")
 tbss_dir = os.path.join(inputs["outdir"], "tbss")
 if not os.path.isdir(tbss_dir):
     os.mkdir(tbss_dir)
 outputs["tbss_dir"] = tbss_dir
+with open(inputs["subjects"], "rt") as open_file:
+    subjects = [row.rstrip("\n") for row in open_file.readlines()]
+with open(inputs["fa_files"], "rt") as open_file:
+    fa_files = [row.rstrip("\n") for row in open_file.readlines()]
+
+
+"""
+Pre-Step: copy/renaming
+"""
 
 if inputs["init"]:
     print("Copying FA files in tbss directory...")
-    for i, fa_file in enumerate(inputs["fa_files"]):
-        shutil.copy(fa_file, tbss_dir)
+    for sid, fa_file in zip(subjects, fa_files):
+        basename = os.path.basename(fa_file)
         if inputs["rename_fa"]:
-            out_fa = os.path.join(
-                tbss_dir,
-                inputs["subjects"][i] + "_" + os.path.basename(fa_file))
-            shutil.move(
-                os.path.join(tbss_dir, os.path.basename(fa_file)), out_fa)
+            basename = sid + "_" + basename
+        out_fa = os.path.join(tbss_dir, basename)
+        if not os.path.isfile(out_fa):
+            shutil.copy2(fa_file, out_fa)
+
+
+"""
+Step 1: preproc
+"""
 
 if inputs["preproc"]:
     print("Preprocessing FA files...")
@@ -206,6 +280,11 @@ if inputs["preproc"]:
         fsl_sh=inputs["fsl_config"])
     outputs["fa_dir"] = fa_dir
     outputs["orig_dir"] = orig_dir
+
+
+"""
+Step 2: registration
+"""
 
 if inputs["registration"]:
     print("Registering FA files to template...")
@@ -216,28 +295,49 @@ if inputs["registration"]:
         find_best_target=inputs["find_best_target"],
         fsl_sh=inputs["fsl_config"])
 
+
+"""
+Step 3: apply registration and create skeleton
+"""
+
 if inputs["postreg"]:
     print("Applying transformation FA files and creating mean FA...")
-    all_FA, mean_FA, mean_FA_mask, mean_FA_skel = tbss_3_postreg(
+    all_fa, mean_fa, mean_fa_mask, mean_fa_skel = tbss_3_postreg(
         tbss_dir=tbss_dir,
         use_fmrib58_fa_mean_and_skel=inputs["use_fmrib58_fa_mean_and_skel"],
         fsl_sh=inputs["fsl_config"])
-    outputs["all_FA"] = all_FA
-    outputs["mean_FA"] = mean_FA
-    outputs["mean_FA_mask"] = mean_FA_mask
-    outputs["mean_FA_skel"] = mean_FA_skel
+    outputs["all_FA"] = all_fa
+    outputs["mean_FA"] = mean_fa
+    outputs["mean_FA_mask"] = mean_fa_mask
+    outputs["mean_FA_skel"] = mean_fa_skel
+
+
+"""
+Step 4: stats
+"""
 
 if inputs["pre_stats"]:
     print("Project the FA data onto the mean FA skeleton....")
-    (all_FA_skeletonized, mean_FA_skel_mask, mean_FA_skel_mask_dst,
+    (all_fa_skeletonized, mean_fa_skel_mask, mean_fa_skel_mask_dst,
      thresh_file) = tbss_4_prestats(
         tbss_dir=tbss_dir,
         threshold=inputs["threshold_fa_skeleton"],
         fsl_sh=inputs["fsl_config"])
-    outputs["all_FA_skeletonized"] = all_FA_skeletonized
-    outputs["mean_FA_skel_mask"] = mean_FA_skel_mask
-    outputs["mean_FA_skel_mask_dst"] = mean_FA_skel_mask_dst
-    outputs["mean_FA_skel_mask_dst"] = mean_FA_skel_mask_dst
+    outputs["all_FA_skeletonized"] = all_fa_skeletonized
+    outputs["mean_FA_skel_mask"] = mean_fa_skel_mask
+    outputs["mean_FA_skel_mask_dst"] = mean_fa_skel_mask_dst
+    outputs["mean_FA_skel_mask_dst"] = mean_fa_skel_mask_dst
+
+
+"""
+Dump subjects
+"""
+subjects_file = os.path.join(tbss_dir, "stats", "subjects.txt")
+ordered_subjects = [
+    elem.split(".")[0]
+    for elem in sorted(glob.glob1(os.path.join(tbss_dir, "FA"), "*_FA.*"))]
+with open(subjects_file, "wt") as open_file:
+     open_file.write("\n".join(ordered_subjects))
 
 
 """
