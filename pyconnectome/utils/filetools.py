@@ -452,7 +452,7 @@ def fslreorient2std(input_image, output_image, save_trf=True,
         fsl_trf_file = output_image.split(".")[0] + ".fsl.trf"
         with open(fsl_trf_file, "wt") as open_file:
             open_file.write(fslprocess.stdout)
-        trf_file = output_image + ".trf"
+        trf_file = output_image.split(".")[0] + ".trf"
         numpy.savetxt(trf_file, flirt2aff(fsl_trf_file, output_image,
                                           input_image))
 
