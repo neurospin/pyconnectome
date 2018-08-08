@@ -29,7 +29,7 @@ try:
                      names=["read_bvals_bvecs"])
     bredala.register("pyconnectome.utils.preproctools",
                      names=["concatenate_volumes", "get_dcm_info",
-                            "get_readout_time"])
+                            "get_readout_time", "get_dwell_time"])
 except:
     pass
 
@@ -45,6 +45,7 @@ from pyconnectome import __version__ as version
 from pyconnectome.utils.preproctools import concatenate_volumes
 from pyconnectome.utils.preproctools import get_dcm_info
 from pyconnectome.utils.preproctools import get_readout_time
+from pyconnectome.utils.preproctools import get_dwell_time
 
 
 # Script documentation
@@ -139,8 +140,8 @@ def get_cmd_line_args():
         "-m", "--dicom",
         required=True, metavar="<path>",
         help="A compressed tarball (.tar.gz) or a folder containing the dMRI "
-             "DICOM files. We assume that all images were acquired with the "
-             "same protocol.")
+             "DICOM files or the DWI image BIDS description file. We assume "
+             "that all images were acquired with the same protocol.")
     required.add_argument(
         "-d", "--dwi",
         required=True, metavar="<path>", nargs="+", type=is_file,
@@ -214,6 +215,7 @@ subject_data["bvec"] = concat_bvecs
 subject_data["bval"] = concat_bvals
 
 # Get read out time, phase encode dir and scanner from dicoms.
+dcm_info = None
 if os.path.isfile(inputs["dicom"]):
     if inputs["dicom"].endswith(".tar.gz"):
         output_dicom_dir = os.path.join(output_sub_dir, "dicom")
@@ -221,6 +223,9 @@ if os.path.isfile(inputs["dicom"]):
             os.mkdir(output_dicom_dir)
         cmd = ["tar", "-xzf", inputs["dicom"], "-C", output_dicom_dir]
         subprocess.check_call(cmd)
+    elif inputs["dicom"].endswith(".json"):
+        with open(inputs["dicom"], "rt") as open_file:
+            dcm_info = json.load(open_file)
     else:
         raise ValueError("Unexpected file format: '{0}'.".format(
             inputs["dicom"]))
@@ -228,25 +233,40 @@ else:
     output_dicom_dir = inputs["dicom"]
 
 # Load a dicom file
-dicom_files = glob.glob(os.path.join(output_dicom_dir, "*"))
-if len(dicom_files) == 0:
-    raise ValueError("No files in '{0}'.".format(output_dicom_dir))
-dicom_img = dicom.read_file(dicom_files[0])
+if dcm_info is None:
+    dicom_files = glob.glob(os.path.join(output_dicom_dir, "*"))
+    if len(dicom_files) == 0:
+        raise ValueError("No files in '{0}'.".format(output_dicom_dir))
+    dicom_img = dicom.read_file(dicom_files[0])
 
 # Get dicom information
-dcm_info = get_dcm_info(
-    dicom_dir=output_dicom_dir,
-    outdir=output_sub_dir,
-    dicom_img=dicom_img)
+if dcm_info is None:
+    dcm_info = get_dcm_info(
+        dicom_dir=output_dicom_dir,
+        outdir=output_sub_dir,
+        dicom_img=dicom_img)
 subject_data["PhaseEncodingDirection"] = dcm_info["PhaseEncodingDirection"]
 subject_data["Manufacturer"] = dcm_info["Manufacturer"]
 subject_data["MagneticFieldStrength"] = dcm_info["MagneticFieldStrength"]
 
 # Get read out time
-readout_time = get_readout_time(
-    dicom_img=dicom_img,
-    dcm_info=dcm_info)
+if "TotalReadoutTime" in dcm_info:
+    readout_time = dcm_info["TotalReadoutTime"]
+else:
+    readout_time = get_readout_time(
+        dicom_img=dicom_img,
+        dcm_info=dcm_info)
 subject_data["TotalReadoutTime"] = readout_time
+
+# Get dwell time
+if "DwellTime" in dcm_info:
+    dwell_time = 1. / (dcm_info["BandwidthPerPixelPhaseEncode"] *
+                       dcm_info["AcquisitionMatrixPE"])
+else:
+    dwell_time = get_dwell_time(
+        dicom_img=dicom_img,
+        dcm_info=dcm_info)
+subject_data["DwellTime"] = dwell_time
 
 # Write eddy acqp and index files
 # https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/eddy/UsersGuide#A--acqp

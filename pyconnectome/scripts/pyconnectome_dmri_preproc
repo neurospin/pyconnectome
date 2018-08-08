@@ -9,16 +9,17 @@
 
 # System import
 import os
-import argparse
-import textwrap
 import re
 import json
+import shutil
+import argparse
+import textwrap
 import subprocess
-from collections import OrderedDict
-from datetime import datetime
-from argparse import RawTextHelpFormatter
 from pprint import pprint
+from datetime import datetime
 from packaging import version
+from collections import OrderedDict
+from argparse import RawTextHelpFormatter
 
 # Bredala import
 try:
@@ -31,20 +32,24 @@ try:
     bredala.register("pyconnectome.utils.segtools",
                      names=["bet2", "robustfov"])
     bredala.register("pyconnectome.utils.preproctools",
-                     names=["eddy", "fsl_prepare_fieldmap", "epi_reg"])
+                     names=["eddy", "fsl_prepare_fieldmap", "epi_reg",
+                            "smooth_fieldmap", "pixel_shift_to_fieldmap",
+                            "fieldmap_reflect", "topup"])
     bredala.register("pyconnectome.models.tensor",
                      names=["dtifit"])
     bredala.register("pyconnectome.utils.filetools",
-                     names=["fslreorient2std", "apply_mask", "erode"])
+                     names=["fslreorient2std", "apply_mask", "erode",
+                            "extract_image"])
     bredala.register("pyconnectome.utils.regtools",
                      names=["flirt", "applywarp"])
+    bredala.register("pyconnectome.plotting.slicer",
+                     names=["triplanar"])
 except:
     pass
 
 # Third-Party imports
 import nibabel
 import numpy
-from nilearn import plotting
 
 # Pyconnectomist imports
 from pyconnectomist.preproc.susceptibility import (
@@ -54,6 +59,7 @@ from pyconnectomist.utils.pdftools import generate_pdf
 
 # Pyconnectome imports
 import pyconnectome
+from pyconnectome.plotting.slicer import triplanar
 from pyconnectome.utils.regtools import flirt
 from pyconnectome.utils.regtools import applywarp
 from pyconnectome.utils.segtools import bet2
@@ -61,10 +67,15 @@ from pyconnectome.utils.segtools import robustfov
 from pyconnectome.utils.preproctools import eddy
 from pyconnectome.utils.preproctools import epi_reg
 from pyconnectome.utils.preproctools import fsl_prepare_fieldmap
+from pyconnectome.utils.preproctools import smooth_fieldmap
+from pyconnectome.utils.preproctools import pixel_shift_to_fieldmap
+from pyconnectome.utils.preproctools import fieldmap_reflect
+from pyconnectome.utils.preproctools import topup
 from pyconnectome.models.tensor import dtifit
 from pyconnectome.utils.filetools import fslreorient2std
 from pyconnectome.utils.filetools import apply_mask
 from pyconnectome.utils.filetools import erode
+from pyconnectome.utils.filetools import extract_image
 from pyconnectome.wrapper import FSLWrapper
 from pyconnectome import DEFAULT_FSL_PATH
 
@@ -121,23 +132,26 @@ python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_dmri_preproc \
     -t /neurospin/senior/nsap/data/V0/nifti/ag160127/000002_3DT1/000002_3DT1.nii.gz \
     -c /tmp/senior/ag160127/acqp.txt \
     -i /tmp/senior/ag160127/index.txt \
-    -m /tmp/senior/ag160127/info.json \
+    -m SIEMENS \
+    -p j \
     -o /tmp/senior/ag160127 \
-    -O \
+    -w 0.00027 \
     -Z 45 \
     -V 2 \
     -F /etc/fsl/5.0.11/fsl.sh
 
 python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_dmri_preproc \
     -s ag160127 \
-    -d /tmp/senior/ag160127/dwi.nii.gz \
-    -b /tmp/senior/ag160127/dwi.bval \
-    -r /tmp/senior/ag160127/dwi.bvec \
+    -d /tmp/senior/ag160127_/dwi.nii.gz \
+    -b /tmp/senior/ag160127_/dwi.bval \
+    -r /tmp/senior/ag160127_/dwi.bvec \
     -t /neurospin/senior/nsap/data/V0/nifti/ag160127/000002_3DT1/000002_3DT1.nii.gz \
-    -c /tmp/senior/ag160127/acqp.txt \
-    -i /tmp/senior/ag160127/index.txt \
-    -m /tmp/senior/ag160127/info.json \
-    -o /tmp/senior/ag160127 \
+    -c /tmp/senior/ag160127_/acqp.txt \
+    -i /tmp/senior/ag160127_/index.txt \
+    -m SIEMENS \
+    -p j \
+    -o /tmp/senior/ag160127_ \
+    -w 0.00027 \
     -Z 45 \
     -V 2 \
     -F /etc/fsl/5.0.11/fsl.sh \
@@ -146,30 +160,31 @@ python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_dmri_preproc \
     -T 2.46 \
     -A 2 \
     -Q 0.55 \
-    -R 0.75
+    -B 0.4
 
 python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_dmri_preproc \
     -s ag160127 \
-    -d /volatile/test_dmri_preproc/ag160127/dwi.nii.gz \
-    -b /volatile/test_dmri_preproc/ag160127/dwi.bval \
-    -r /volatile/test_dmri_preproc/ag160127/dwi.bvec \
-    -t /volatile/test_dmri_preproc/ag160127/robust_fov_und.nii.gz \
-    -c /volatile/test_dmri_preproc/ag160127/acqp.txt \
-    -i /volatile/test_dmri_preproc/ag160127/index.txt \
-    -p j \
+    -d /tmp/senior/ag160127_/dwi.nii.gz \
+    -b /tmp/senior/ag160127_/dwi.bval \
+    -r /tmp/senior/ag160127_/dwi.bvec \
+    -t /neurospin/senior/nsap/data/V0/nifti/ag160127/000002_3DT1/000002_3DT1.nii.gz \
+    -c /tmp/senior/ag160127_/acqp.txt \
+    -i /tmp/senior/ag160127_/index.txt \
     -m SIEMENS \
-    -o /volatile/test_dmri_preproc/ag160127 \
+    -p j \
+    -o /tmp/senior/ag160127_ \
+    -w 0.00027 \
     -Z 45 \
     -V 2 \
-    -F /volatile/fsl.5.0.11/etc/fslconf/fsl.sh \
+    -F /etc/fsl/5.0.11/fsl.sh \
     -P /neurospin/senior/nsap/data/V0/nifti/ag160127/000018_B0MAP/000018_B0MAP.nii.gz \
     -M /neurospin/senior/nsap/data/V0/nifti/ag160127/000017_B0MAP/000017_B0MAP.nii.gz \
-    -K /volatile/test_dmri_preproc/ag160127/robust_fov_und_brain_mask.nii.gz \
     -T 2.46 \
-    -W /volatile/test_dmri_preproc/ag160127/epi2struct_fast_wmseg.nii.gz \
     -A 2 \
+    -W /tmp/senior/ag160127_/2-Susceptibility/epi2struct_fast_wmseg.nii.gz \
+    -L /tmp/senior/ag160127_/test_nodiff_mask.nii.gz \
     -Q 0.55 \
-    -R 0.75
+    -B 0.4
 """
 
 
@@ -232,6 +247,14 @@ def get_cmd_line_args():
         type=is_file, required=True, metavar="<path>",
         help="Path to the FSL eddy index file.")
     required.add_argument(
+        "-w", "--dwell-time",
+        type=float, required=True, metavar="<dwell time>",
+        help="The dwell time or effective echo spacing.")
+    required.add_argument(
+        "-x", "--readout-time",
+        type=float, required=True, metavar="<readout time>",
+        help="The readout time.")
+    required.add_argument(
         "-p", "--phase-encode-dir",
         type=str, required=True,
         help="Phase encoding direction.")
@@ -245,6 +268,14 @@ def get_cmd_line_args():
         help="Path to the output directory.")
 
     # Optional argument
+    parser.add_argument(
+        "-O", "--topup-b0",
+        type=is_file, metavar="<path>", nargs="+",
+        help="The b0 data acquired in opposite phase enc. direction.")
+    parser.add_argument(
+        "-D", "--topup-b0-dir",
+        metavar="<path>", nargs="+", choices=("i", "i-", "j", "j-"),
+        help="The b0 data enc.directions.")    
     parser.add_argument(
         "-K", "--t1-mask",
         type=is_file, metavar="<path>",
@@ -299,10 +330,6 @@ def get_cmd_line_args():
         type=float,
         help=("the difference in msec between the 2 echoes of the B0 magnitude"
               " map."))
-    parser.add_argument(
-        "-R", "--partial-fourier-factor",
-        type=float, default=1.,
-        help="the percentage of k-space plane acquired (]0;1]).")
     parser.add_argument(
         "-B", "--bet-threshold-t1",
         type=float, default=0.5,
@@ -407,8 +434,8 @@ nodiff_mean, dwis = extract_dwi_shells(
     bvals_path=inputs["bval"],
     bvecs_path=inputs["bvec"],
     outdir=reshape_outdir)
-if len(dwis) != 1:
-    raise ValueError("Only single shell acquisitions accepted.")
+if len(dwis) > 1:
+    print("[warn] '{0}' shells detected: do not use FA map.".format(len(dwis)))
 outputs["nodif"] = nodiff_mean
 
 # Extract brain from t1
@@ -442,6 +469,7 @@ if inputs["nodiff_mask"] is not None:
         output_fileroot=os.path.join(reshape_outdir, "nodiff_brain"),
         mask_file=inputs["nodiff_mask"],
         fslconfig=inputs["fsl_config"])
+    nodif_brain_mask = inputs["nodiff_mask"]
 else:
     # Extract brain with bet2 from nodiff dwi volume
     nodif_brain, nodif_brain_mask, _, _, _, _, _, _, _, _, _ = bet2(
@@ -451,7 +479,6 @@ else:
         skull=False,
         f=inputs["bet_threshold_nodiff"],
         shfile=inputs["fsl_config"])
-
 outputs["nodif_brain"] = nodif_brain
 outputs["nodif_brain_mask"] = nodif_brain_mask
 
@@ -465,10 +492,14 @@ if not os.path.isdir(brainsuite_dir):
     os.mkdir(brainsuite_dir)
 
 # Perform susceptibility correction: check carefully the result
+susceptibility_method = None
 if not inputs["skip_susceptibility"]:
 
-    # FSL
+    # FSL with B0 maps
     if inputs["magnitude"] is not None and inputs["phase"] is not None:
+
+        # Select case
+        susceptibility_method = "b0map"
 
         # Deal with phase encoding direction
         if inputs["phase_encode_dir"] == "i":
@@ -495,21 +526,21 @@ if not inputs["skip_susceptibility"]:
                 shfile=inputs["fsl_config"])
             erode_mask_file = os.path.join(
                 brainsuite_dir, "ero_" + os.path.basename(mag_brain_mask))
-            im = nibabel.load(inputs["magnitude"])
-            min_spacing = min(im.header.get_zooms()[:3])
-            erode(
-                input_file=mag_brain_mask,
-                output_file=erode_mask_file,
-                radius=min_spacing * 2,
-                fslconfig=inputs["fsl_config"])
-            erode_fileroot = os.path.join(
-                brainsuite_dir, "ero_" + os.path.basename(
-                    mag_brain).split(".")[0])
-            erode_file = apply_mask(
-                input_file=mag_brain,
-                output_fileroot=erode_fileroot,
-                mask_file=erode_mask_file,
-                fslconfig=inputs["fsl_config"])
+            #im = nibabel.load(inputs["magnitude"])
+            #min_spacing = min(im.header.get_zooms()[:3])
+            #erode(
+            #    input_file=mag_brain_mask,
+            #    output_file=erode_mask_file,
+            #    radius=min_spacing * 2,
+            #    fslconfig=inputs["fsl_config"])
+            #erode_fileroot = os.path.join(
+            #    brainsuite_dir, "ero_" + os.path.basename(
+            #        mag_brain).split(".")[0])
+            #erode_file = apply_mask(
+            #    input_file=mag_brain,
+            #    output_fileroot=erode_fileroot,
+            #    mask_file=erode_mask_file,
+            #    fslconfig=inputs["fsl_config"])
 
         else:
             mag_brain_mask = inputs["mag_mask"]
@@ -519,24 +550,47 @@ if not inputs["skip_susceptibility"]:
             apply_mask(
                 input_file=inputs["magnitude"],
                 output_fileroot=mag_brain.replace(".nii.gz", ""),
-                mask_file=inputsmag_brain_mask,
+                mask_file=mag_brain_mask,
                 fslconfig=inputs["fsl_config"])
-            erode_file = None
-
+            #erode_file = None
         outputs["mag_brain"] = mag_brain
         outputs["mag_brain_mask"] = mag_brain_mask
-        outputs["mag_brain_eroded"] = erode_file
+        #outputs["mag_brain_eroded"] = erode_file
 
         # Prepare the fieldmap
         fieldmap_file = os.path.join(brainsuite_dir, "fieldmap.nii.gz")
-        fsl_prepare_fieldmap(
+        fieldmap_file, fieldmap_hz_file = fsl_prepare_fieldmap(
             manufacturer=inputs["manufacturer"].upper(),
             phase_file=inputs["phase"],
-            brain_magnitude_file=erode_file,
+            brain_magnitude_file=mag_brain,
             output_file=fieldmap_file,
             delta_te=str(inputs["delta_te"]),
             fsl_sh=inputs["fsl_config"])
+        im = nibabel.load(fieldmap_hz_file)
+        sigma = min(im.header.get_zooms()[:3]) / 2.
+        smooth_fieldmap(
+            fieldmap_hz_file,
+            inputs["dwell_time"],
+            fieldmap_hz_file,
+            sigma=sigma,
+            fsl_sh=inputs["fsl_config"])
+        fieldmap_reflect(
+            fieldmap=fieldmap_hz_file,
+            phase_enc_dir=inputs["phase_encode_dir"],
+            output_file=fieldmap_hz_file)
+        fieldmap_hz_to_diff_file = fieldmap_hz_file.replace(
+            ".nii.gz", "_to_diff.nii.gz")
+        flirt(
+            in_file=fieldmap_hz_file,
+            ref_file=nodif_brain,
+            out=fieldmap_hz_to_diff_file,
+            interp="nearestneighbour",
+            applyxfm=True,
+            shfile=inputs["fsl_config"])
         outputs["fieldmap"] = fieldmap_file
+        outputs["fieldmap_smooth_hz"] = fieldmap_hz_file
+        outputs["sigma"] = sigma
+        outputs["fieldmap_smooth_hz_to_diff"] = fieldmap_hz_to_diff_file
 
         # Simultaneous coregistration and fieldmap unwarping
         # The shift image contains a value that represents the amount of
@@ -554,16 +608,47 @@ if not inputs["skip_susceptibility"]:
             fieldmap_file=fieldmap_file,
             effective_echo_spacing=echo_spacing,
             magnitude_file=inputs["magnitude"],
-            brain_magnitude_file=erode_file,
+            brain_magnitude_file=mag_brain,
             phase_encode_dir=phase_enc_dir,
             wmseg_file=inputs["wm_seg"],
             fsl_sh=inputs["fsl_config"])
+        nodif_to_t1_mat = os.path.join(brainsuite_dir, "epi2struct.mat")
+        t1_to_nodif_mat = os.path.join(brainsuite_dir, "epi2struct_inv.mat")
         outputs["corrected_epi_file"] = corrected_epi_file
         outputs["warp_file"] = warp_file
-        outputs["distortion_map"] = distortion_map
+        deformation_field_file = warp_file
+
+    # FSL topup
+    elif inputs["topup_b0"] is not None:
+
+        # Select case
+        susceptibility_method = "topup"
+
+        # Topup
+        fieldmap_hz_to_diff_file, corrected_b0s, mean_corrected_b0s = topup(
+            b0s=inputs["topup_b0"],
+            phase_enc_dirs=inputs["topup_b0_dir"],
+            readout_time=inputs["readout_time"],
+            outroot=brainsuite_dir,
+            fsl_sh=inputs["fsl_config"])
+        outputs["fieldmap_hz_to_diff"] = fieldmap_hz_to_diff_file
+        outputs["mean_corrected_b0s"] = mean_corrected_b0s
+
+        # Check diffusion image size
+        im = nibabel.load(inputs["dwi"])
+        arr = im.get_data()
+        for cnt, size in enumerate(arr.shape[:3]):
+            if size % 2 == 1:
+                print("[warn] reducing DWI image size.")
+                arr = numpy.delete(arr, -1, axis=cnt)
+        im = nibabel.Nifti1Image(arr, im.affine)
+        nibabel.save(im, inputs["dwi"])
 
     # Brainsuite
     else:
+
+        # Select case
+        susceptibility_method = "reg"
 
         # Deal with phase encoding direction
         if inputs["phase_encode_dir"] == "i":
@@ -624,37 +709,49 @@ if not inputs["skip_susceptibility"]:
                 to_rm_file = os.path.join(
                     brainsuite_dir, basename.format(inputs["subject"]))
                 os.remove(to_rm_file)
-        distortion_map = os.path.join(
+        warp_file = os.path.join(
             brainsuite_dir, "{0}.dwi.RAS.correct.distortion.map.nii.gz".format(
                             inputs["subject"]))
+        outputs["pixel_shift_map"] = warp_file
 
-    # Reorganize deformation field volume
-    if not os.path.isfile(distortion_map):
-        raise ValueError(
-            "Unavailable distortion map file: {0}".format(distortion_map))
-    distortion_img = nibabel.load(distortion_map)
-    distortion_img_data = distortion_img.get_data()
-    distortion_img_data.shape += (1,)
-    spacing = distortion_img.header.get_zooms()
-    zero_field = numpy.zeros(distortion_img_data.shape)
-    if phase_enc_dir in ("x", "x-"):
-        deformation_field = numpy.concatenate(
-            (distortion_img_data * spacing[0], zero_field, zero_field),
-            axis=3)
-    elif phase_enc_dir in ("y", "y-"):
-        deformation_field = numpy.concatenate(
-            (zero_field, distortion_img_data * spacing[1], zero_field),
-            axis=3)
-    else:
-        raise ValueError("Incorrect phase encode direction: {0}".format(
-                         phase_enc_dir))
-    deformation_field_img = nibabel.Nifti1Image(
-        deformation_field, distortion_img.affine)
-    deformation_field_file = os.path.join(brainsuite_dir, "field.nii.gz")
-    nibabel.save(deformation_field_img, deformation_field_file)
+        # Reorganize deformation field volume
+        if not os.path.isfile(warp_file):
+            raise ValueError("Unavailable warp file: {0}".format(warp_file))
+        distortion_img = nibabel.load(warp_file)
+        distortion_img_data = distortion_img.get_data()
+        distortion_img_data.shape += (1,)
+        spacing = distortion_img.header.get_zooms()
+        zero_field = numpy.zeros(distortion_img_data.shape)
+        if phase_enc_dir in ("x", "x-"):
+            deformation_field = numpy.concatenate(
+                (distortion_img_data * spacing[0], zero_field, zero_field),
+                axis=3)
+        elif phase_enc_dir in ("y", "y-"):
+            deformation_field = numpy.concatenate(
+                (zero_field, distortion_img_data * spacing[1], zero_field),
+                axis=3)
+        else:
+            raise ValueError("Incorrect phase encode direction: {0}".format(
+                             phase_enc_dir))
+        deformation_field_img = nibabel.Nifti1Image(
+            deformation_field, distortion_img.affine)
+        deformation_field_file = os.path.join(brainsuite_dir, "field.nii.gz")
+        nibabel.save(deformation_field_img, deformation_field_file)
+        outputs["warp_file"] = deformation_field_file
+
+        # Create a field map from the pixel shift warp
+        fieldmap_file = os.path.join(brainsuite_dir, "fieldmap.nii.gz")
+        fieldmap_file, fieldmap_hz_to_diff_file = pixel_shift_to_fieldmap(
+            pixel_shift_file=warp_file,
+            dwell_time=inputs["dwell_time"],
+            output_file=fieldmap_file,
+            fsl_sh=inputs["fsl_config"])
+        outputs["fieldmap"] = fieldmap_file
+        outputs["fieldmap_hz"] = fieldmap_hz_to_diff_file
 
 # Create an zero deformation field
 else:
+
     # Coregistration only
     dwi_corrected_fileroot = os.path.join(brainsuite_dir, "epi2struct")
     corrected_epi_file, _, _ = epi_reg(
@@ -664,6 +761,8 @@ else:
         output_fileroot=dwi_corrected_fileroot,
         wmseg_file=None,
         fsl_sh=inputs["fsl_config"])
+    nodif_to_t1_mat = os.path.join(brainsuite_dir, "epi2struct.mat")
+    t1_to_nodif_mat = os.path.join(brainsuite_dir, "epi2struct_inv.mat")
 
     # Create the null deformation field
     im = nibabel.load(inputs["dwi"])
@@ -671,6 +770,12 @@ else:
     deformation_field_im = nibabel.Nifti1Image(zero_field, im.affine)
     deformation_field_file = os.path.join(brainsuite_dir, "field.nii.gz")
     nibabel.save(deformation_field_im, deformation_field_file)
+    outputs["warp_file"] = deformation_field_file
+
+    # Create a null field map
+    fieldmap_hz_to_diff_file = None
+    outputs["fieldmap"] = None
+    outputs["fieldmap_hz"] = None
 
 
 """
@@ -678,20 +783,43 @@ else:
 """
 
 # Apply the deformation field to the nodif brain mask
-nodif_brain_mask_undistorted = nodif_brain_mask.replace(
-    ".nii.gz", "_undistorted.nii.gz")
-applywarp(
-    in_file=nodif_brain_mask,
-    ref_file=nodif_brain_mask,
-    out_file=nodif_brain_mask_undistorted,
-    warp_file=deformation_field_file,
-    interp="nn",
-    shfile=inputs["fsl_config"])
+nodif_brain_mask_undistorted = os.path.join(
+    inputs["outdir"],
+    os.path.basename(nodif_brain_mask).replace(".nii.gz", "_corrected.nii.gz"))
+if susceptibility_method == "b0map":
+    applywarp(
+        in_file=nodif_brain_mask,
+        ref_file=nodif_brain_mask,
+        out_file=nodif_brain_mask_undistorted,
+        warp_file=deformation_field_file,
+        post_affine_file=t1_to_nodif_mat,
+        interp="nn",
+        shfile=inputs["fsl_config"])
+elif susceptibility_method == "topup":
+    nodif_brain_, nodif_brain_mask_, _, _, _, _, _, _, _, _, _ = bet2(
+        input_file=mean_corrected_b0s,
+        output_fileroot=brainsuite_dir,
+        mask=True,
+        skull=False,
+        f=inputs["bet_threshold_nodiff"],
+        shfile=inputs["fsl_config"])
+    shutil.copy2(nodif_brain_mask_, nodif_brain_mask_undistorted)
+else:
+    applywarp(
+        in_file=nodif_brain_mask,
+        ref_file=nodif_brain_mask,
+        out_file=nodif_brain_mask_undistorted,
+        warp_file=deformation_field_file,
+        interp="nn",
+        shfile=inputs["fsl_config"])
 eddy_outputdir = os.path.join(inputs["outdir"], "3-Eddy")
 if not os.path.isdir(eddy_outputdir):
     os.mkdir(eddy_outputdir)
 eddy_outroot = os.path.join(
     eddy_outputdir, "{0}_dwi_eddy_corrected".format(inputs["subject"]))
+field = None
+if fieldmap_hz_to_diff_file is not None:
+    field = fieldmap_hz_to_diff_file.replace(".nii.gz", "")   
 corrected_dwi, corrected_bvec = eddy(
     dwi=inputs["dwi"],
     dwi_brain_mask=nodif_brain_mask_undistorted,
@@ -699,12 +827,56 @@ corrected_dwi, corrected_bvec = eddy(
     index=inputs["index"],
     bvecs=inputs["bvec"],
     bvals=inputs["bval"],
-    deformation_field=deformation_field_file.replace(".nii.gz", ""),
     outroot=eddy_outroot,
+    field=field,
     strategy="openmp",
     fsl_sh=inputs["fsl_config"])
-outputs["corrected_dwi"] = corrected_dwi
-outputs["corrected_bvec"] = corrected_bvec
+corrected_dwi_undistorted = os.path.join(
+    inputs["outdir"], "dwi_corrected.nii.gz")
+#if susceptibility_method == "reg":
+#    applywarp(
+#        in_file=corrected_dwi,
+#        ref_file=corrected_dwi,
+#        out_file=corrected_dwi_undistorted,
+#        warp_file=deformation_field_file,
+#        interp="spline",
+#        shfile=inputs["fsl_config"])
+#else:
+shutil.copy2(corrected_dwi, corrected_dwi_undistorted)
+corrected_bvec_undistorted = os.path.join(
+    inputs["outdir"], "dwi_corrected.bvec")
+shutil.copy2(corrected_bvec, corrected_bvec_undistorted)
+t1_to_dwi = os.path.join(inputs["outdir"], "t1_to_dwi.nii.gz")
+if susceptibility_method == "reg":
+    shutil.copy(t1_in_dwi_space, t1_to_dwi)
+elif susceptibility_method == "topup":
+    flirt(
+        in_file=t1,
+        ref_file=mean_corrected_b0s,
+        dof=6,
+        cost="normmi",
+        out=t1_to_dwi,
+        interp="spline",
+        shfile=inputs["fsl_config"])
+else:
+    flirt(
+        in_file=brain_img,
+        ref_file=nodif_brain_mask_undistorted,
+        out=t1_to_dwi,
+        init=t1_to_nodif_mat,
+        interp="spline",
+        applyxfm=True,
+        shfile=inputs["fsl_config"])
+corrected_nodiff_undistorted = os.path.join(
+    inputs["outdir"], "nodiff_corrected.nii.gz")
+extract_image(
+    in_file=corrected_dwi_undistorted,
+    index=0,
+    out_file=corrected_nodiff_undistorted)
+outputs["corrected_dwi"] = corrected_dwi_undistorted
+outputs["corrected_bvec"] = corrected_bvec_undistorted
+outputs["t1_to_diff"] = t1_to_dwi
+outputs["corrected_nodiff"] = corrected_nodiff_undistorted
 
 
 """
@@ -713,14 +885,13 @@ outputs["corrected_bvec"] = corrected_bvec
 tensor_outdir = os.path.join(inputs["outdir"], "4-Tensor")
 if not os.path.isdir(tensor_outdir):
     os.mkdir(tensor_outdir)
-tensor_fileroot = os.path.join(tensor_outdir, "dtifit")
 (v1_file, v2_file, v3_file, l1_file, l2_file, l3_file, md_file,
  fa_file, s0_file, tensor_file, m0_file) = dtifit(
     corrected_dwi,
     corrected_bvec,
     inputs["bval"],
     nodif_brain_mask,
-    tensor_fileroot,
+    tensor_outdir,
     save_tensor=True,
     fslconfig=inputs["fsl_config"])
 outputs["md_file"] = md_file
@@ -733,48 +904,60 @@ outputs["m0_file"] = m0_file
 """
 5- Create QC report
 """
-
 # Create PDF comparison susceptibility correction/ no susceptibility correction
 if not inputs["skip_susceptibility"]:
     qc_dir = os.path.join(inputs["outdir"], "5-QC")
     if not os.path.isdir(qc_dir):
         os.mkdir(qc_dir)
 
-    # Generate brain mask png for t1 and nodiff
-    nodiff_img = nibabel.load(nodiff_mean)
-    nodiff_brain_mask_img = nibabel.load(nodif_brain_mask)
-    nodiff_slices_nb = plotting.find_cut_slices(
-        nodiff_img, direction='z', n_cuts=6)
-    nodiff_slices = []
-    for i in nodiff_slices_nb:
-        out_png = os.path.join(qc_dir, "nodiff_{0}.png".format(i))
-        display = plotting.plot_anat(
-            nodiff_img,
-            vmin=0,
-            vmax=numpy.percentile(nodiff_img.get_data(), 98),
-            display_mode="z",
-            cut_coords=[i])
-        display.add_overlay(nodiff_brain_mask_img, alpha=0.5)
-        display.savefig(out_png, dpi=300)
-        display.close()
-        nodiff_slices.append([out_png])
-    t1_img = nibabel.load(t1)
-    brain_mask_img = nibabel.load(brain_mask)
-    t1_slices_nb = plotting.find_cut_slices(
-        t1_img, direction='z', n_cuts=6)
-    t1_slices = []
-    for i in t1_slices_nb:
-        out_png = os.path.join(qc_dir, "t1_{0}.png".format(i))
-        display = plotting.plot_anat(
-            t1_img,
-            vmin=0,
-            vmax=numpy.percentile(t1_img.get_data(), 98),
-            display_mode="z",
-            cut_coords=[i])
-        display.add_overlay(brain_mask_img, alpha=0.5)
-        display.savefig(out_png, dpi=300)
-        display.close()
-        t1_slices.append([out_png])
+    # T1 mask snap
+    t1_mask_snap = triplanar(
+        input_file=t1,
+        output_fileroot=os.path.join(qc_dir, "t1_mask"),
+        overlays=[brain_mask],
+        overlays_colors=None,
+        overlay_opacities=[0.7],
+        contours=True,
+        edges=False,
+        marker_coords=(5, -9, 7),
+        resolution=300)
+
+    # DWI mask snap
+    nodif_mask_snap = triplanar(
+        input_file=nodiff_mean,
+        output_fileroot=os.path.join(qc_dir, "nodif_mask"),
+        overlays=[nodif_brain_mask],
+        overlays_colors=None,
+        overlay_opacities=[0.7],
+        contours=True,
+        edges=False,
+        marker_coords=(5, -9, 7),
+        resolution=300)
+
+    # T1 overlayed with nodif snap
+    t1_nodif_snap = triplanar(
+        input_file=nodiff_mean,
+        output_fileroot=os.path.join(qc_dir, "t1_nodif"),
+        overlays=[t1_to_dwi],
+        overlays_colors=None,
+        overlay_opacities=[0.7],
+        contours=True,
+        edges=False,
+        marker_coords=(5, -9, 7),
+        resolution=300)
+
+    # T1 overlayed with corrected nodif snap
+    t1_corrected_nodif_snap = triplanar(
+        input_file=corrected_nodiff_undistorted,
+        output_fileroot=os.path.join(qc_dir, "t1_corrected_nodif"),
+        overlays=[t1_to_dwi],
+        overlays_colors=None,
+        overlay_opacities=[0.7],
+        contours=True,
+        edges=False,
+        marker_coords=(5, -9, 7),
+        resolution=300)
+
     # Write pdf struct
     pdfstruct = os.path.join(qc_dir, "pdf_struct.json")
     pdfstruct_json = OrderedDict()
@@ -785,10 +968,10 @@ if not inputs["skip_susceptibility"]:
     # Add pages with nodiff and t1 brain mask segmentation
     page_struct = {
             "type": "triplanar",
-            "style": "TwoCol",
-            "images": t1_slices,
+            "style": "OneCol",
+            "images": [[t1_mask_snap], [nodif_mask_snap]],
             "texts": [
-                "Brain mask on t1 image in the axial direction."
+                "Brain mask for t1 and diffusion images."
             ],
             "topmargin": 0.05,
             "linecount": 120
@@ -796,60 +979,15 @@ if not inputs["skip_susceptibility"]:
     pdfstruct_json["page1"] = page_struct
     page_struct = {
             "type": "triplanar",
-            "style": "TwoCol",
-            "images": nodiff_slices,
+            "style": "OneCol",
+            "images": [[t1_nodif_snap], [t1_corrected_nodif_snap]],
             "texts": [
-                "Brain mask on nodiff image in the axial direction."
+                "Susceptibility correction before and after respectivelly."
             ],
             "topmargin": 0.05,
             "linecount": 120
         }
     pdfstruct_json["page2"] = page_struct
-
-    # Add pages comparing susceptibility correction to no correction
-    corrected_dwi_img = nibabel.load(corrected_dwi)
-    corrected_dwi_v0_img = nibabel.Nifti1Image(
-        corrected_dwi_img.get_data()[:, :, :, 0], corrected_dwi_img.affine)
-    corrected_dwi_slices_nb = plotting.find_cut_slices(
-        corrected_dwi_v0_img, direction='z', n_cuts=3)
-    slices_correction_comparison = [None for i in range(6)]
-    for i, s in enumerate(corrected_dwi_slices_nb):
-        out_png = os.path.join(
-            qc_dir, "corrected_dwi_{0}.png".format(s))
-        display = plotting.plot_anat(
-            t1_img,
-            vmin=0,
-            vmax=numpy.percentile(t1_img.get_data(), 98),
-            display_mode="z",
-            cut_coords=[i])
-        display.add_edges(corrected_dwi_v0_img)
-        display.savefig(out_png, dpi=300)
-        display.close()
-        slices_correction_comparison[i] = [out_png]
-        out_png = os.path.join(
-            qc_dir, "dwi_{0}.png".format(s))
-        display = plotting.plot_anat(
-            t1_img,
-            vmin=0,
-            vmax=numpy.percentile(t1_img.get_data(), 98),
-            display_mode="z",
-            cut_coords=[i])
-        display.add_edges(nodiff_img)
-        display.savefig(out_png, dpi=300)
-        display.close()
-        slices_correction_comparison[i+3] = [out_png]
-    page_struct = {
-            "type": "triplanar",
-            "style": "TwoCol",
-            "images": slices_correction_comparison,
-            "texts": [
-                "Comparison between susceptibility corrected images (left) "
-                " and initial dwi data surperposed on T1."
-            ],
-            "topmargin": 0.05,
-            "linecount": 120
-        }
-    pdfstruct_json["page3"] = page_struct
 
     # Save pdf
     with open(pdfstruct, "wt") as open_file:
@@ -857,9 +995,9 @@ if not inputs["skip_susceptibility"]:
     tic = datetime.now()
     filename = os.path.join(qc_dir, "{0}_susceptibility_QC.pdf".format(
         inputs["subject"]))
-    generate_pdf(qc_dir, pdfstruct, "NSAP", "NA", "pyConnectome",
-                 "NA", "NC", inputs["subject"], tic,
-                 "Susceptibility QC reporting", filename)
+    generate_pdf(
+        qc_dir, pdfstruct, "NSAP", "NA", "pyConnectome", "NA", "NC",
+        inputs["subject"], tic, "Susceptibility QC reporting", filename)
     outputs["QC_susceptibility_pdf"] = filename
 
 
