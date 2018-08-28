@@ -1,5 +1,5 @@
 ##########################################################################
-# NSAp - Copyright (C) CEA, 2016 - 208
+# NSAp - Copyright (C) CEA, 2016 - 2018
 # Distributed under the terms of the CeCILL-B license, as published by
 # the CEA-CNRS-INRIA. Refer to the LICENSE file or to
 # http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html
@@ -13,6 +13,7 @@ voxel.
 
 # System import
 import os
+import shutil
 import numpy
 
 # Package import
@@ -23,6 +24,7 @@ from pyconnectome.wrapper import FSLWrapper
 import nibabel
 import dipy.reconst.dki as dki
 import dipy.reconst.dki_micro as dki_micro
+from scipy.ndimage.filters import gaussian_filter
 from dipy.io import read_bvals_bvecs
 from dipy.core.gradients import gradient_table
 
@@ -116,13 +118,22 @@ def dkifit(dwi_file, bvec_file, bval_file, mask_file, out, min_kurtosis=-0.42,
     dwi_image = nibabel.load(dwi_file)
     mask_image = nibabel.load(mask_file)
 
+    # Smooth the data
+    data = dwi_image.get_data()
+    fwhm = 1.25
+    gauss_std = fwhm / numpy.sqrt(8 * numpy.log(2))
+    data_smooth = numpy.zeros(data.shape)
+    for indx in range(data.shape[-1]):
+        data_smooth[..., indx] = gaussian_filter(data[..., indx],
+                                                 sigma=gauss_std)
+
     # Load the bvalues and bvectors
     bvals, bvecs = read_bvals_bvecs(bval_file, bvec_file)
     gtab = gradient_table(bvals, bvecs)
 
     # Create/fit the model
-    model = dki.DiffusionKurtosisModel(gtab, fit_method="OLS")
-    fit = model.fit(dwi_image.get_data(), mask=mask_image.get_data())
+    model = dki.DiffusionKurtosisModel(gtab, fit_method="WLS")
+    fit = model.fit(data_smooth, mask=mask_image.get_data())
 
     # Get the tensor part scalars
     kt_image = nibabel.Nifti1Image(fit.kt, affine=dwi_image.affine)
@@ -191,8 +202,7 @@ def dkifit(dwi_file, bvec_file, bval_file, mask_file, out, min_kurtosis=-0.42,
 
         # Create/fit the model
         micro_model = dki_micro.KurtosisMicrostructureModel(gtab)
-        micro_fit = micro_model.fit(
-            dwi_image.get_data(), mask=well_aligned_mask)
+        micro_fit = micro_model.fit(data_smooth, mask=well_aligned_mask)
 
         # Get scalars
         awf_image = nibabel.Nifti1Image(micro_fit.awf, affine=dwi_image.affine)
