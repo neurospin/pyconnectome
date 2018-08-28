@@ -28,6 +28,8 @@ try:
                      names=["shorefit"])
     bredala.register("pyconnectome.models.shm",
                      names=["qballfit"])
+    bredala.register("pyconnectome.models.noddi",
+                     names=["noddifit"])
 except:
     pass
 
@@ -38,7 +40,7 @@ from pyconnectome import DEFAULT_FSL_PATH
 from pyconnectome.wrapper import FSLWrapper
 from pyconnectome.models.shm import qballfit
 from pyconnectome.models.tensor import dtifit
-from pyconnectome.models.tensor import dkifit
+from pyconnectome.models.noddi import noddifit
 from pyconnectome.models.shore import shorefit
 
 # Third party import
@@ -150,6 +152,10 @@ def get_cmd_line_args():
         action="store_true",
         help="If set estimate the tensor (DTI) derived scalars.")
     parser.add_argument(
+        "-N", "--noddi",
+        action="store_true",
+        help="If set estimate the NODDI derived scalars.")
+    parser.add_argument(
         "-F", "--fsl-sh",
         type=is_file, metavar="<path>",
         help="Bash script initializing FSL's environment.")
@@ -253,6 +259,15 @@ if inputs["qball"]:
         out=inputs["outdir"],
         order=inputs["sh_order"])
     out_files.extend(["gfa_file", "qa_file", "shc_file", "odf_file"])
+if inputs["noddi"]:
+    od_file, icvf_file, isovf_file, dir_file, config_file = noddifit(
+        dwi_file=inputs["dwi"],
+        bvec_file=inputs["bvecs"],
+        bval_file=inputs["bvals"],
+        mask_file=inputs["mask"],
+        out=inputs["outdir"])
+    out_files.extend(["od_file", "icvf_file", "isovf_file", "dir_file",
+                      "config_file"])
 
 
 """
@@ -265,7 +280,8 @@ params = locals()
 outputs = dict([(name, params[name]) for name in out_files])
 for name, final_struct in [("inputs", inputs), ("outputs", outputs),
                            ("runtime", runtime)]:
-    log_file = os.path.join(logdir, "{0}.json".format(name))
+    log_file = os.path.join(logdir, "{0}_{1}.json".format(
+        name, runtime["timestamp"]))
     with open(log_file, "wt") as open_file:
         json.dump(final_struct, open_file, sort_keys=True, check_circular=True,
                   indent=4)
