@@ -23,16 +23,18 @@ from pprint import pprint
 try:
     import bredala
     bredala.USE_PROFILER = False
-    bredala.register("ppyconnectome.tractography.dtitk_tbss",
-                     names=["dtitk_import_tensors"])
+    bredala.register("pyconnectome.tractography.dtitk_tbss",
+                     names=["dtitk_version", "dtitk_import_tensors"])
 except:
     pass
 
 # DTI-TK imports
+from pyconnectome.tractography.dtitk_tbss import dtitk_version
 from pyconnectome.tractography.dtitk_tbss import dtitk_import_tensors
 
 # Pyconnectome imports
-from pyconnectome.wrapper import FSLWrapper
+import pyconnectome
+
 
 # Script documentation
 DOC = """
@@ -44,9 +46,7 @@ Preprocess tensor files and turn them into viable inputs for DTI-TK.
 Command example on the MAPT data :
 python $PROJECT/MAPT/pyconnectome_dtitk_preprocessing \
     -b 02990191LSI/4-Tensor/dtifit/dtifit \
-       02990236RMO/4-Tensor/dtifit/dtifit \
-       02990247CCO/4-Tensor/dtifit/dtifit \
-    -s 02990191LSI 02990236RMO 02990247CCO \
+    -s 02990191LSI \
     -o /volatile/test_enigma_dtitk_tbss_v2 \
     -V 2
 """
@@ -113,7 +113,9 @@ inputs, verbose = get_cmd_line_args()
 params = locals()
 runtime = {
     "timestamp": datetime.now().isoformat(),
-    "tool": "pyconnectome_dtitk_import_tensors"
+    "tool": "pyconnectome_dtitk_import_tensors",
+    "tool_version": pyconnectome.__version__,
+    "dtitk_version": dtitk_version()
 }
 outputs = {}
 if verbose > 0:
@@ -127,7 +129,6 @@ if verbose > 0:
 """
 DTITK preprocessing
 """
-
 print("\nPreprocessing subject {0}... \n".format(inputs["subject"]))
 sub_dir = os.path.join(inputs["outdir"], inputs["subject"])
 if not os.path.isdir(sub_dir):
@@ -135,6 +136,9 @@ if not os.path.isdir(sub_dir):
 tensor_dtitk = dtitk_import_tensors(
     basename=inputs["basename"],
     output_dir=sub_dir,
+    outliers=True,
+    spd=True,
+    origin=True,
     isotropic=False)
 outputs["preprocessed_tensor"] = tensor_dtitk
 
@@ -142,7 +146,6 @@ outputs["preprocessed_tensor"] = tensor_dtitk
 """
 Update the outputs and save them and the inputs in a 'logs' directory.
 """
-
 logdir = os.path.join(sub_dir, "logs")
 if not os.path.isdir(logdir):
     os.mkdir(logdir)

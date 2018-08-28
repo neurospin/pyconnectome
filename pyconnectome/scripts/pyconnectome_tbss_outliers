@@ -92,9 +92,16 @@ def get_cmd_line_args():
 
     # Optional arguments
     parser.add_argument(
+        "-P", "--processing-type",
+        choices=["fsl", "dtitk"], default="fsl",
+        help="The processing tool, in order to locate the FA maps.")
+    parser.add_argument(
         "-T", "--thres",
         type=float,
         help="The overlays cutting threshold [0, 100].")
+    parser.add_argument(
+        "-F", "--template-fa", type=is_file,
+        help="Template FA map used with DTI-TK.")
     parser.add_argument(
         "-V", "--verbose",
         type=int, choices=[0, 1, 2], default=0,
@@ -116,8 +123,17 @@ runtime = {
     "tool": "pyconnectome_tbss_outliers",
     "tool_version": pyconnectome.__version__,
     "timestamp": datetime.now().isoformat()}
-target_file = os.path.join(inputs["datadir"], "target.nii.gz")
-fa_files = glob.glob(os.path.join(inputs["datadir"], "*_FA_to_target.nii.gz"))
+
+if inputs["processing_type"] == "fsl":
+    target_file = os.path.join(inputs["datadir"], "target.nii.gz")
+else:
+    target_file = inputs["template_fa"]
+if inputs["processing_type"] == "fsl":
+    fa_files = glob.glob(
+        os.path.join(inputs["datadir"], "*_FA_to_target.nii.gz"))
+else:
+    fa_files = glob.glob(
+        os.path.join(inputs["datadir"], "*", "*_diffeo_FA.nii.gz"))
 outputs = {}
 if verbose > 0:
     pprint("[info] Starting registration ...")

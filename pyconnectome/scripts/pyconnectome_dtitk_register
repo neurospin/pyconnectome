@@ -19,22 +19,27 @@ from argparse import RawTextHelpFormatter
 from datetime import datetime
 from pprint import pprint
 
-# DTI-TK imports
-from pyconnectome.tractography.dtitk_tbss import (
-    dti_rigid_reg, dti_affine_reg, dti_diffeomorphic_reg, dti_warp_to_template)
-
-# Pyconnectome imports
-from pyconnectome.wrapper import FSLWrapper
-
 # Bredala import
 try:
     import bredala
     bredala.USE_PROFILER = False
     bredala.register("pyconnectome.tractography.dtitk_tbss",
                      names=["dti_rigid_reg", "dti_affine_reg",
-                            "dti_diffeomorphic_reg", "dti_warp_to_template"])
+                            "dti_diffeomorphic_reg", "dti_warp_to_template",
+                            "dtitk_version"])
 except:
     pass
+
+# DTI-TK imports
+from pyconnectome.tractography.dtitk_tbss import dtitk_version
+from pyconnectome.tractography.dtitk_tbss import dti_rigid_reg
+from pyconnectome.tractography.dtitk_tbss import dti_affine_reg
+from pyconnectome.tractography.dtitk_tbss import dti_diffeomorphic_reg
+from pyconnectome.tractography.dtitk_tbss import dti_warp_to_template
+
+# Pyconnectome imports
+import pyconnectome
+
 
 # Script documentation
 DOC = """
@@ -46,7 +51,7 @@ Wraps subject to template space and resample to given voxels dimensions
 
 Command example on the MAPT data :
 
-python $PROJECT/MAPT/pyconnectome_dtitk_subject_mapping \
+python $PROJECT/MAPT/pyconnectome_dtitk_register \
     -t /volatile/test_enigma_dtitk_tbss_v2/M0/01310036DAR/dtifit_dtitk.nii.gz \
     -s 01310036DAR \
     -e /volatile/test_enigma_dtitk_tbss_v2/M0/mean_diffeomorphic6.nii.gz \
@@ -80,7 +85,7 @@ def get_cmd_line_args():
     <argument name> -> <argument value>.
     """
     parser = argparse.ArgumentParser(
-        prog="python pyconnectome_dtitk_apply_deformation",
+        prog="python pyconnectome_dtitk_register",
         description=textwrap.dedent(DOC),
         formatter_class=RawTextHelpFormatter)
 
@@ -126,7 +131,9 @@ Parse the command line.
 inputs, verbose = get_cmd_line_args()
 runtime = {
     "timestamp": datetime.now().isoformat(),
-    "tool": "pyconnectome_dtitk_apply_deformation"
+    "tool": "pyconnectome_dtitk_register",
+    "tool_version": pyconnectome.__version__,
+    "dtitk_version": dtitk_version()
 }
 outputs = {}
 if verbose > 0:
@@ -135,19 +142,21 @@ if verbose > 0:
     pprint(runtime)
     pprint("[info] Inputs:")
     pprint(inputs)
+subdir = os.path.join(inputs["outdir"], inputs["subject"])
+if not os.path.isdir(subdir):
+    os.mkdir(subdir)
 
 
 """
 1 - Register the subject to template
 """
-
 # Affine registration
 print("{0} -> {1} : Affine registration...".format(
     inputs["tensor"], inputs["template"]))
 affine_tensor, affine_transformation = dti_affine_reg(
     template=inputs["template"],
-    subject=inputs["tensor"],
-    output_dir=inputs["outdir"],
+    dti=inputs["tensor"],
+    output_dir=subdir,
     SMoption="EDS",
     sep=[4.0, 4.0, 4.0],
     ftol=0.01,
@@ -160,9 +169,9 @@ print("{0} -> {1} : Diffeomorphic registration...".format(
     inputs["tensor"], inputs["template"]))
 diffeo_tensor, diffeo_transformation = dti_diffeomorphic_reg(
     template=inputs["template"],
-    subject=affine_tensor,
+    dti=affine_tensor,
     mask=inputs["template_brain_mask"],
-    output_dir=inputs["outdir"],
+    output_dir=subdir,
     no_of_iter=6,
     ftol=0.002)
 outputs["diffeo_registered_subject"] = diffeo_tensor
@@ -174,20 +183,19 @@ outputs["diffeo_transformation"] = diffeo_transformation
     1) Combine affine and diffeomorphic transformation.
     2) Normalize data to given resolution (default isotropic)
 """
-
-
-print("Combine affine + diffeormorphic transformation and normalize data"
-      " to resolution {0}...".format(voxel_dim))
 if inputs["voxel_dim"] is None:
     voxel_dim = [1, 1, 1]
 elif len(inputs["voxel_dim"]) < 3:
     raise ValueError("Please enter 3 dimensions for voxel dimensions.")
 else:
     voxel_dim = inputs["voxel_dim"]
+print("Combine affine + diffeormorphic transformation and normalize data"
+      " to resolution {0}...".format(voxel_dim))
 warped_subject, combined_transformation = dti_warp_to_template(
-    subject=inputs["tensor"],
-    template=inputs["diffeo_template"],
-    voxel_dim=voxel_dim)
+    dti=inputs["tensor"],
+    template=inputs["template"],
+    voxel_dim=voxel_dim,
+    output_dir=subdir)
 outputs["tensor_template_space"] = warped_subject
 outputs["combined_transformation"] = combined_transformation
 
@@ -195,10 +203,6 @@ outputs["combined_transformation"] = combined_transformation
 """
 Update the outputs and save them and the inputs in a 'logs' directory.
 """
-
-subdir = os.path.join(inputs["outdir"], inputs["subject"])
-if not os.path.isdir(subdir):
-    os.mkdir(subdir)
 logdir = os.path.join(subdir, "logs")
 if not os.path.isdir(logdir):
     os.mkdir(logdir)

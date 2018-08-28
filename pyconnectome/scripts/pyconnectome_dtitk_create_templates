@@ -128,7 +128,6 @@ def get_cmd_line_args():
 """
 Parse the command line.
 """
-
 inputs, verbose = get_cmd_line_args()
 params = locals()
 runtime = {
@@ -148,7 +147,6 @@ if verbose > 0:
 """
 0 - Write DTI-TK data files
 """
-
 # List corrected dti files
 subjects_dti_file = os.path.join(inputs["outdir"], "subjects_dti.txt")
 with open(subjects_dti_file, 'w') as open_file:
@@ -161,7 +159,6 @@ outputs["subjects_file"] = subjects_tensor_file
 """
 1 - Bootstrap input tensor template/ Create initial mean template.
 """
-
 print("\nGenerating template...\n")
 if inputs["template"] is not None:
     initial_template = dti_template_bootstrap(
@@ -177,7 +174,6 @@ outputs["initial_template"] = initial_template
 """
 2 - Create affine template.
 """
-
 print("Affine alignment...\n")
 affine_template, subjects_dti_aff_file = affine_alignment_population(
     template=rigid_template,
@@ -192,7 +188,6 @@ outputs["affine_template"] = affine_template
 3 - Create diffeomorphic template from the final refined template estimate from
     affine alignment.
 """
-
 print("Deformable alignment...\n")
 diffeo_template, mean_affine_tr_mask = deformable_alignment_population(
     affine_template=affine_template,
@@ -207,7 +202,6 @@ outputs["mean_affine_tr_mask"] = mean_affine_tr_mask
 """
 Update the outputs and save them and the inputs in a 'logs' directory.
 """
-
 logdir = os.path.join(inputs["outdir"], "logs")
 if not os.path.isdir(logdir):
     os.mkdir(logdir)

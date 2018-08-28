@@ -79,6 +79,13 @@ def get_cmd_line_args():
 
     # Optional argument
     parser.add_argument(
+        "-P", "--processing-type",
+        choices=["fsl", "dtitk"], default="fsl",
+        help="The processing tool, in order to locate the FA maps.")
+    parser.add_argument(
+        "-F", "--template-fa", type=is_file,
+        help="Template FA map used with DTI-TK.")
+    parser.add_argument(
         "-V", "--verbose",
         type=int, choices=[0, 1, 2], default=2,
         help="Increase the verbosity level: 0 silent, [1, 2] verbose.")
@@ -103,7 +110,12 @@ if verbose > 0:
 """
 Generate FA png snaps
 """
-subjects_file = glob.glob(os.path.join(inputs["datapath"], "*_target.nii.gz"))
+if inputs["processing_type"] == "fsl":
+    subjects_file = glob.glob(os.path.join(
+        inputs["datapath"], "*_target.nii.gz"))
+else:
+    subjects_file = glob.glob(os.path.join(
+        inputs["datapath"], "*", "*_diffeo_FA.nii.gz"))
 png_outdir = os.path.join(inputs["outdir"], "snaps")
 if not os.path.isdir(png_outdir):
     os.mkdir(png_outdir)
@@ -113,25 +125,35 @@ pdfstruct_json["cover"] = {
     "type": "cover"
 }
 out_png_files = []
+marker_coords = None
+if inputs["processing_type"] == "fsl":
+    template_path = os.path.join(inputs["datapath"], "target.nii.gz")
+    marker_coords = (5, -9, 7)
+else:
+    template_path = inputs["template_fa"]
+    marker_coords = (116, 128, 119)
 with progressbar.ProgressBar(max_value=len(subjects_file),
                              redirect_stdout=True) as bar:
     page_pngs = []
     cpt = 0
     pg_nb = 0
     for cnt, path in enumerate(subjects_file):
-        sub_id = os.path.basename(path).split("_")[0]
+        if inputs["processing_type"] == "fsl": 
+            sub_id = os.path.basename(path).split("_")[0]
+        else:
+            sub_id = path.split(os.sep)[-2]
         out_png = os.path.join(png_outdir, "{0}_FA".format(sub_id))
         if not os.path.isfile(out_png + "_ortho.png"):
             out_png = triplanar(
                 input_file=path,
                 output_fileroot=out_png,
                 title=sub_id,
-                overlays=[os.path.join(inputs["datapath"], "target.nii.gz")],
+                overlays=[template_path],
                 overlays_colors=None,
                 overlay_opacities=[0.7],
                 contours=True,
                 edges=False,
-                marker_coords=(5, -9, 7),
+                marker_coords=marker_coords,
                 resolution=300)
             page_pngs.append([out_png])
         else:
