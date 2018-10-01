@@ -281,7 +281,7 @@ generate_pdf(
     show_boundary=False,
     verbose=0)
 if verbose > 1:
-    print("[info] Repor in '{0}'.".format(reportfile))
+    print("[info] Report in '{0}'.".format(reportfile))
 
 
 """
