@@ -1,0 +1,204 @@
+#!/usr/bin/env python
+##########################################################################
+# NSAp - Copyright (C) CEA, 2018
+# Distributed under the terms of the CeCILL-B license, as published by
+# the CEA-CNRS-INRIA. Refer to the LICENSE file or to
+# http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html
+# for details.
+##########################################################################
+
+# System import
+import os
+import argparse
+import textwrap
+import glob
+import re
+import json
+import shutil
+from datetime import datetime
+from argparse import RawTextHelpFormatter
+from datetime import datetime
+from pprint import pprint
+import xml.etree.ElementTree as ET
+from collections import OrderedDict
+
+# Bredala import
+try:
+    import bredala
+    bredala.USE_PROFILER = False
+    bredala.register("pyconnectome.wrapper",
+                     names=["FSLWrapper.__init__", "FSLWrapper.__call__"])
+except:
+    pass
+
+# Pyconnectome imports
+import pyconnectome
+from pyconnectome.wrapper import FSLWrapper
+from pyconnectome import DEFAULT_FSL_PATH
+import nibabel
+import numpy
+import progressbar
+
+# Script documentation
+DOC = """
+TBSS: bundle stats.
+-------------------
+
+Compute the bundle mean FA, MD, ...
+The result is a TSV file with all subjects.
+
+Command example on HCP:
+
+python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_tbss_stats \
+    -i /neurospin/nsap/processed/hcp_tbss/data/3T_diffusion_tbss/tbss/stats/all_FA_skeletonised.nii.gz \
+    -l /neurospin/nsap/processed/hcp_tbss/data/labels.nii.gz \
+    -s /neurospin/nsap/processed/hcp_tbss/data/3T_diffusion_tbss/subjects.txt \
+    -m /i2bm/local/fsl-5.0.11/data/atlases/JHU-labels.xml \
+    -o /neurospin/nsap/processed/hcp_tbss/data/3T_diffusion_tbss/stats \
+    -V 2
+"""
+
+
+def is_file(filepath):
+    """ Check file's existence - argparse 'type' argument.
+    """
+    if not os.path.isfile(filepath):
+        raise argparse.ArgumentError("File does not exist: %s" % filepath)
+    return filepath
+
+
+def is_directory(dirarg):
+    """ Type for argparse - checks that directory exists.
+    """
+    if not os.path.isdir(dirarg):
+        raise argparse.ArgumentError(
+            "The directory '{0}' does not exist!".format(dirarg))
+    return dirarg
+
+
+# Parse input arguments
+def get_cmd_line_args():
+    """
+    Create a command line argument parser and return a dict mapping
+    <argument name> -> <argument value>.
+    """
+    parser = argparse.ArgumentParser(
+        prog="python pyconnectome_tbss_stats",
+        description=textwrap.dedent(DOC),
+        formatter_class=RawTextHelpFormatter)
+
+    # Required arguments
+    required = parser.add_argument_group("required arguments")
+    required.add_argument(
+        "-i", "--all-scalar-skeletonised", type=is_file, required=True,
+        help="The TBBS scalar (FA, MD, ...) on the skeleton.")
+    required.add_argument(
+        "-l", "--labels", type=is_file, required=True,
+        help="The bundle labels that will be intersected with the skeleton "
+             "(must be in the same space).")
+    required.add_argument(
+        "-s", "--subjects", type=is_file, required=True,
+        help="The subject IDs in the skeleton image order.")
+    required.add_argument(
+        "-m", "--labels-map", type=is_file, required=True,
+        help="The label map to retrieve the bundle name: an XML in FSL "
+             "format.")
+    required.add_argument(
+        "-o", "--outdir",
+        type=is_directory, required=True, metavar="<path>",
+        help="Path to the output directory.")
+
+    # Optional argument
+    parser.add_argument(
+        "-V", "--verbose",
+        type=int, choices=[0, 1, 2], default=2,
+        help="Increase the verbosity level: 0 silent, [1, 2] verbose.")
+
+    # Create a dict of arguments to pass to the 'main' function
+    args = parser.parse_args()
+    kwargs = vars(args)
+    verbose = kwargs.pop("verbose")
+    return kwargs, verbose
+
+
+"""
+Parse the command line.
+"""
+
+inputs, verbose = get_cmd_line_args()
+runtime = {
+    "timestamp": datetime.now().isoformat(),
+    "tool": "pyconnectome_tbss_stats",
+    "tool_version": pyconnectome.__version__
+}
+outputs = {}
+if verbose > 0:
+    pprint("[info] Starting TBSS STATS analysis...")
+    pprint("[info] Runtime:")
+    pprint(runtime)
+    pprint("[info] Inputs:")
+    pprint(inputs)
+
+
+"""
+Interesect skeleton and ROIs
+"""
+subjects = numpy.loadtxt(inputs["subjects"], dtype=str).tolist()
+roi_arr = nibabel.load(inputs["labels"]).get_data()
+skel_arr = nibabel.load(inputs["all_scalar_skeletonised"]).get_data()
+mean_skel_arr = numpy.mean(skel_arr, axis=-1)
+if verbose > 1:
+    print("ROI shape: ", roi_arr.shape)
+    print("SKELETON shape: ", skel_arr.shape)   
+tree = ET.parse(inputs["labels_map"])
+root = tree.getroot()
+label_map = OrderedDict((int(label.attrib["index"]), label.text)
+                        for label in root.iter("label"))
+nb_labels = len(label_map)
+nb_subjects = skel_arr.shape[-1]
+if verbose > 1:
+    print("Number of labels: ", nb_labels)
+    print("Number of subjects: ", nb_subjects) 
+mean_values = numpy.zeros((nb_subjects, nb_labels))
+for cnt, (label, name) in enumerate(label_map.items()):
+
+    # Background case
+    if label == 0:
+        continue
+
+    # Get ROI indices/values
+    indices = numpy.where((roi_arr == label) & (mean_skel_arr > 0))
+    roi_values = skel_arr[indices]
+    mean_values[:, cnt] = numpy.mean(roi_values, axis=0)
+
+
+"""
+Save result in a TSV
+"""
+name = os.path.basename(inputs["all_scalar_skeletonised"]).split(".")[0]
+outfile = os.path.join(inputs["outdir"], name + ".tsv")
+header = ["participant_id"] + label_map.values()
+with open(outfile, "wt") as open_file:
+    open_file.write("\t".join(header))
+    for cnt, row in enumerate(mean_values):
+        open_file.write("\n")
+        _row = [subjects[cnt]] + [str(elem) for elem in row]
+        open_file.write("\t".join(_row)) 
+outputs["tbss_stats"] = outfile
+
+
+"""
+Update the outputs and save them and the inputs in a 'logs' directory.
+"""
+logdir = os.path.join(inputs["outdir"], "logs")
+if not os.path.isdir(logdir):
+    os.mkdir(logdir)
+for name, final_struct in [("inputs", inputs), ("outputs", outputs),
+                           ("runtime", runtime)]:
+    log_file = os.path.join(logdir, "{0}.json".format(name))
+    with open(log_file, "wt") as open_file:
+        json.dump(final_struct, open_file, sort_keys=True, check_circular=True,
+                  indent=4)
+if verbose > 1:
+    print("[final]")
+    pprint(outputs)
