@@ -316,15 +316,15 @@ def get_cmd_line_args():
         "-F", "--fsl-config",
         type=is_file, metavar="<path>",
         help="Bash script initializing FSL's environment.")
-    parser.add_argument(
-        "-Q", "--echo-spacing",
-        type=float,
-        help=("the acquisition time in msec between 2 centers of 2 "
-              "consecutively acquired lines in k-space."))
-    parser.add_argument(
-        "-A", "--parallel-acceleration-factor",
-        type=float, default=1.,
-        help="the number of parallel acquisition in the k-space plane.")
+    #parser.add_argument(
+    #    "-Q", "--echo-spacing",
+    #    type=float,
+    #    help=("the acquisition time in msec between 2 centers of 2 "
+    #          "consecutively acquired lines in k-space."))
+    #parser.add_argument(
+    #    "-A", "--parallel-acceleration-factor",
+    #    type=float, default=1.,
+    #    help="the number of parallel acquisition in the k-space plane.")
     parser.add_argument(
         "-T", "--delta-te",
         type=float,
@@ -366,6 +366,9 @@ runtime = {
     "timestamp": datetime.now().isoformat(),
     "fsl_version": FSLWrapper([], shfile=inputs["fsl_config"]).version}
 outputs = {}
+outdir = os.path.join(inputs["outdir"], inputs["subject"])
+if not os.path.isdir(outdir):
+    raise ValueError("Please call first 'pyconnectome_get_eddy_data'.")
 if verbose > 0:
     pprint("[info] Starting dMRI preprocessings...")
     pprint("[info] Runtime:")
@@ -382,7 +385,7 @@ if version.parse(runtime["fsl_version"]) < version.parse("5.0.11"):
 """
 
 # Create preproc output dir
-reshape_outdir = os.path.join(inputs["outdir"], "1-Reshape")
+reshape_outdir = os.path.join(outdir, "1-Reshape")
 if not os.path.isdir(reshape_outdir):
     os.mkdir(reshape_outdir)
 
@@ -487,7 +490,7 @@ outputs["nodif_brain_mask"] = nodif_brain_mask
 2- Susceptibility correction.
 """
 # Run susceptibility correction
-brainsuite_dir = os.path.join(inputs["outdir"], "2-Susceptibility")
+brainsuite_dir = os.path.join(outdir, "2-Susceptibility")
 if not os.path.isdir(brainsuite_dir):
     os.mkdir(brainsuite_dir)
 
@@ -598,15 +601,15 @@ if not inputs["skip_susceptibility"]:
         # need to be applied in the direction specified by the shiftdir.
         # TODO: check effective echo spacing computation
         dwi_corrected_fileroot = os.path.join(brainsuite_dir, "epi2struct")
-        echo_spacing = inputs["echo_spacing"] / (
-            1000 * inputs["parallel_acceleration_factor"])
+        #echo_spacing = inputs["echo_spacing"] / (
+        #    1000 * inputs["parallel_acceleration_factor"])
         corrected_epi_file, warp_file, distortion_map = epi_reg(
             epi_file=inputs["dwi"],
             structural_file=inputs["t1"],
             brain_structural_file=brain_img,
             output_fileroot=dwi_corrected_fileroot,
             fieldmap_file=fieldmap_file,
-            effective_echo_spacing=echo_spacing,
+            effective_echo_spacing=inputs["dwell_time"],
             magnitude_file=inputs["magnitude"],
             brain_magnitude_file=mag_brain,
             phase_encode_dir=phase_enc_dir,
@@ -784,7 +787,7 @@ else:
 
 # Apply the deformation field to the nodif brain mask
 nodif_brain_mask_undistorted = os.path.join(
-    inputs["outdir"],
+    outdir,
     os.path.basename(nodif_brain_mask).replace(".nii.gz", "_corrected.nii.gz"))
 if susceptibility_method == "b0map":
     applywarp(
@@ -812,7 +815,7 @@ else:
         warp_file=deformation_field_file,
         interp="nn",
         shfile=inputs["fsl_config"])
-eddy_outputdir = os.path.join(inputs["outdir"], "3-Eddy")
+eddy_outputdir = os.path.join(outdir, "3-Eddy")
 if not os.path.isdir(eddy_outputdir):
     os.mkdir(eddy_outputdir)
 eddy_outroot = os.path.join(
@@ -832,7 +835,7 @@ corrected_dwi, corrected_bvec = eddy(
     strategy="openmp",
     fsl_sh=inputs["fsl_config"])
 corrected_dwi_undistorted = os.path.join(
-    inputs["outdir"], "dwi_corrected.nii.gz")
+    outdir, "dwi_corrected.nii.gz")
 #if susceptibility_method == "reg":
 #    applywarp(
 #        in_file=corrected_dwi,
@@ -844,9 +847,9 @@ corrected_dwi_undistorted = os.path.join(
 #else:
 shutil.copy2(corrected_dwi, corrected_dwi_undistorted)
 corrected_bvec_undistorted = os.path.join(
-    inputs["outdir"], "dwi_corrected.bvec")
+    outdir, "dwi_corrected.bvec")
 shutil.copy2(corrected_bvec, corrected_bvec_undistorted)
-t1_to_dwi = os.path.join(inputs["outdir"], "t1_to_dwi.nii.gz")
+t1_to_dwi = os.path.join(outdir, "t1_to_dwi.nii.gz")
 if susceptibility_method == "reg":
     shutil.copy(t1_in_dwi_space, t1_to_dwi)
 elif susceptibility_method == "topup":
@@ -868,7 +871,7 @@ else:
         applyxfm=True,
         shfile=inputs["fsl_config"])
 corrected_nodiff_undistorted = os.path.join(
-    inputs["outdir"], "nodiff_corrected.nii.gz")
+    outdir, "nodiff_corrected.nii.gz")
 extract_image(
     in_file=corrected_dwi_undistorted,
     index=0,
@@ -882,7 +885,7 @@ outputs["corrected_nodiff"] = corrected_nodiff_undistorted
 """
 4- Tensor fit
 """
-tensor_outdir = os.path.join(inputs["outdir"], "4-Tensor")
+tensor_outdir = os.path.join(outdir, "4-Tensor")
 if not os.path.isdir(tensor_outdir):
     os.mkdir(tensor_outdir)
 (v1_file, v2_file, v3_file, l1_file, l2_file, l3_file, md_file,
@@ -906,7 +909,7 @@ outputs["m0_file"] = m0_file
 """
 # Create PDF comparison susceptibility correction/ no susceptibility correction
 if not inputs["skip_susceptibility"]:
-    qc_dir = os.path.join(inputs["outdir"], "5-QC")
+    qc_dir = os.path.join(outdir, "5-QC")
     if not os.path.isdir(qc_dir):
         os.mkdir(qc_dir)
 
@@ -1005,7 +1008,7 @@ if not inputs["skip_susceptibility"]:
 Update the outputs and save them and the inputs in a 'logs' directory.
 """
 
-logdir = os.path.join(inputs["outdir"], "logs")
+logdir = os.path.join(outdir, "logs")
 if not os.path.isdir(logdir):
     os.mkdir(logdir)
 for name, final_struct in [("inputs", inputs), ("outputs", outputs),
