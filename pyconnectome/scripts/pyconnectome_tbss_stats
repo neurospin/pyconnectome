@@ -52,7 +52,7 @@ Command example on HCP:
 python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_tbss_stats \
     -i /neurospin/nsap/processed/hcp_tbss/data/3T_diffusion_tbss/tbss/stats/all_FA_skeletonised.nii.gz \
     -l /neurospin/nsap/processed/hcp_tbss/data/labels.nii.gz \
-    -s /neurospin/nsap/processed/hcp_tbss/data/3T_diffusion_tbss/subjects.txt \
+    -S /neurospin/nsap/processed/hcp_tbss/data/3T_diffusion_tbss/subjects.txt \
     -m /i2bm/local/fsl-5.0.11/data/atlases/JHU-labels.xml \
     -o /neurospin/nsap/processed/hcp_tbss/data/3T_diffusion_tbss/stats \
     -V 2
@@ -91,14 +91,12 @@ def get_cmd_line_args():
     required = parser.add_argument_group("required arguments")
     required.add_argument(
         "-i", "--all-scalar-skeletonised", type=is_file, required=True,
-        help="The TBBS scalar (FA, MD, ...) on the skeleton.")
+        help="The TBBS scalar (FA, MD, ...) on the skeleton or a list of "
+             "splieted result (one subject, one file).")
     required.add_argument(
         "-l", "--labels", type=is_file, required=True,
         help="The bundle labels that will be intersected with the skeleton "
              "(must be in the same space).")
-    required.add_argument(
-        "-s", "--subjects", type=is_file, required=True,
-        help="The subject IDs in the skeleton image order.")
     required.add_argument(
         "-m", "--labels-map", type=is_file, required=True,
         help="The label map to retrieve the bundle name: an XML in FSL "
@@ -109,6 +107,13 @@ def get_cmd_line_args():
         help="Path to the output directory.")
 
     # Optional argument
+    required.add_argument(
+        "-S", "--subjects", type=is_file,
+        help="The subject IDs in the skeleton image order.")
+    required.add_argument(
+        "-I", "--subject-index", type=int,
+        help="Retrieve the subject name from the splitted path at the "
+             "specified location.")
     parser.add_argument(
         "-V", "--verbose",
         type=int, choices=[0, 1, 2], default=2,
@@ -141,55 +146,96 @@ if verbose > 0:
 
 
 """
-Interesect skeleton and ROIs
+Load the ROIs
 """
-subjects = numpy.loadtxt(inputs["subjects"], dtype=str).tolist()
 roi_arr = nibabel.load(inputs["labels"]).get_data()
-skel_arr = nibabel.load(inputs["all_scalar_skeletonised"]).get_data()
-mean_skel_arr = numpy.mean(skel_arr, axis=-1)
-if verbose > 1:
-    print("ROI shape: ", roi_arr.shape)
-    print("SKELETON shape: ", skel_arr.shape)   
 tree = ET.parse(inputs["labels_map"])
 root = tree.getroot()
 label_map = OrderedDict((int(label.attrib["index"]), label.text)
                         for label in root.iter("label"))
-nb_labels = len(label_map)
-nb_subjects = skel_arr.shape[-1]
-if verbose > 1:
-    print("Number of labels: ", nb_labels)
-    print("Number of subjects: ", nb_subjects) 
-mean_values = numpy.zeros((nb_subjects, nb_labels))
-for cnt, (label, name) in enumerate(label_map.items()):
-
-    # Background case
-    if label == 0:
-        continue
-
-    # Get ROI indices/values
-    indices = numpy.where((roi_arr == label) & (mean_skel_arr > 0))
-    roi_values = skel_arr[indices]
-    mean_values[:, cnt] = numpy.mean(roi_values, axis=0)
 
 
 """
-Save result in a TSV
+Interesect one file skeleton and ROIs
 """
-name = os.path.basename(inputs["all_scalar_skeletonised"]).split(".")[0]
-outfile = os.path.join(inputs["outdir"], name + ".tsv")
-header = ["participant_id"] + label_map.values()
-with open(outfile, "wt") as open_file:
-    open_file.write("\t".join(header))
-    for cnt, row in enumerate(mean_values):
-        open_file.write("\n")
-        _row = [subjects[cnt]] + [str(elem) for elem in row]
-        open_file.write("\t".join(_row)) 
-outputs["tbss_stats"] = outfile
+if inputs["subjects"] is not None:
+
+    subjects = numpy.loadtxt(inputs["subjects"], dtype=str).tolist()
+    skel_arr = nibabel.load(inputs["all_scalar_skeletonised"]).get_data()
+    mean_skel_arr = numpy.mean(skel_arr, axis=-1)
+    if verbose > 1:
+        print("ROI shape: ", roi_arr.shape)
+        print("SKELETON shape: ", skel_arr.shape)   
+    nb_labels = len(label_map)
+    nb_subjects = skel_arr.shape[-1]
+    if verbose > 1:
+        print("Number of labels: ", nb_labels)
+        print("Number of subjects: ", nb_subjects) 
+    mean_values = numpy.zeros((nb_subjects, nb_labels))
+    for cnt, (label, name) in enumerate(label_map.items()):
+
+        # Background case
+        if label == 0:
+            continue
+
+        # Get ROI indices/values
+        indices = numpy.where((roi_arr == label) & (mean_skel_arr > 0))
+        roi_values = skel_arr[indices]
+        mean_values[:, cnt] = numpy.mean(roi_values, axis=0)
+
+    # Save TSV file
+    name = os.path.basename(inputs["all_scalar_skeletonised"]).split(".")[0]
+    outfile = os.path.join(inputs["outdir"], name + ".tsv")
+    header = ["participant_id"] + label_map.values()
+    with open(outfile, "wt") as open_file:
+        open_file.write("\t".join(header))
+        for cnt, row in enumerate(mean_values):
+            open_file.write("\n")
+            _row = [subjects[cnt]] + [str(elem) for elem in row]
+            open_file.write("\t".join(_row)) 
+
+"""
+Intersect splited skeletons and ROIs
+"""
+if inputs["subject_index"] is not None:
+
+    # Compute summary table
+    outfile = os.path.join(inputs["outdir"], "all_scalar_skeletonised.tsv")
+    skeleton_files = numpy.loadtxt(
+        inputs["all_scalar_skeletonised"], dtype=str)
+    header = ["participant_id"] + label_map.values()
+    with open(outfile, "wt") as open_file:
+        open_file.write("\t".join(header))
+
+        with progressbar.ProgressBar(max_value=len(skeleton_files)) as bar:
+            for cnt, path in enumerate(skeleton_files):
+                sid = path.split(os.sep)[inputs["subject_index"]]
+                skel_arr = nibabel.load(path).get_data()
+                row = [sid]
+                for label, name in label_map.items():
+
+                    # Background case
+                    if label == 0:
+                        row.append("0.0")
+                        continue
+
+                    # Get ROI indices/values
+                    indices = numpy.where((roi_arr == label) & (skel_arr > 0))
+                    roi_values = skel_arr[indices]
+                    row.append(str(numpy.mean(roi_values)))
+
+                # Update TSV file
+                open_file.write("\n")
+                open_file.write("\t".join(row))
+
+                # Update progressbar
+                bar.update(cnt)
 
 
 """
 Update the outputs and save them and the inputs in a 'logs' directory.
 """
+outputs["tbss_stats"] = outfile
 logdir = os.path.join(inputs["outdir"], "logs")
 if not os.path.isdir(logdir):
     os.mkdir(logdir)
