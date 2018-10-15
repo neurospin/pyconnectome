@@ -402,7 +402,7 @@ def concatenate_volumes(nii_files, bvals_files, bvecs_files, outdir, axis=-1):
         bvals_files, bvecs_files, min_bval=200)
 
     if nb_nodiff > 1:
-        nodiff_indexes = numpy.where(bvals == 0)[0].tolist()
+        nodiff_indexes = numpy.where(bvals < 15)[0].tolist()
         b0_array = concatenated_volumes[..., nodiff_indexes[0]]
         b0_array.shape += (1, )
         cpt_delete = 0
