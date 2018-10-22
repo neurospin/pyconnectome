@@ -24,6 +24,7 @@ import nibabel
 from pyconnectome.wrapper import FSLWrapper
 from pyconnectome import DEFAULT_FSL_PATH
 from pyconnectomist.utils.dwitools import read_bvals_bvecs
+from pydcmio.dcmconverter.converter import dcm2niix
 
 
 def topup(
@@ -457,11 +458,17 @@ def get_dcm_info(dicom_dir, outdir, dicom_img=None):
     if os.path.isdir(dcm_info_dir):
         shutil.rmtree(dcm_info_dir)
     os.mkdir(dcm_info_dir)
-    cmd = ["dcm2niix", "-b", "o", "-v", "n", "-o", dcm_info_dir, dicom_dir]
-    cmd = " ".join(cmd)
-    os.system(cmd)
-    dcm_info_json = glob.glob(os.path.join(dcm_info_dir, "*.json"))[0]
-    with open(dcm_info_json, "rb") as open_file:
+    _, _, _, bids = dcm2niix(
+        input=dicom_dir,
+        o=dcm_info_dir,
+        f="%p",
+        z="n",
+        b="o")
+    if len(bids) == 0:
+        raise ValueError(
+            "Dcm2niix could not extract information from '{0}'".format(
+                dicom_dir))
+    with open(bids[0], "rb") as open_file:
         dcm_info = json.load(open_file)
 
     return dcm_info
@@ -496,10 +503,10 @@ def get_readout_time(dicom_img, dcm_info, dwell_time):
     """
 
     manufacturer = dcm_info["Manufacturer"]
-    if manufacturer in ["SIEMENS", "Siemens", "GE MEDICAL SYSTEMS", "GE"]:
+    if manufacturer.upper() in ["SIEMENS", "GE MEDICAL SYSTEMS", "GE"]:
         readout_time = dcm_info["TotalReadoutTime"]
 
-    elif manufacturer in ["Philips Medical Systems", "Philips"]:
+    elif manufacturer.upper() in ["PHILIPS MEDICAL SYSTEMS", "PHILIPS"]:
         acceleration_factor = dicom_img[int("2005", 16),
                                         int("140f", 16)][0][24, 36969].value
         etl = float(dicom_img[0x0018, 0x0089].value)
@@ -538,10 +545,10 @@ def get_dwell_time(dicom_img, dcm_info):
     """
     manufacturer = dcm_info["Manufacturer"]
 
-    if manufacturer in ["SIEMENS", "Siemens", "GE MEDICAL SYSTEMS", "GE"]:
+    if manufacturer.upper() in ["SIEMENS", "GE MEDICAL SYSTEMS", "GE"]:
         dwell_time = dcm_info["EffectiveEchoSpacing"]
 
-    elif manufacturer in ["Philips Medical Systems", "Philips"]:
+    elif manufacturer.upper() in ["PHILIPS MEDICAL SYSTEMS", "PHILIPS"]:
 
         # Compute pixel water fat shift
         gyromagnetic_proton_gamma_ratio = 42.576 * pow(10, 6)  # Hz/T
