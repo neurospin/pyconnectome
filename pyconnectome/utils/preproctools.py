@@ -24,6 +24,7 @@ import nibabel
 from pyconnectome.wrapper import FSLWrapper
 from pyconnectome import DEFAULT_FSL_PATH
 from pyconnectomist.utils.dwitools import read_bvals_bvecs
+from pydcmio.dcmconverter.converter import dcm2niix
 
 
 def topup(
@@ -402,7 +403,7 @@ def concatenate_volumes(nii_files, bvals_files, bvecs_files, outdir, axis=-1):
         bvals_files, bvecs_files, min_bval=200)
 
     if nb_nodiff > 1:
-        nodiff_indexes = numpy.where(bvals < 15)[0].tolist()
+        nodiff_indexes = numpy.where(bvals == 0)[0].tolist()
         b0_array = concatenated_volumes[..., nodiff_indexes[0]]
         b0_array.shape += (1, )
         cpt_delete = 0
@@ -431,90 +432,49 @@ def concatenate_volumes(nii_files, bvals_files, bvecs_files, outdir, axis=-1):
 
 
 def get_dcm_info(dicom_dir, outdir, dicom_img=None):
-    """ Get the sequence parameters, especiallt the phase encoded direction.
-
+    """ Get the sequence parameters, especially the phase encoded direction.
+        Uses Christopher Rorden tool dcm2niix.
     Parameters
     ----------
     dicom_dir: str
         path to the dicoms directory.
     outdir: str
         path to the subject output directory.
-    dicom_img: dicom.dataset.FileDataset object, default None
-        one of the dicom image loaded by pydicom. If not specified load one
-        DICOM file available in the 'dicom_dir' folder.
 
     Returns
     -------
     dcm_info: dict
         Dictionnary with scanner characteristics.  The phase encode direction
         is encoded as (i, -i, j, -j).
+        /!\ Warnings : For Philips and GE scanners only phase encode direction
+            axis is available and is named PhaseEncodingAxis.
+            Phase encode direction axis + orientation is only available for
+            Siemens scanners and is named PhaseEncodingDirection.
+        /!\
     """
-    # Dicom phase encoding direction tag
-    p_enc_tag = [24, 4882]
 
-    # Dicom manufacturer tag (0008, 0070)
-    manufacturer_tag = [8, 112]
-
-    # Magnetic field strength (0018,0087)
-    field_tag = [24, 135]
-
-    # Load the image if necessary
-    if dicom_img is None:
-        dicom_img = dicom.read_file(
-            glob.glob(os.path.join(dicom_dir, "*.*"))[0])
-
-    # Get the manufacturer
-    manufacturer = dicom_img[manufacturer_tag[0], manufacturer_tag[1]].value
-
-    # Use DICOM files
-    if manufacturer == "Philips Medical Systems":
-
-        phase_enc_dir = dicom_img[p_enc_tag[0], p_enc_tag[1]].value
-        if phase_enc_dir == "COL":
-            phase_enc_dir = "j"
-        elif phase_enc_dir == "ROW":
-            phase_enc_dir = "i"
-        else:
-            raise ValueError("Unknown phase encode direction: "
-                             "{0}".format(phase_enc_dir))
-        dcm_info = {"PhaseEncodingDirection": phase_enc_dir}
-
-    # Use dcm2niix
-    elif manufacturer in ["SIEMENS", "GE", "GE MEDICAL SYSTEMS"]:
-        dcm_info_dir = os.path.join(outdir, "DCM_INFO")
-        if os.path.isdir(dcm_info_dir):
-            shutil.rmtree(dcm_info_dir)
-        os.mkdir(dcm_info_dir)
-        cmd = ["dcm2niix", "-b", "o", "-v", "n", "-o", dcm_info_dir, dicom_dir]
-        cmd = " ".join(cmd)
-        os.system(cmd)
-        dcm_info_json = glob.glob(os.path.join(dcm_info_dir, "*.json"))[0]
-        with open(dcm_info_json, "rb") as open_file:
-            dcm_info = json.load(open_file)
-        if manufacturer == "SIEMENS":
-            phase_enc_dir = dcm_info["PhaseEncodingDirection"]
-        if manufacturer in ["GE", "GE MEDICAL SYSTEMS"]:
-            phase_enc_dir = dcm_info["InPlanePhaseEncodingDirectionDICOM"]
-            if phase_enc_dir == "COL":
-                phase_enc_dir = "j"
-            elif phase_enc_dir == "ROW":
-                phase_enc_dir = "i"
-            else:
-                raise ValueError("Unknown phase encode direction: "
-                                 "{0}".format(phase_enc_dir))
-            dcm_info["PhaseEncodingDirection"] = phase_enc_dir
-    else:
-        raise ValueError("Unknown scanner: {0}...".format(manufacturer))
-
-    # Add some information
-    dcm_info["Manufacturer"] = manufacturer
-    dcm_info["MagneticFieldStrength"] = float(dicom_img[
-        field_tag[0], field_tag[1]].value)
+    # Use Christopher Rorden tool dcm2niix to extract other dicom info.
+    dcm_info_dir = os.path.join(outdir, "DCM_INFO")
+    if os.path.isdir(dcm_info_dir):
+        shutil.rmtree(dcm_info_dir)
+    os.mkdir(dcm_info_dir)
+    _, _, _, bids = dcm2niix(
+        input=dicom_dir,
+        o=dcm_info_dir,
+        f="%p",
+        z="n",
+        b="o")
+    if len(bids) == 0:
+        raise ValueError(
+            "Dcm2niix could not extract information from '{0}'".format(
+                dicom_dir))
+    with open(bids[0], "rb") as open_file:
+        dcm_info = json.load(open_file)
 
     return dcm_info
 
 
-def get_readout_time(dicom_img, dcm_info):
+def get_readout_time(dicom_img, dcm_info, dwell_time):
     """ Get read out time from a dicom image.
 
     Parameters
@@ -523,6 +483,8 @@ def get_readout_time(dicom_img, dcm_info):
         one of the dicom image loaded by pydicom.
     dcm_info: dict
         array containing dicom data.
+    dwell_time: float
+        Effective echo spacing in s.
 
     Returns
     -------
@@ -532,77 +494,23 @@ def get_readout_time(dicom_img, dcm_info):
     For philips scanner
     ~~~~~~~~~~~~~~~~~~~
     Formula to compute read out time:
-    echo spacing (seconds) * (epi - 1)
+    echo spacing (seconds) * (epi - 1) where
+    epi = nb of phase encoding steps/ acceleration factor.
 
-    Formula to compute echo spacing:
-    (water-fat shift (per pixel)/(water-fat shift (in Hz) * echo train length))
-
-    Formula to compute water shift in Hz:
-    fieldstrength (T) * water-fat difference (ppm) * resonance frequency(MHz/T)
-
-    References :
-    http://support.brainvoyager.com/functional-analysis-preparation/
-    27-pre-processing/459-epi-distortion-correction-echo-spacing.html
-    and
-    https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/eddy/
-    Faq#How_do_I_know_what_to_put_into_my_--acqp_file
-
-    For Siemens scanner
-    ~~~~~~~~~~~~~~~~~~~
-    Use dcm2niix to generate a json summary of the parameters.
+    For Siemens and GE scanners
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Readout time is written by dcm2niix in json summary dcm_info.
     """
-    # Compute readout time
+
     manufacturer = dcm_info["Manufacturer"]
-    b0 = dcm_info["MagneticFieldStrength"]
-    if manufacturer == "Philips Medical Systems":
-
-        # Compute water-fat shift (per pixel)
-        # gyromagnetic_proton_gamma_ratio = gamma /2pi = 42.576 MHz/T.
-        gyromagnetic_proton_gamma_ratio = 42.576  # MHz/T
-        delta_b0 = b0 * gyromagnetic_proton_gamma_ratio * pow(10, 6)  # Hz
-
-        # Number of lines in k-spaces per slice
-        # Generally nb of voxels in the phase encode direction multiplied by
-        # Fourier partial ratio and divided by acceleration factor SENSE or
-        # GRAPPA (iPAT)
-        fourier_partial_ratio = dicom_img[24, 147].value  # Percent sampling
-        acceleration_factor = dicom_img[int("2005", 16),
-                                        int("140f", 16)][0][24, 36969].value
-        nb_phase_encoding_steps = dicom_img[24, 137].value
-        Ny = (
-            float(nb_phase_encoding_steps) *
-            float(fourier_partial_ratio) /
-            100)
-        Ny = Ny / acceleration_factor
-
-        # Pixel bandwith (BW/Nx) Hz/pixel
-        BW_Nx = float(dicom_img[24, 149].value)
-        water_shift_pixel = delta_b0 * Ny / BW_Nx  # pixel
-
-        # Water shift (Hz)
-        # Haacke et al: 3.35ppm. Bernstein et al (pg. 960): Chemical shifts
-        # (ppm, using protons in tetramethyl silane Si(CH3)4 as a reference).
-        # Protons in lipids ~1.3, protons in water 4.7, difference:
-        # 4.7 - 1.3 = 3.4.
-        water_fat_difference = 3.35  # ppm
-
-        # Resonance frequency (Hz/T)
-        resonance_frequency = 42.576 * pow(10, 6)  # Haacke et al.
-        # water_shift_hertz (Hz)
-        water_shift_hertz = b0 * water_fat_difference * resonance_frequency
-
-        # Compute echo spacing
-        etl = float(dicom_img[24, 145].value)  # echo train length
-        echo_spacing = water_shift_pixel / (water_shift_hertz * etl)  # s
-
-        # Compute readout time
-        # Compute number of phase encoding steps epi
-        epi = float(dicom_img[int("0018", 16), int("0089", 16)].value)
-        readout_time = echo_spacing * (epi - 1)
-
-    elif manufacturer == "SIEMENS" or "GE":
+    if manufacturer.upper() in ["SIEMENS", "GE MEDICAL SYSTEMS", "GE"]:
         readout_time = dcm_info["TotalReadoutTime"]
 
+    elif manufacturer.upper() in ["PHILIPS MEDICAL SYSTEMS", "PHILIPS"]:
+        acceleration_factor = dicom_img[int("2005", 16),
+                                        int("140f", 16)][0][24, 36969].value
+        etl = float(dicom_img[0x0018, 0x0089].value)
+        readout_time = dwell_time * (etl - 1)
     else:
         raise ValueError("Unknown manufacturer : {0}".format(manufacturer))
 
@@ -611,6 +519,17 @@ def get_readout_time(dicom_img, dcm_info):
 
 def get_dwell_time(dicom_img, dcm_info):
     """ Get the dwell time or effective echo spacing.
+        Returns effective echo spacing written in dcm_info for Siemens and GE
+        scanners and compute it for Philips scanner as described in:
+        https://www.spinozacentre.nl/wiki/index.php/NeuroWiki:Current_\\
+        developments
+
+    For further references see:
+    http://support.brainvoyager.com/functional-analysis-preparation/
+    27-pre-processing/459-epi-distortion-correction-echo-spacing.html
+    and
+    https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/eddy/
+    Faq#How_do_I_know_what_to_put_into_my_--acqp_file
 
     Parameters
     ----------
@@ -622,16 +541,53 @@ def get_dwell_time(dicom_img, dcm_info):
     Returns
     -------
     dwell_time: float
-        effective echo spacing.
+        effective echo spacing in s.
     """
-    bandwidth_per_pixel_phase_encode = float(dicom_img[0x0019, 0x1028])
-    if dcm_info["PhaseEncodingDirection"] in ("i", "i-"):
-        pe_index = 0
+    manufacturer = dcm_info["Manufacturer"]
+
+    if manufacturer.upper() in ["SIEMENS", "GE MEDICAL SYSTEMS", "GE"]:
+        dwell_time = dcm_info["EffectiveEchoSpacing"]
+
+    elif manufacturer.upper() in ["PHILIPS MEDICAL SYSTEMS", "PHILIPS"]:
+
+        # Compute pixel water fat shift
+        gyromagnetic_proton_gamma_ratio = 42.576 * pow(10, 6)  # Hz/T
+        b0 = float(dicom_img[0x0018, 0x0087].value)
+        water_fat_difference = 3.35 * pow(10, -6)  # ppm
+        delta_b0 = water_fat_difference * b0
+
+        # Ny : Number of lines in k-spaces per slice
+        # Generally nb of voxels in the phase encode direction multiplied by
+        # Fourier partial ratio and divided by acceleration factor SENSE or
+        # GRAPPA (iPAT)
+        fourier_partial_ratio = dicom_img[24, 147].value  # Percent sampling
+        acceleration_factor = dicom_img[int("2005", 16),
+                                        int("140f", 16)][0][24, 36969].value
+        nb_phase_encoding_steps = float(dicom_img[24, 137].value)
+        Ny = (
+            float(nb_phase_encoding_steps) *
+            (float(fourier_partial_ratio) /
+             100))
+        Ny = Ny / acceleration_factor
+        BW_Nx = float(dicom_img[24, 149].value)
+        water_shift_pixel = (gyromagnetic_proton_gamma_ratio * delta_b0 * Ny /
+                             BW_Nx)  # pixel
+
+        # Calculate Water fat shift in hertz
+        # Resonance frequency (Hz/T)
+        resonance_frequency = 42.576 * pow(10, 6)  # Haacke et al.
+
+        # Water_shift_hertz (Hz)
+        water_shift_hertz = b0 * water_fat_difference * resonance_frequency
+
+        # Number of phase encoding steps
+        etl = float(dicom_img[0x0018, 0x0089].value)
+        dwell_time = (water_shift_pixel / (water_shift_hertz * etl /
+                      acceleration_factor))
     else:
-        pe_index = 1
-    acquisition_matrix = float(dicom_img[0x0018, 0x1310][pe_index])
-    echo_spacing = 1. / (bandwidth_per_pixel_phase_encode * acquisition_matrix)
-    return echo_spacing
+        raise ValueError("Unknown manufacturer : {0}...".format(manufacturer))
+
+    return dwell_time
 
 
 def pixel_shift_to_fieldmap(pixel_shift_file, dwell_time, output_file,

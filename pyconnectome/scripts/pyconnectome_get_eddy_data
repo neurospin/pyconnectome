@@ -161,6 +161,9 @@ def get_cmd_line_args():
 
     # Optional argument
     parser.add_argument(
+        "-R", "--round-readout-time", action="store_true",
+        help="Round read out time value to 3 digits after the decimal point.")
+    parser.add_argument(
         "-V", "--verbose",
         type=int, choices=[0, 1, 2], default=2,
         help="Increase the verbosity level: 0 silent, [1, 2] verbose.")
@@ -239,50 +242,66 @@ if dcm_info is None:
         raise ValueError("No files in '{0}'.".format(output_dicom_dir))
     dicom_img = dicom.read_file(dicom_files[0])
 
-# Get dicom information
-if dcm_info is None:
+    # Get dicom information
     dcm_info = get_dcm_info(
         dicom_dir=output_dicom_dir,
-        outdir=output_sub_dir,
-        dicom_img=dicom_img)
-subject_data["PhaseEncodingDirection"] = dcm_info["PhaseEncodingDirection"]
+        outdir=output_sub_dir)
+
+if "PhaseEncodingDirection" in dcm_info.keys():
+    subject_data["PhaseEncodingDirection"] = dcm_info["PhaseEncodingDirection"]
+elif "PhaseEncodingAxis" in dcm_info.keys():
+    subject_data["PhaseEncodingAxis"] = dcm_info["PhaseEncodingAxis"]
+else:
+    raise ValueError("No information on phase encode direction...")
+
 subject_data["Manufacturer"] = dcm_info["Manufacturer"]
 subject_data["MagneticFieldStrength"] = dcm_info["MagneticFieldStrength"]
 
-# Get read out time
-if "TotalReadoutTime" in dcm_info:
-    readout_time = dcm_info["TotalReadoutTime"]
-else:
-    readout_time = get_readout_time(
-        dicom_img=dicom_img,
-        dcm_info=dcm_info)
-subject_data["TotalReadoutTime"] = readout_time
-
-# Get dwell time
-if "DwellTime" in dcm_info:
-    dwell_time = 1. / (dcm_info["BandwidthPerPixelPhaseEncode"] *
-                       dcm_info["AcquisitionMatrixPE"])
-else:
-    dwell_time = get_dwell_time(
-        dicom_img=dicom_img,
-        dcm_info=dcm_info)
+# Get dwell time (effective echo spacing)
+dwell_time = get_dwell_time(
+    dicom_img=dicom_img,
+    dcm_info=dcm_info)
 subject_data["DwellTime"] = dwell_time
+
+# Get read out time
+readout_time = get_readout_time(
+    dicom_img=dicom_img,
+    dcm_info=dcm_info,
+    dwell_time=dwell_time)
+
+if inputs["round_readout_time"]:
+    readout_time = round(readout_time, 3)
+subject_data["TotalReadoutTime"] = readout_time
 
 # Write eddy acqp and index files
 # https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/eddy/UsersGuide#A--acqp
 acqp_file = os.path.join(output_sub_dir, "acqp.txt")
 with open(acqp_file, "wt") as open_file:
-    if dcm_info["PhaseEncodingDirection"] == "i":
-        open_file.write("1 0 0 {0}".format(readout_time))
-    elif dcm_info["PhaseEncodingDirection"] == "i-":
-        open_file.write("-1 0 0 {0}".format(readout_time))
-    elif dcm_info["PhaseEncodingDirection"] == "j":
-        open_file.write("0 1 0 {0}".format(readout_time))
-    elif dcm_info["PhaseEncodingDirection"] == "j-":
-        open_file.write("0 -1 0 {0}".format(readout_time))
+    if dcm_info["Manufacturer"].upper() == "SIEMENS":
+        if dcm_info["PhaseEncodingDirection"] == "i":
+            open_file.write("1 0 0 {0}".format(readout_time))
+        elif dcm_info["PhaseEncodingDirection"] == "i-":
+            open_file.write("-1 0 0 {0}".format(readout_time))
+        elif dcm_info["PhaseEncodingDirection"] == "j":
+            open_file.write("0 1 0 {0}".format(readout_time))
+        elif dcm_info["PhaseEncodingDirection"] == "j-":
+            open_file.write("0 -1 0 {0}".format(readout_time))
+        else:
+            raise ValueError(
+                "Unknown encode phase direction : {0}...".format(
+                    dcm_info["PhaseEncodingDirection"]))
     else:
-        raise ValueError(
-            "Unknown encode phase direction : {0}...".format(phase_enc_dir))
+        print("Only phase encoding direction is assured for subject {0},"
+              "orientation may be negative or positive.".format(
+                inputs["subject"]))
+        if dcm_info["PhaseEncodingAxis"] == "i":
+            open_file.write("1 0 0 {0}".format(readout_time))
+        elif dcm_info["PhaseEncodingAxis"] == "j":
+            open_file.write("0 1 0 {0}".format(readout_time))
+        else:
+            raise ValueError(
+                "Unknown encode phase direction : {0}...".format(
+                    dcm_info["PhaseEncodingAxis"]))
 subject_data["acqp"] = acqp_file
 
 # Write index file
