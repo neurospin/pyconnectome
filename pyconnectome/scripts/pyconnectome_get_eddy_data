@@ -277,7 +277,7 @@ subject_data["TotalReadoutTime"] = readout_time
 # https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/eddy/UsersGuide#A--acqp
 acqp_file = os.path.join(output_sub_dir, "acqp.txt")
 with open(acqp_file, "wt") as open_file:
-    if dcm_info["Manufacturer"] in ["SIEMENS", "Siemens"]:
+    if dcm_info["Manufacturer"].upper() == "SIEMENS":
         if dcm_info["PhaseEncodingDirection"] == "i":
             open_file.write("1 0 0 {0}".format(readout_time))
         elif dcm_info["PhaseEncodingDirection"] == "i-":
