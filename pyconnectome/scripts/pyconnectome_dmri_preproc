@@ -866,6 +866,9 @@ else:
     fieldmap_hz_to_diff_file = None
 
 # Apply susceptibility correction to nodiff brain mask
+nodif_brain_mask_undistorted = os.path.join(
+    outdir,
+    os.path.basename(nodif_brain_mask).replace(".nii.gz", "_corrected.nii.gz"))
 if susceptibility_method == "topup":
     nodif_brain_, nodif_brain_mask_, _, _, _, _, _, _, _, _, _ = bet2(
         input_file=mean_corrected_b0s,
