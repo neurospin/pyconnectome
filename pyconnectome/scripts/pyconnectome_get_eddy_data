@@ -140,8 +140,8 @@ def get_cmd_line_args():
         "-m", "--dicom",
         required=True, metavar="<path>",
         help="A compressed tarball (.tar.gz) or a folder containing the dMRI "
-             "DICOM files or the DWI image BIDS description file. We assume "
-             "that all images were acquired with the same protocol.")
+             "DICOM files. We assume that all images were acquired with the "
+             "same protocol.")
     required.add_argument(
         "-d", "--dwi",
         required=True, metavar="<path>", nargs="+", type=is_file,
@@ -160,6 +160,9 @@ def get_cmd_line_args():
         help="Subject output directory.")
 
     # Optional argument
+    parser.add_argument(
+        "-M", "--dicom-info", metavar="<path>", type=is_file,
+        help="Image BIDS description file.")
     parser.add_argument(
         "-R", "--round-readout-time", action="store_true",
         help="Round read out time value to 3 digits after the decimal point.")
@@ -206,7 +209,7 @@ if not os.path.isdir(output_sub_dir):
     os.mkdir(output_sub_dir)
 subject_data["output_dir"] = output_sub_dir
 
-# Concatenate the volume into new nii/bvec/bval files.
+# Concatenate the volume into new nii/bvec/bval files
 concat_volume, concat_bvals, concat_bvecs = concatenate_volumes(
     nii_files=inputs["dwi"],
     bvals_files=inputs["bval"],
@@ -217,8 +220,8 @@ subject_data["dwi"] = concat_volume
 subject_data["bvec"] = concat_bvecs
 subject_data["bval"] = concat_bvals
 
-# Get read out time, phase encode dir and scanner from dicoms.
-dcm_info = None
+# Get sequence information from dicom
+# > Unzip dicom archive
 if os.path.isfile(inputs["dicom"]):
     if inputs["dicom"].endswith(".tar.gz"):
         output_dicom_dir = os.path.join(output_sub_dir, "dicom")
@@ -226,27 +229,27 @@ if os.path.isfile(inputs["dicom"]):
             os.mkdir(output_dicom_dir)
         cmd = ["tar", "-xzf", inputs["dicom"], "-C", output_dicom_dir]
         subprocess.check_call(cmd)
-    elif inputs["dicom"].endswith(".json"):
-        with open(inputs["dicom"], "rt") as open_file:
-            dcm_info = json.load(open_file)
     else:
         raise ValueError("Unexpected file format: '{0}'.".format(
             inputs["dicom"]))
 else:
     output_dicom_dir = inputs["dicom"]
 
-# Load a dicom file
-if dcm_info is None:
-    dicom_files = glob.glob(os.path.join(output_dicom_dir, "*"))
-    if len(dicom_files) == 0:
-        raise ValueError("No files in '{0}'.".format(output_dicom_dir))
-    dicom_img = dicom.read_file(dicom_files[0])
-
-    # Get dicom information
+# > Get dicom information
+if inputs["dicom_info"] is None:
     dcm_info = get_dcm_info(
         dicom_dir=output_dicom_dir,
         outdir=output_sub_dir)
+else:
+    dcm_info = inputs["dicom_info"]
 
+# Load a dicom file to get complementary dicom information
+dicom_files = glob.glob(os.path.join(output_dicom_dir, "*"))
+if len(dicom_files) == 0:
+    raise ValueError("No files in '{0}'.".format(output_dicom_dir))
+dicom_img = dicom.read_file(dicom_files[0])
+
+# Get phase encoding direction
 if "PhaseEncodingDirection" in dcm_info.keys():
     subject_data["PhaseEncodingDirection"] = dcm_info["PhaseEncodingDirection"]
 elif "PhaseEncodingAxis" in dcm_info.keys():
