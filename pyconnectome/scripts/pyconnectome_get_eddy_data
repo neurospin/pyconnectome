@@ -241,7 +241,8 @@ if inputs["dicom_info"] is None:
         dicom_dir=output_dicom_dir,
         outdir=output_sub_dir)
 else:
-    dcm_info = inputs["dicom_info"]
+    with open(inputs["dicom_info"], "rt") as open_file:
+        dcm_info = json.load(open_file)
 
 # Load a dicom file to get complementary dicom information
 dicom_files = glob.glob(os.path.join(output_dicom_dir, "*"))
