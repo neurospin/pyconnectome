@@ -536,7 +536,7 @@ def get_dwell_time(dicom_img, dcm_info):
     dicom_img: dicom.dataset.FileDataset object
         one of the dicom image loaded by pydicom.
     dcm_info: dict
-        array containing dicom data.
+        dictionary containing dicom metadata.
 
     Returns
     -------
