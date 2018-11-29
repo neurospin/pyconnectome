@@ -137,12 +137,6 @@ def get_cmd_line_args():
         required=True,
         help="The center name.")
     required.add_argument(
-        "-m", "--dicom",
-        required=True, metavar="<path>",
-        help="A compressed tarball (.tar.gz) or a folder containing the dMRI "
-             "DICOM files. We assume that all images were acquired with the "
-             "same protocol.")
-    required.add_argument(
         "-d", "--dwi",
         required=True, metavar="<path>", nargs="+", type=is_file,
         help="Path to the DWI image files.")
@@ -160,8 +154,14 @@ def get_cmd_line_args():
         help="Subject output directory.")
 
     # Optional argument
+    required.add_argument(
+        "-D", "--dicom",
+        metavar="<path>",
+        help="A compressed tarball (.tar.gz) or a folder containing the dMRI "
+             "DICOM files. We assume that all images were acquired with the "
+             "same protocol.")
     parser.add_argument(
-        "-M", "--dicom-info", metavar="<path>", type=is_file,
+        "-I", "--dicom-info", metavar="<path>", type=is_file,
         help="Image BIDS description file.")
     parser.add_argument(
         "-R", "--round-readout-time", action="store_true",
@@ -222,7 +222,7 @@ subject_data["bval"] = concat_bvals
 
 # Get sequence information from dicom
 # > Unzip dicom archive
-if os.path.isfile(inputs["dicom"]):
+if inputs["dicom"] is not None and os.path.isfile(inputs["dicom"]):
     if inputs["dicom"].endswith(".tar.gz"):
         output_dicom_dir = os.path.join(output_sub_dir, "dicom")
         if not os.path.isdir(output_dicom_dir):
@@ -245,10 +245,13 @@ else:
         dcm_info = json.load(open_file)
 
 # Load a dicom file to get complementary dicom information
-dicom_files = glob.glob(os.path.join(output_dicom_dir, "*"))
-if len(dicom_files) == 0:
-    raise ValueError("No files in '{0}'.".format(output_dicom_dir))
-dicom_img = dicom.read_file(dicom_files[0])
+if output_dicom_dir is not None:
+    dicom_files = glob.glob(os.path.join(output_dicom_dir, "*"))
+    if len(dicom_files) == 0:
+        raise ValueError("No files in '{0}'.".format(output_dicom_dir))
+    dicom_img = dicom.read_file(dicom_files[0])
+else:
+    dicom_img = None
 
 # Get phase encoding direction
 if "PhaseEncodingDirection" in dcm_info.keys():
@@ -257,7 +260,6 @@ elif "PhaseEncodingAxis" in dcm_info.keys():
     subject_data["PhaseEncodingAxis"] = dcm_info["PhaseEncodingAxis"]
 else:
     raise ValueError("No information on phase encode direction...")
-
 subject_data["Manufacturer"] = dcm_info["Manufacturer"]
 subject_data["MagneticFieldStrength"] = dcm_info["MagneticFieldStrength"]
 
