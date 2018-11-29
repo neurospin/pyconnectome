@@ -40,6 +40,7 @@ from pyconnectome import DEFAULT_FSL_PATH
 from pyconnectome.wrapper import FSLWrapper
 from pyconnectome.models.shm import qballfit
 from pyconnectome.models.tensor import dtifit
+from pyconnectome.models.tensor import dkifit
 from pyconnectome.models.noddi import noddifit
 from pyconnectome.models.shore import shorefit
 
