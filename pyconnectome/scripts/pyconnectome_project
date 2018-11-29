@@ -1,0 +1,165 @@
+#!/usr/bin/env python
+##########################################################################
+# NSAp - Copyright (C) CEA, 2018
+# Distributed under the terms of the CeCILL-B license, as published by
+# the CEA-CNRS-INRIA. Refer to the LICENSE file or to
+# http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html
+# for details.
+##########################################################################
+
+# System import
+import os
+import argparse
+import textwrap
+import shutil
+import json
+from datetime import datetime
+from argparse import RawTextHelpFormatter
+from pprint import pprint
+from packaging import version
+
+# Bredala import
+try:
+    import bredala
+    bredala.USE_PROFILER = False
+    bredala.register("pyconnectome.utils.projecttools",
+                     names=["head_interhemi_plane", "head_interhemi_distances"])
+except:
+    pass
+
+# Pyconnectome imports
+import pyconnectome
+from pyconnectome.utils.projecttools import head_interhemi_plane
+from pyconnectome.utils.projecttools import head_interhemi_distances
+
+# Third party import
+import numpy as np
+
+
+# Script documentation
+DOC = """
+Compute the interhemispheric plane and project blobs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Example:
+python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_project \
+    -i /usr/share/fsl/data/standard/MNI152_T1_2mm.nii.gz \
+    -o /tmp/project \
+    -M /usr/share/fsl/data/standard/MNI152_T1_2mm_eye_mask.nii.gz \
+    -V 1
+"""
+
+
+def is_file(filepath):
+    """ Check file's existence - argparse 'type' argument.
+    """
+    if not os.path.isfile(filepath):
+        raise argparse.ArgumentError("File does not exist: %s" % filepath)
+    return filepath
+
+
+def is_directory(dirarg):
+    """ Type for argparse - checks that directory exists.
+    """
+    if not os.path.isdir(dirarg):
+        raise argparse.ArgumentError(
+            "The directory '{0}' does not exist!".format(dirarg))
+    return dirarg
+
+
+# Parse input arguments
+def get_cmd_line_args():
+    """
+    Create a command line argument parser and return a dict mapping
+    <argument name> -> <argument value>.
+    """
+    parser = argparse.ArgumentParser(
+        prog="python pyconnectome_project",
+        description=textwrap.dedent(DOC),
+        formatter_class=RawTextHelpFormatter)
+
+    # Required arguments
+    required = parser.add_argument_group("required arguments")
+    required.add_argument(
+        "-i", "--input-file",
+        type=is_file, required=True, metavar="<path>",
+        help="The input image to extract the interhemispheric plane from.")
+    required.add_argument(
+        "-o", "--output-dir",
+        type=is_directory, required=True, metavar="<path>",
+        help="The destination folder.")
+
+    # Optional argument
+    required.add_argument(
+        "-M", "--mask-file",
+        type=is_file, metavar="<path>",
+        help="A mask file from which we will take the minimum distance "
+             "from each connected components to the plane.")
+    parser.add_argument(
+        "-V", "--verbose",
+        type=int, choices=[0, 1, 2], default=0,
+        help="Increase the verbosity level: 0 silent, [1, 2] verbose.")
+
+    # Create a dict of arguments to pass to the 'main' function
+    args = parser.parse_args()
+    kwargs = vars(args)
+    verbose = kwargs.pop("verbose")
+    return kwargs, verbose
+
+"""
+Parse the command line.
+"""
+inputs, verbose = get_cmd_line_args()
+runtime = {
+    "tool": "pyconnectome_project",
+    "tool_version": pyconnectome.__version__,
+    "timestamp": datetime.now().isoformat()}
+outputs = {}
+if verbose > 0:
+    pprint("[info] Starting PROJECT...")
+    pprint("[info] Runtime:")
+    pprint(runtime)
+    pprint("[info] Inputs:")
+    pprint(inputs)
+
+
+"""
+Compute interhemispheric plane
+"""
+x, snaps = head_interhemi_plane(
+    inputs["input_file"], verbose=verbose, output_dir=inputs["output_dir"])
+x_file = os.path.join(inputs["output_dir"], "x.txt")
+np.savetxt(x_file, x)
+outputs["x_file"] = x_file
+outputs["x_snaps"] = snaps
+
+
+"""
+Compute the interhemispheric distances
+"""
+if inputs["mask_file"] is not None:
+    dists = head_interhemi_distances(
+        inputs["input_file"], inputs["mask_file"], x, verbose=verbose)
+    dists_file = os.path.join(inputs["output_dir"], "dists.json")
+    with open(dists_file, "wt") as open_file:
+        json.dump(dists, open_file, indent=4)
+    outputs["dists_file"] = dists_file
+
+
+"""
+Update the outputs and save them and the inputs in a 'logs' directory.
+"""
+
+logdir = os.path.join(inputs["output_dir"], "logs")
+if not os.path.isdir(logdir):
+    os.mkdir(logdir)
+for name, final_struct in [("inputs", inputs), ("outputs", outputs),
+                           ("runtime", runtime)]:
+    log_file = os.path.join(
+        logdir, "{0}_{1}.json".format(name, runtime["timestamp"]))
+    with open(log_file, "wt") as open_file:
+        json.dump(final_struct, open_file, sort_keys=True, check_circular=True,
+                  indent=4)
+if verbose > 0:
+    print("[final]")
+    pprint(outputs)
