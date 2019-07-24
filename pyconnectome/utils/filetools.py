@@ -437,21 +437,23 @@ def fslreorient2std(input_image, output_image, save_trf=True,
         raise ValueError("'{0}' is not a valid input file.".format(
                          input_image))
     if not output_image.endswith(".nii.gz"):
-        output_image += ".nii.gz"
+        if output_image.endswith(".nii"):
+            output_image += ".gz"
+        else:
+            output_image += ".nii.gz"
 
     # Define the FSL commands
     cmd1 = ["fslreorient2std", input_image, output_image]
     cmd2 = ["fslreorient2std", input_image]
 
     # Call fslreorient2std
-    fslprocess = FSLWrapper(cmd1, shfile=fslconfig)
-    fslprocess()
+    fslprocess = FSLWrapper(shfile=fslconfig)
+    fslprocess(cmd=cmd1)
     if save_trf:
-        fslprocess = FSLWrapper(cmd2, shfile=fslconfig)
-        fslprocess()
+        fslprocess(cmd=cmd2)
         fsl_trf_file = output_image.split(".")[0] + ".fsl.trf"
         with open(fsl_trf_file, "wt") as open_file:
-            open_file.write(fslprocess.stdout)
+            open_file.write(fslprocess.stdout.decode("utf-8"))
         trf_file = output_image.split(".")[0] + ".trf"
         numpy.savetxt(trf_file, flirt2aff(fsl_trf_file, output_image,
                                           input_image))
@@ -486,7 +488,7 @@ def surf2surf(input_surf, output_surf, fslconfig=DEFAULT_FSL_PATH):
 
     # Call fslreorient2std
     fslprocess = FSLWrapper(cmd, shfile=fslconfig)
-    fslprocess()
+    fslprocess(cmd=cmd)
 
 
 def apply_mask(input_file, output_fileroot, mask_file,
@@ -520,8 +522,8 @@ def apply_mask(input_file, output_fileroot, mask_file,
     cmd = ["fslmaths", input_file, "-mas", mask_file, output_fileroot]
 
     # Call fslmaths
-    fslprocess = FSLWrapper(cmd, shfile=fslconfig)
-    fslprocess()
+    fslprocess = FSLWrapper(shfile=fslconfig)
+    fslprocess(cmd=cmd)
 
     return glob.glob(output_fileroot + ".*")[0]
 
@@ -554,8 +556,8 @@ def erode(input_file, output_file, radius, fslconfig=DEFAULT_FSL_PATH):
            output_file]
 
     # Call fslmaths
-    fslprocess = FSLWrapper(cmd, shfile=fslconfig)
-    fslprocess()
+    fslprocess = FSLWrapper(shfile=fslconfig)
+    fslprocess(cmd=cmd)
 
     return output_file
 

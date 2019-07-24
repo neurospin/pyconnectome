@@ -45,14 +45,10 @@ SUMMARY = """
     * connectome graph analysis and visulaization.
     * tractogram compression and filtergin tools.
 """
-long_description = """
-============
-pyConnectome
-============
-
-Python wrappers around different softwares to compute structural (complete or
-reduced) connectomes.
-"""
+long_description = (
+    "pyConnectome\n\n"
+    "Python wrappers around different softwares to compute structural "
+    "(complete or reduced) connectomes.\n")
 
 # Main setup parameters
 NAME = "pyConnectome"

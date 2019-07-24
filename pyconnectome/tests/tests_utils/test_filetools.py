@@ -54,6 +54,7 @@ class Fslreorient2std(unittest.TestCase):
         self.kwargs = {
             "input_image": "/my/path/mock_input_image",
             "output_image": "/my/path/mock_output_image",
+            "save_trf": True,
             "fslconfig": "/my/path/mock_shfile",
         }
 
@@ -112,7 +113,7 @@ class Fslreorient2std(unittest.TestCase):
                       self.kwargs["input_image"]],
                       cwd=None, env={}, stderr=-1, stdout=-1)],
             self.mock_popen.call_args_list)
-        self.assertEqual(len(self.mock_env.call_args_list), 2)
+        self.assertEqual(len(self.mock_env.call_args_list), 1)
 
 
 class FslApplyMask(unittest.TestCase):

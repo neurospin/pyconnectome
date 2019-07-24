@@ -56,7 +56,8 @@ def white_matter_interface(
     five_tissues_file = os.path.join(outdir, "5TT.nii.gz")
     cmd = ["5ttgen", "fsl", t1_brain_file, five_tissues_file, "-premasked",
            "-tempdir", tempdir, "-nocrop"]
-    FSLWrapper(cmd, env=os.environ, shfile=fsl_sh)()
+    process = FSLWrapper(env=os.environ, shfile=fsl_sh)
+    process(cmd=cmd)
 
     # Generate probabilist seed mask
     gmwmi_mask_file = os.path.join(outdir, "gmwmi_mask.nii.gz")
@@ -107,8 +108,8 @@ def fix_freesurfer_subcortical_parcellation(
         cmd += ["-tempdir", tempdir]
     if nb_threads is not None:
         cmd += ["-nthreads", "%i" % nb_threads]
-    fsl_process = FSLWrapper(cmd, env=os.environ, shfile=fsl_sh)
-    fsl_process()
+    fsl_process = FSLWrapper(env=os.environ, shfile=fsl_sh)
+    fsl_process(cmd=cmd)
 
     return output
 
@@ -187,8 +188,8 @@ def robustfov(
     cmd += ["-i", input_file, "-r", output_file]
 
     # Call FSL robustfov
-    fslprocess = FSLWrapper(cmd, shfile=fsl_sh)
-    fslprocess()
+    fslprocess = FSLWrapper(shfile=fsl_sh)
+    fslprocess(cmd=cmd)
 
 
 def fast(input_file, out_fileroot, klass=3, im_type=1, segments=False,
@@ -196,8 +197,8 @@ def fast(input_file, out_fileroot, klass=3, im_type=1, segments=False,
          shfile=DEFAULT_FSL_PATH):
     """ FAST (FMRIB's Automated Segmentation Tool) segments a 3D image of
     the brain into different tissue types (Grey Matter, White Matter, CSF,
-    etc.), whilst also correcting for spatial intensity variations
-    (also known as bias field or RF inhomogeneities).
+    etc.), whilst also correcting for spatial intensity variations (also
+    known as bias field or RF inhomogeneities).
     The underlying method is based on a hidden Markov random field model and
     an associated Expectation-Maximization algorithm.
 
@@ -255,8 +256,8 @@ def fast(input_file, out_fileroot, klass=3, im_type=1, segments=False,
     cmd.append(input_file)
 
     # Call FSL fast
-    fslprocess = FSLWrapper(cmd, shfile=shfile)
-    fslprocess()
+    fslprocess = FSLWrapper(shfile=shfile)
+    fslprocess(cmd=cmd)
 
     # Check the FSL environment variable
     if "FSLOUTPUTTYPE" not in fslprocess.environment:
@@ -388,8 +389,8 @@ def bet2(input_file, output_fileroot, outline=False, mask=False,
         cmd += ["-s", smooth]
 
     # Call bet2
-    fslprocess = FSLWrapper(cmd, shfile=shfile)
-    fslprocess()
+    fslprocess = FSLWrapper(shfile=shfile)
+    fslprocess(cmd=cmd)
 
     # Check the FSL environment variable
     if "FSLOUTPUTTYPE" not in fslprocess.environment:

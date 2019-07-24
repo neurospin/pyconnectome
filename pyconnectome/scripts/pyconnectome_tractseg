@@ -1,0 +1,354 @@
+#!/usr/bin/env python
+##########################################################################
+# NSAp - Copyright (C) CEA, 2019
+# Distributed under the terms of the CeCILL-B license, as published by
+# the CEA-CNRS-INRIA. Refer to the LICENSE file or to
+# http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html
+# for details.
+##########################################################################
+
+# System import
+import os
+import argparse
+import textwrap
+import glob
+import re
+import json
+import shutil
+from datetime import datetime
+from argparse import RawTextHelpFormatter
+from datetime import datetime
+from pprint import pprint
+from collections import OrderedDict
+
+# Bredala import
+try:
+    import bredala
+    bredala.USE_PROFILER = False
+    bredala.register("pyconnectome.wrapper",
+                     names=["FSLWrapper.__init__", "FSLWrapper.__call__"])
+    bredala.register("pyconnectome.utils.filetools",
+                     names=["apply_mask"])
+except:
+    pass
+
+# Pyconnectome imports
+import pyconnectome
+from pyconnectome.wrapper import FSLWrapper
+from pyconnectome import DEFAULT_FSL_PATH
+from pyconnectome.utils.filetools import apply_mask
+
+
+# Script documentation
+DOC = """
+TractSeg: bundle labeling
+-------------------------
+
+Command example on HCP:
+
+python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_tractseg \
+    -d /neurospin/hcp/PROCESSED/3T_diffusion_preproc/101107/T1w/Diffusion/data.nii.gz \
+    -b /neurospin/hcp/PROCESSED/3T_diffusion_preproc/101107/T1w/Diffusion/bvals \
+    -r /neurospin/hcp/PROCESSED/3T_diffusion_preproc/101107/T1w/Diffusion/bvecs \
+    -T /neurospin/hcp/PROCESSED/3T_diffusion_preproc/101107/T1w/T1w_acpc_dc_restore_1.25.nii.gz \
+    -J /neurospin/hcp/PROCESSED/3T_diffusion_preproc/101107/T1w/Diffusion/nodif_brain_mask.nii.gz \
+    -L /neurospin/hcp/ANALYSIS/3T_diffusion_scalars/101107/dtifit_FA.nii.gz /neurospin/hcp/ANALYSIS/3T_diffusion_scalars/101107/qball_gfa.nii.gz \
+    -M csd_msmt_5tt \
+    -R \
+    -A \
+    -o /neurospin/nsap/processed/hcp_tractseg/data \
+    -V 2
+"""
+
+
+def is_file(filepath):
+    """ Check file's existence - argparse 'type' argument.
+    """
+    if not os.path.isfile(filepath):
+        raise argparse.ArgumentError("File does not exist: %s" % filepath)
+    return filepath
+
+
+def is_directory(dirarg):
+    """ Type for argparse - checks that directory exists.
+    """
+    if not os.path.isdir(dirarg):
+        raise argparse.ArgumentError(
+            "The directory '{0}' does not exist!".format(dirarg))
+    return dirarg
+
+
+# Parse input arguments
+def get_cmd_line_args():
+    """
+    Create a command line argument parser and return a dict mapping
+    <argument name> -> <argument value>.
+    """
+    parser = argparse.ArgumentParser(
+        prog="python pyconnectome_tractseg",
+        description=textwrap.dedent(DOC),
+        formatter_class=RawTextHelpFormatter)
+
+    # Required arguments
+    required = parser.add_argument_group("required arguments")
+    required.add_argument(
+        "-d", "--dwi",
+        type=is_file, required=True, metavar="<path>",
+        help="Path to the DWI image file.")
+    required.add_argument(
+        "-b", "--bvals",
+        type=is_file, required=True, metavar="<path>",
+        help="Path to the bval file.")
+    required.add_argument(
+        "-r", "--bvecs",
+        type=is_file, required=True, metavar="<path>",
+        help="Path to the bvec file.")
+    required.add_argument(
+        "-o", "--outdir",
+        type=is_directory, required=True, metavar="<path>",
+        help="Path to the output directory.")
+
+    # Optional argument
+    required.add_argument(
+        "-L", "--scalars",
+        type=is_file, nargs="*",
+        help="The scalar maps to project on buldles.")
+    required.add_argument(
+        "-M", "--csd-type",
+        choices=("csd", "csd_msmt", "csd_msmt_5tt"), default="csd",
+        help="Which MRtrix constrained spherical deconvolution (CSD) "
+             "is used for peak generation. 'csd' [DEFAULT]: Standard "
+             "CSD. Very fast. 'csd_msmt': Multi-shell multi-tissue "
+             "CSD DHollander algorithm. Medium fast. Needs more than "
+             "one b-value shell. 'csd_msmt_5tt': Multi-shell multi- "
+             "tissue CSD 5TT. Slow on large images. Needs more than "
+             "one b-value shell.Needs a T1 image (a file "
+             "'T1w_acpc_dc_restore_brain.nii.gz' must be in the "
+             "input directory)")
+    required.add_argument(
+        "-P", "--preprocess",
+        action="store_true",
+        help="Move input image to MNI space.")
+    required.add_argument(
+        "-X", "--postprocess",
+        action="store_true",
+        help="Simple postprocessing of segmentations: Remove small blobs "
+             "and fill holes")
+    required.add_argument(
+        "-S", "--super-resolution",
+        action="store_true",
+        help="Keep 1.25mm resolution of model instead of "
+             "downsampling back to original resolution")
+    required.add_argument(
+        "-R", "--raw-diffusion-input",
+        action="store_true",
+        help="For converting probability maps to binary maps use "
+             "lower threshold for difficult bundles like CA, FX and CST.")
+    required.add_argument(
+        "-B", "--bundle-specific-threshold",
+        action="store_true",
+        help="Move input image to MNI space.")
+    required.add_argument(
+        "-A", "--get-probabilities",
+        action="store_true",
+        help="Output probability map instead of binary segmentation.")   
+    required.add_argument(
+        "-T", "--t1",
+        type=is_file, metavar="<path>",
+        help="Path to the T1 image file in the diffusion space.")
+    parser.add_argument(
+        "-J", "--nodiff-mask",
+        type=is_file, metavar="<path>",
+        help="Path to the t1 brain mask image.")
+    parser.add_argument(
+        "-F", "--fsl-config",
+        type=is_file, metavar="<path>",
+        help="Bash script initializing FSL's environment.")
+    parser.add_argument(
+        "-V", "--verbose",
+        type=int, choices=[0, 1, 2], default=2,
+        help="Increase the verbosity level: 0 silent, [1, 2] verbose.")
+
+    # Create a dict of arguments to pass to the 'main' function
+    args = parser.parse_args()
+    kwargs = vars(args)
+    if kwargs["fsl_config"] is None:
+        kwargs["fsl_config"] = DEFAULT_FSL_PATH
+    verbose = kwargs.pop("verbose")
+    return kwargs, verbose
+
+
+"""
+Parse the command line.
+"""
+
+inputs, verbose = get_cmd_line_args()
+process = FSLWrapper(shfile=inputs["fsl_config"], env=os.environ)
+runtime = {
+    "timestamp": datetime.now().isoformat(),
+    "tool": "pyconnectome_tractseg",
+    "tool_version": pyconnectome.__version__,
+    "fsl_version": process.version
+}
+outputs = {}
+if verbose > 0:
+    pprint("[info] Starting TractSeg analysis...")
+    pprint("[info] Runtime:")
+    pprint(runtime)
+    pprint("[info] Inputs:")
+    pprint(inputs)
+
+
+"""
+TractSeg: preprocessing
+"""
+for path in (inputs["dwi"], inputs["bvals"], inputs["bvecs"]):
+    _path = os.path.join(inputs["outdir"], os.path.basename(path))
+    if not os.path.islink(_path):
+        os.symlink(path, _path)
+cmd = [
+    "TractSeg",
+    "-i", os.path.basename(inputs["dwi"]),
+    "--bvals", os.path.basename(inputs["bvals"]),
+    "--bvecs", os.path.basename(inputs["bvecs"]),
+    "--raw_diffusion_input",
+    "--csd_type", inputs["csd_type"]]
+if inputs["nodiff_mask"]:
+    _path = os.path.join(inputs["outdir"], "nodif_brain_mask.nii.gz")
+    if not os.path.islink(_path):
+        os.symlink(inputs["nodiff_mask"], _path)
+    cmd += [
+        "--brain_mask", "nodif_brain_mask.nii.gz"]
+if inputs["preprocess"]:
+    cmd.append("--preprocess")
+if inputs["postprocess"]:
+    cmd.append("--postprocess")
+if inputs["super_resolution"]:
+    cmd.append("--super_resolution")
+if inputs["bundle_specific_threshold"]:
+    cmd.append("--bundle_specific_threshold")
+if inputs["t1"] is not None:
+    _path = os.path.join(inputs["outdir"], "T1w_acpc_dc_restore_brain.nii.gz")
+    if inputs["nodiff_mask"] is not None:
+        apply_mask(
+            input_file=inputs["t1"],
+            output_fileroot=_path.replace(".nii.gz", ""),
+            mask_file=inputs["nodiff_mask"],
+            fslconfig=inputs["fsl_config"])
+    elif not os.path.islink(_path):
+        os.symlink(inputs["t1"], _path)
+process(cmd=cmd, cwdir=inputs["outdir"])
+outputs["bundle_masks"] = sorted(glob.glob(
+    os.path.join(inputs["outdir"], "tractseg_output", "bundle_segmentations",
+                 "*.nii.gz")))
+
+if inputs["get_probabilities"]:
+    cmd = cmd = [
+        "TractSeg",
+        "-i", os.path.join("tractseg_output", "peaks.nii.gz"),
+        "-o", "extra",
+        "--get_probabilities"]
+    if inputs["super_resolution"]:
+        cmd.append("--super_resolution")
+    process(cmd=cmd, cwdir=inputs["outdir"])
+    outputs["bundle_probabilities"] = sorted(glob.glob(
+        os.path.join(inputs["outdir"], "extra", "tractseg_output",
+                     "bundle_segmentations", "*.nii.gz")))
+
+
+"""
+TractSeg: segment bundle start and end regions
+"""
+cmd = [
+    "TractSeg",
+    "-i", os.path.join("tractseg_output", "peaks.nii.gz"),
+    "-o", ".",
+    "--output_type", "endings_segmentation"]
+process(cmd=cmd, cwdir=inputs["outdir"])
+outputs["bundle_endmasks"] = sorted(glob.glob(
+    os.path.join(inputs["outdir"], "tractseg_output", "endings_segmentations",
+                 "*.nii.gz")))
+
+"""
+TractSeg: Tract Orientation Maps (TOMs)
+"""
+cmd = [
+    "TractSeg",
+    "-i", os.path.join("tractseg_output", "peaks.nii.gz"),
+    "-o", ".",
+    "--output_type", "TOM"]
+process(cmd=cmd, cwdir=inputs["outdir"])
+outputs["bundle_TOM"] = sorted(glob.glob(
+    os.path.join(inputs["outdir"], "tractseg_output", "TOM",
+                 "*.nii.gz")))
+
+
+"""
+TractSeg: bundle-specific tractograms
+"""
+cmd = [
+    "Tracking",
+    "-i", os.path.join("tractseg_output", "peaks.nii.gz"),
+    "-o", ".",
+    "--nr_fibers", "10000"]
+process(cmd=cmd, cwdir=inputs["outdir"])
+outputs["bundle_tracks"] = sorted(glob.glob(
+    os.path.join(inputs["outdir"], "tractseg_output", "TOM_trackings",
+                 "*.trk")))
+
+
+"""
+TractSeg: uncertainty map
+"""
+cmd = [
+    "TractSeg",
+    "-i", os.path.join("tractseg_output", "peaks.nii.gz"),
+    "-o", ".",
+    "--uncertainty"]
+process(cmd=cmd, cwdir=inputs["outdir"])
+outputs["bundle_uncertainties"] = sorted(glob.glob(
+    os.path.join(inputs["outdir"], "tractseg_output", "bundle_uncertainties",
+                 "*.nii.gz")))
+
+
+"""
+TractSeg: tractometry
+"""
+if inputs["scalars"] is not None:
+    for path in inputs["scalars"]:
+        cmd = [
+            "Tractometry",
+            "-i", os.path.join("tractseg_output", "TOM_trackings"),
+            "-o", os.path.join("tractseg_output", "tractometry_{0}.csv".format(
+                os.path.basename(path).split(".")[0])),
+            "-e", os.path.join("tractseg_output", "endings_segmentations"),
+            "-s", path]
+        process(cmd=cmd, cwdir=inputs["outdir"])
+    cmd = [
+        "Tractometry",
+        "-i", os.path.join("tractseg_output", "TOM_trackings"),
+        "-o", os.path.join("tractseg_output", "tractometry_tom.csv"),
+        "-e", os.path.join("tractseg_output", "endings_segmentations"),
+        "-s", os.path.join("tractseg_output", "peaks.nii.gz"),
+        "--TOM", os.path.join("tractseg_output", "TOM"),
+        "--peak_length"]
+    process(cmd=cmd, cwdir=inputs["outdir"])
+    outputs["tractometry"] = sorted(glob.glob(
+        os.path.join(inputs["outdir"], "tractseg_output", "*.csv")))
+
+
+"""
+Update the outputs and save them and the inputs in a 'logs' directory.
+"""
+logdir = os.path.join(inputs["outdir"], "logs")
+if not os.path.isdir(logdir):
+    os.mkdir(logdir)
+for name, final_struct in [("inputs", inputs), ("outputs", outputs),
+                           ("runtime", runtime)]:
+    log_file = os.path.join(logdir, "{0}.json".format(name))
+    with open(log_file, "wt") as open_file:
+        json.dump(final_struct, open_file, sort_keys=True, check_circular=True,
+                  indent=4)
+if verbose > 1:
+    print("[final]")
+    pprint(outputs)

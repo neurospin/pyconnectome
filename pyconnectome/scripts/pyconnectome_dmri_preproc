@@ -627,32 +627,31 @@ if not inputs["skip_susceptibility"]:
         outputs["pixel_shift_map"] = distortion_map
 
         # Reorganize deformation field volume
-        if not os.path.isfile(distortion_map):
-            raise ValueError("Unavailable warp file: {0}".format(
-                distortion_map))
-        distortion_img = nibabel.load(distortion_map)
-        distortion_img_data = distortion_img.get_data()
-        distortion_img_data.shape += (1,)
-        spacing = distortion_img.header.get_zooms()
-        zero_field = numpy.zeros(distortion_img_data.shape)
-        if phase_enc_dir in ("x", "x-"):
-            deformation_field = numpy.concatenate(
-                (distortion_img_data * spacing[0], zero_field, zero_field),
-                axis=3)
-        elif phase_enc_dir in ("y", "y-"):
-            deformation_field = numpy.concatenate(
-                (zero_field, distortion_img_data * spacing[1], zero_field),
-                axis=3)
-        else:
-            raise ValueError("Incorrect phase encode direction: {0}".format(
-                             phase_enc_dir))
-        deformation_field_img = nibabel.Nifti1Image(
-            deformation_field, distortion_img.affine)
-
-        deformation_field_file = os.path.join(
-            susceptibility_dir, "field.nii.gz")
-        nibabel.save(deformation_field_img, deformation_field_file)
-        outputs["warp_file"] = deformation_field_file
+        #if not os.path.isfile(distortion_map):
+        #    raise ValueError("Unavailable warp file: {0}".format(
+        #        distortion_map))
+        #distortion_img = nibabel.load(distortion_map)
+        #distortion_img_data = distortion_img.get_data()
+        #distortion_img_data.shape += (1,)
+        #spacing = distortion_img.header.get_zooms()
+        #zero_field = numpy.zeros(distortion_img_data.shape)
+        #if phase_enc_dir in ("x", "x-"):
+        #    deformation_field = numpy.concatenate(
+        #        (distortion_img_data * spacing[0], zero_field, zero_field),
+        #        axis=3)
+        #elif phase_enc_dir in ("y", "y-"):
+        #    deformation_field = numpy.concatenate(
+        #        (zero_field, distortion_img_data * spacing[1], zero_field),
+        #        axis=3)
+        #else:
+        #    raise ValueError("Incorrect phase encode direction: {0}".format(
+        #                     phase_enc_dir))
+        #deformation_field_img = nibabel.Nifti1Image(
+        #    deformation_field, distortion_img.affine)
+        ##deformation_field_file = os.path.join(
+        #    susceptibility_dir, "field.nii.gz")
+        #nibabel.save(deformation_field_img, deformation_field_file)
+        outputs["warp_file"] = warp_file # deformation_field_file
 
     # FSL topup
     elif inputs["topup_b0"] is not None:
@@ -692,6 +691,9 @@ if not inputs["skip_susceptibility"]:
         nodif_to_t1_mat = os.path.join(susceptibility_dir, "epi2struct.mat")
         t1_to_nodif_mat = os.path.join(
             susceptibility_dir, "epi2struct_inv.mat")
+        aff = numpy.loadtxt(nodif_to_t1_mat)
+        aff_inv = numpy.linalg.inv(aff)
+        numpy.savetxt(t1_to_nodif_mat, aff_inv)
 
     # Brainsuite
     else:
@@ -799,19 +801,23 @@ if not inputs["skip_susceptibility"]:
                              phase_enc_dir))
         deformation_field_img = nibabel.Nifti1Image(
             deformation_field, distortion_img.affine)
-
         deformation_field_file = os.path.join(
             susceptibility_dir, "field.nii.gz")
         nibabel.save(deformation_field_img, deformation_field_file)
         outputs["warp_file"] = deformation_field_file
 
-        # Create a null field map
-        fieldmap_hz_to_diff_file = None
+        # Create a field map from the pixel shift warp
+        # fieldmap_file = os.path.join(brainsuite_dir, "fieldmap.nii.gz")
+        # fieldmap_file, fieldmap_hz_to_diff_file = pixel_shift_to_fieldmap(
+        #     pixel_shift_file=warp_file,
+        #     dwell_time=inputs["dwell_time"],
+        #     output_file=fieldmap_file,
+        #     fsl_sh=inputs["fsl_config"])
         outputs["fieldmap"] = None
-        outputs["fieldmap_hz"] = None
 
 # Create an zero deformation field
 else:
+
     # Coregistration only
     dwi_corrected_fileroot = os.path.join(susceptibility_dir, "epi2struct")
     corrected_epi_file, _, _ = epi_reg(
@@ -823,6 +829,9 @@ else:
         fsl_sh=inputs["fsl_config"])
     nodif_to_t1_mat = os.path.join(susceptibility_dir, "epi2struct.mat")
     t1_to_nodif_mat = os.path.join(susceptibility_dir, "epi2struct_inv.mat")
+    aff = numpy.loadtxt(nodif_to_t1_mat)
+    aff_inv = numpy.linalg.inv(aff)
+    numpy.savetxt(t1_to_nodif_mat, aff_inv)
 
     # Create the null deformation field
     im = nibabel.load(inputs["dwi"])
@@ -833,9 +842,7 @@ else:
     outputs["warp_file"] = deformation_field_file
 
     # Create a null field map
-    fieldmap_hz_to_diff_file = None
     outputs["fieldmap"] = None
-    outputs["fieldmap_hz"] = None
 
 
 """
@@ -848,6 +855,7 @@ if susceptibility_method == "topup":
     # Susceptibility will be corrected directly by eddy
     eddy_dwi_input = inputs["dwi"]
 else:
+
     # For now, except for topup sequences, susceptibility is corrected by
     # applying a voxel shift map generated from either a registration based
     # method or a an equivalent fieldmap.
@@ -864,6 +872,7 @@ else:
         shfile=inputs["fsl_config"])
     eddy_dwi_input = susceptibility_corrected_dwi
     fieldmap_hz_to_diff_file = None
+    outputs["fieldmap_hz"] = fieldmap_hz_to_diff_file
 
 # Apply susceptibility correction to nodiff brain mask
 nodif_brain_mask_undistorted = os.path.join(
@@ -935,6 +944,7 @@ if susceptibility_method == "reg":
 
     # t1 has already been registered to dwi by BrainSuite
     shutil.copy(t1_in_dwi_space, t1_to_dwi)
+
 else:
 
     # For BrainSuite correction, topup correction or no correction, T1 to DWI
@@ -942,10 +952,8 @@ else:
     flirt(
         in_file=t1,
         ref_file=corrected_nodiff_undistorted,
-        dof=6,
         applyxfm=True,
         init=t1_to_nodif_mat,
-        cost="normmi",
         out=t1_to_dwi,
         interp="spline",
         shfile=inputs["fsl_config"])

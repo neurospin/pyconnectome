@@ -308,8 +308,8 @@ def dtifit(data, bvecs, bvals, mask, out, wls=False, save_tensor=False,
         cmd += ["--save_tensor"]
 
     # Execute the FSL command
-    fslprocess = FSLWrapper(cmd, shfile=fslconfig)
-    fslprocess()
+    fslprocess = FSLWrapper(shfile=fslconfig)
+    fslprocess(cmd=cmd)
 
     # Check the FSL environment variable
     if "FSLOUTPUTTYPE" not in fslprocess.environment:

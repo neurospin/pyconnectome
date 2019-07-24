@@ -789,8 +789,8 @@ def skeletonize(input_file, output_file, skel_threshold=None,
     if output_file is not None:
         cmd.append("-o")
         cmd.append(output_file)
-    fslprocess = FSLWrapper(cmd, shfile=fsl_sh)
-    fslprocess()
+    fslprocess = FSLWrapper(shfile=fsl_sh)
+    fslprocess(cmd=cmd)
 
     return output_file
 
@@ -845,8 +845,8 @@ def fslmerge(images, concatenated_output, time=True, x=False, y=False, z=False,
     cmd.append(concatenated_output)
     for img in images:
         cmd.append(img)
-    fslprocess = FSLWrapper(cmd, shfile=fsl_sh)
-    fslprocess()
+    fslprocess = FSLWrapper(shfile=fsl_sh)
+    fslprocess(cmd=cmd)
 
     return concatenated_output
 
@@ -871,8 +871,8 @@ def get_fa_stack_mask(fa_4D, output, fsl_sh=DEFAULT_FSL_PATH):
     """
     cmd = ["fslmaths", fa_4D, "-max", "0", "-Tmin", "-bin", output, "-odt",
            "char"]
-    fslprocess = FSLWrapper(cmd, shfile=fsl_sh)
-    fslprocess()
+    fslprocess = FSLWrapper(shfile=fsl_sh)
+    fslprocess(cmd=cmd)
     return output
 
 
@@ -889,8 +889,8 @@ def get_mean_fa(fa_4D, output, fsl_sh=DEFAULT_FSL_PATH):
         path to FSL setup sh file.
     """
     cmd = ["fslmaths", fa_4D, "-Tmean", output]
-    fslprocess = FSLWrapper(cmd, shfile=fsl_sh)
-    fslprocess()
+    fslprocess = FSLWrapper(shfile=fsl_sh)
+    fslprocess(cmd=cmd)
 
 
 """
@@ -1017,8 +1017,8 @@ def tbss_1_preproc(tbss_dir, fsl_sh=DEFAULT_FSL_PATH):
         os.mkdir(tbss_dir)
     os.chdir(tbss_dir)
     cmd = ["tbss_1_preproc", "*.nii.gz"]
-    fslprocess = FSLWrapper(cmd, shfile=fsl_sh)
-    fslprocess()
+    fslprocess = FSLWrapper(shfile=fsl_sh)
+    fslprocess(cmd=cmd)
     fa_dir = os.path.join(tbss_dir, "FA")
     orig_dir = os.path.join(tbss_dir, "origdata")
     if not os.path.isdir(fa_dir):
@@ -1047,8 +1047,8 @@ def fsl_reg(fa_basename, tbss_dir, fsl_sh):
     cmd = ["fsl_reg", fa_basename, "target", fa_basename + "_to_target", "-e",
            "-FA"]
     print("Executing: " + " ".join(cmd))
-    fslprocess = FSLWrapper(cmd, shfile=fsl_sh)
-    fslprocess(cwdir=os.path.join(tbss_dir, "FA"))
+    fslprocess = FSLWrapper(shfile=fsl_sh)
+    fslprocess(cmd=cmd, cwdir=os.path.join(tbss_dir, "FA"))
 
 
 def tbss_2_reg(tbss_dir, use_fmrib58_fa_1mm=False, target_img=None,
@@ -1091,8 +1091,8 @@ def tbss_2_reg(tbss_dir, use_fmrib58_fa_1mm=False, target_img=None,
         shutil.copy2(target_img, os.path.join(tbss_dir, "FA", "target.nii.gz"))
     elif find_best_target:
         cmd.append("-n")
-        fslprocess = FSLWrapper(cmd, shfile=fsl_sh)
-        fslprocess()
+        fslprocess = FSLWrapper(shfile=fsl_sh)
+        fslprocess(cmd=cmd)
         return
     else:
         raise ValueError(
@@ -1143,8 +1143,8 @@ def tbss_3_postreg(tbss_dir, use_fmrib58_fa_mean_and_skel=True,
         cmd.append("-T")
     else:
         cmd.append("-S")
-    fslprocess = FSLWrapper(cmd, shfile=fsl_sh)
-    fslprocess()
+    fslprocess = FSLWrapper(shfile=fsl_sh)
+    fslprocess(cmd=cmd)
 
     # Check that output files have been correctly created.
     all_FA = os.path.join(tbss_dir, "stats", "all_FA.nii.gz")
@@ -1191,8 +1191,8 @@ def tbss_4_prestats(tbss_dir, threshold=0.2, fsl_sh=DEFAULT_FSL_PATH):
     if not os.getcwd() == tbss_dir:
         os.chdir(tbss_dir)
     cmd = ["tbss_4_prestats", str(threshold)]
-    fslprocess = FSLWrapper(cmd, shfile=fsl_sh)
-    fslprocess()
+    fslprocess = FSLWrapper(shfile=fsl_sh)
+    fslprocess(cmd=cmd)
 
     # Check that output files have been correctly created.
     all_FA_skeletonized = os.path.join(

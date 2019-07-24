@@ -92,7 +92,7 @@ def display_folds(folds_file, labels, weights, white_file=None, pits_file=None,
     labels: dict (mandatory)
         a mapping between a mesh id and its label.
     weights: dict (mandatory)
-        a mapping between a mesh label and its wheight in [0, 1].
+        a mapping between a mesh label and its weight in [0, 1].
     white_file: str (optional, default None)
         if specified the white surface will be displayed.
     pits_file: str (optional, default None)

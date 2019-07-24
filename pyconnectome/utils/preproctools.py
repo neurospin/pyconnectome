@@ -112,8 +112,8 @@ def topup(
         "--fout={0}".format(fieldmap),
         "--iout={0}".format(corrected_b0s),
         "-v"]
-    fslprocess = FSLWrapper(cmd, shfile=fsl_sh)
-    fslprocess()
+    fslprocess = FSLWrapper(shfile=fsl_sh)
+    fslprocess(cmd=cmd)
 
     # Average b0s
     mean_corrected_b0s = os.path.join(outroot, "mean_unwarped_b0s.nii.gz")
@@ -121,8 +121,8 @@ def topup(
         "fslmaths",
         corrected_b0s,
         "-Tmean", mean_corrected_b0s]
-    fslprocess = FSLWrapper(cmd, shfile=fsl_sh)
-    fslprocess()
+    fslprocess = FSLWrapper(shfile=fsl_sh)
+    fslprocess(cmd=cmd)
 
     return fieldmap, corrected_b0s, mean_corrected_b0s
 
@@ -207,8 +207,8 @@ def epi_reg(
         cmd.append("--wmseg={0}".format(wmseg_file))
 
     # Call epi_reg
-    fslprocess = FSLWrapper(cmd, shfile=fsl_sh)
-    fslprocess()
+    fslprocess = FSLWrapper(shfile=fsl_sh)
+    fslprocess(cmd=cmd)
 
     # Get outputs
     corrected_epi_file = glob.glob(output_fileroot + ".*")[0]
@@ -264,14 +264,14 @@ def fsl_prepare_fieldmap(
            brain_magnitude_file, output_file, delta_te]
 
     # Call fsl_prepare_fieldmap
-    fslprocess = FSLWrapper(cmd, shfile=fsl_sh)
-    fslprocess()
+    fslprocess = FSLWrapper(shfile=fsl_sh)
+    fslprocess(cmd=cmd)
 
     # Convert the fieldmap in rad/s to Hz
     output_hz_file = output_file.replace(".nii.gz", "_hz.nii.gz")
     cmd = ["fslmaths", output_file, "-div", "6.28", output_hz_file]
-    fslprocess = FSLWrapper(cmd, shfile=fsl_sh)
-    fslprocess()
+    fslprocess = FSLWrapper(shfile=fsl_sh)
+    fslprocess(cmd=cmd)
 
     return output_file, output_hz_file
 
@@ -285,6 +285,8 @@ def eddy(
         bvals,
         outroot,
         field=None,
+        no_qspace_interpolation=False,
+        no_slice_correction=True,
         strategy="openmp",
         fsl_sh=DEFAULT_FSL_PATH):
     """ Wraps FSL eddy tool to correct eddy currents and movements in
@@ -319,6 +321,11 @@ def eddy(
         fileroot name for output.
     field: str, default None
         path to the field map in Hz.
+    no_qspace_interpolation: bool, default False
+        if set do not remove any slices deemed as outliers and replace them
+        with predictions made by the Gaussian Process.
+    no_slice_correction: bool, True
+        if set do not perform the slice to volume correction.
     strategy: str, default 'openmp'
         the execution strategy: 'openmp' or 'cuda'.
     fsl_sh: str, optional default 'DEFAULT_FSL_PATH'
@@ -340,15 +347,25 @@ def eddy(
         "--index={0}".format(index),
         "--bvecs={0}".format(bvecs),
         "--bvals={0}".format(bvals),
-        "--repol",
         "--out={0}".format(outroot),
         "-v"]
     if field is not None:
         cmd += ["--field={0}".format(field)]
+    if not no_qspace_interpolation:
+        cmd += ["--repol"]
+    else:
+        cmd += ["--data_is_shelled"]
+    if not no_slice_correction:
+        cmd += [
+            "--mporder=6",
+            "--s2v_niter=5",
+            "--s2v_lambda=1",
+            "--s2v_interp=trilinear"]
 
     # Run the Eddy correction
-    fslprocess = FSLWrapper(cmd, shfile=fsl_sh)
-    fslprocess()
+    print(" ".join(cmd))
+    fslprocess = FSLWrapper(shfile=fsl_sh)
+    fslprocess(cmd=cmd)
 
     # Get the outputs
     corrected_dwi = "{0}.nii.gz".format(outroot)
@@ -433,7 +450,8 @@ def concatenate_volumes(nii_files, bvals_files, bvecs_files, outdir, axis=-1):
 
 def get_dcm_info(dicom_dir, outdir, dicom_img=None):
     """ Get the sequence parameters, especially the phase encoded direction.
-        Uses Christopher Rorden tool dcm2niix.
+    Uses Christopher Rorden tool dcm2niix.
+
     Parameters
     ----------
     dicom_dir: str
@@ -625,14 +643,14 @@ def pixel_shift_to_fieldmap(pixel_shift_file, dwell_time, output_file,
         "--dwell={0}".format(dwell_time),
         "--loadshift={0}".format(pixel_shift_file),
         "--savefmap={0}".format(output_file)]
-    fslprocess = FSLWrapper(cmd, shfile=fsl_sh)
-    fslprocess()
+    fslprocess = FSLWrapper(shfile=fsl_sh)
+    fslprocess(cmd=cmd)
 
     # Convert the fieldmap in rad/s to Hz
     output_hz_file = output_file.replace(".nii.gz", "_hz.nii.gz")
     cmd = ["fslmaths", output_file, "-div", "6.28", output_hz_file]
-    fslprocess = FSLWrapper(cmd, shfile=fsl_sh)
-    fslprocess()
+    fslprocess = FSLWrapper(shfile=fsl_sh)
+    fslprocess(cmd=cmd)
 
     return output_file, output_hz_file
 
@@ -660,8 +678,8 @@ def smooth_fieldmap(fieldmap, dwell_time, output_file, sigma=2,
         "--loadfmap={0}".format(fieldmap),
         "--savefmap={0}".format(output_file),
         "-s", str(sigma)]
-    fslprocess = FSLWrapper(cmd, shfile=fsl_sh)
-    fslprocess()
+    fslprocess = FSLWrapper(shfile=fsl_sh)
+    fslprocess(cmd=cmd)
 
 
 def fieldmap_reflect(fieldmap, phase_enc_dir, output_file):

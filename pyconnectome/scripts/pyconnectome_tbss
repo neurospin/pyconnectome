@@ -27,6 +27,8 @@ try:
     bredala.register("pyconnectome.tractography.dtitk_tbss",
                      names=["tbss_1_preproc", "tbss_2_reg", "tbss_3_postreg",
                             "tbss_4_prestats"])
+    bredala.register("pyconnectome.utils.filetools",
+                     names=["apply_mask"])
 except:
     pass
 
@@ -36,6 +38,7 @@ from pyconnectome.tractography.dtitk_tbss import (
 
 # Pyconnectome imports
 import pyconnectome
+from pyconnectome.utils.filetools import apply_mask
 from pyconnectome.wrapper import FSLWrapper
 from pyconnectome import DEFAULT_FSL_PATH
 
@@ -197,6 +200,9 @@ def get_cmd_line_args():
         help="use the FMRIB58 mean FA image and its derived skeleton, "
              "instead of the mean of the subjects.")
     parser.add_argument(
+        "-K", "--use-target-skel-img", type=is_file, metavar="<path>",
+        help="Use target skeleton image for TBSS prestats.")
+    parser.add_argument(
         "-T", "--threshold-fa-skeleton", type=float, default=0.2,
         help="Threshold for the mean FA skeleton.")
     parser.add_argument(
@@ -318,6 +324,22 @@ Step 4: stats
 
 if inputs["pre_stats"]:
     print("Project the FA data onto the mean FA skeleton....")
+    if inputs["use_target_skel_img"] is not None:
+        mean_fa_mask = os.path.join(tbss_dir, "stats", "mean_FA_mask.nii.gz")
+        if not os.path.isfile(mean_fa_mask):
+            raise ValueError("First run 'tbss_3_postreg'.")
+        mean_fa_root = os.path.join(tbss_dir, "stats", "mean_FA")
+        mean_fa = apply_mask(
+            input_file=inputs["use_target_img"],
+            output_fileroot=mean_fa_root,
+            mask_file=mean_fa_mask,
+            fslconfig=inputs["fsl_config"])
+        mean_fa_skel_root = os.path.join(tbss_dir, "stats", "mean_FA_skeleton")
+        mean_fa_skel = apply_mask(
+            input_file=inputs["use_target_skel_img"],
+            output_fileroot=mean_fa_skel_root,
+            mask_file=mean_fa_mask,
+            fslconfig=inputs["fsl_config"])  
     (all_fa_skeletonized, mean_fa_skel_mask, mean_fa_skel_mask_dst,
      thresh_file) = tbss_4_prestats(
         tbss_dir=tbss_dir,

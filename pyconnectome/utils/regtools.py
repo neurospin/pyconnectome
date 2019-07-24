@@ -180,8 +180,8 @@ def mcflirt(in_file, out_fileroot, cost="normcorr", bins=256, dof=6,
         cmd.append("-plots")
 
     # Call mcflirt
-    fslprocess = FSLWrapper(cmd, shfile=shfile)
-    fslprocess()
+    fslprocess = FSLWrapper(shfile=shfile)
+    fslprocess(cmd=cmd)
 
     # Get generated outputs
     func_files = [elem for elem in glob.glob(out_fileroot + ".*")
@@ -208,7 +208,7 @@ def mcflirt(in_file, out_fileroot, cost="normcorr", bins=256, dof=6,
 def flirt(in_file, ref_file, omat=None, out=None, init=None, cost="corratio",
           usesqform=False, displayinit=False, anglerep="euler", bins=256,
           interp="trilinear", dof=12, applyxfm=False, applyisoxfm=None,
-          nosearch=False, verbose=0, shfile=DEFAULT_FSL_PATH):
+          nosearch=False, wmseg=None, verbose=0, shfile=DEFAULT_FSL_PATH):
     """ Wraps command flirt.
 
     The basic usage is:
@@ -254,6 +254,8 @@ def flirt(in_file, ref_file, omat=None, out=None, init=None, cost="corratio",
         0 is least and default.
     nosearch: bool (optional, default False)
         if set perform no search to initializa the optimization.
+    wmseg: str (optional)
+        White matter segmentation volume needed by BBR cost function.
     shfile: str (optional, default DEFAULT_FSL_PATH)
         The FSL configuration batch.
 
@@ -291,11 +293,12 @@ def flirt(in_file, ref_file, omat=None, out=None, init=None, cost="corratio",
         cmd += ["-applyxfm"]
     if nosearch:
         cmd += ["-nosearch"]
-
     if init is not None:
         cmd += ["-init", init]
     if applyisoxfm is not None:
         cmd += ["-applyisoxfm", str(applyisoxfm)]
+    if cost == "bbr":
+        cmd += ["-wmseg", wmseg]
 
     dirname = os.path.dirname(in_file)
     basename = os.path.basename(in_file).split(".")[0]
@@ -313,8 +316,8 @@ def flirt(in_file, ref_file, omat=None, out=None, init=None, cost="corratio",
         cmd += ["-omat", omat]
 
     # Call flirt
-    fslprocess = FSLWrapper(cmd, shfile=shfile)
-    fslprocess()
+    fslprocess = FSLWrapper(shfile=shfile)
+    fslprocess(cmd=cmd)
 
     return out, omat
 
@@ -383,8 +386,8 @@ def fnirt(in_file, ref_file, affine_file, outdir, inmask_file=None, verbose=0,
         cmd += ["--{0}={1}".format(param, outputs[-1])]
 
     # Call fnirt
-    fslprocess = FSLWrapper(cmd, shfile=shfile)
-    fslprocess()
+    fslprocess = FSLWrapper(shfile=shfile)
+    fslprocess(cmd=cmd)
 
     return outputs
 
@@ -435,8 +438,8 @@ def applywarp(in_file, ref_file, out_file, warp_file, pre_affine_file=None,
         cmd.append("--postmat={0}".format(post_affine_file))
 
     # Call fnirt
-    fslprocess = FSLWrapper(cmd, shfile=shfile)
-    fslprocess()
+    fslprocess = FSLWrapper(shfile=shfile)
+    fslprocess(cmd=cmd)
 
 
 def flirt2aff(mat_file, in_file, ref_file):

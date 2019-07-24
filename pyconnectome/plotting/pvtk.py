@@ -9,6 +9,159 @@
 
 """
 Modules that provides tools to create 3D rendering using VTK.
+
+https://gitlab.kitware.com/vtk/vtk/blob/master/IO/Image/
+vtkNIFTIImageReader.cxx#L738
+
+// === Image Orientation in NIfTI files ===
+//
+// The vtkImageData class does not provide a way of storing image
+// orientation.  So when we read a NIFTI file, we should also provide
+// the user with a 4x4 matrix that can transform VTK's data coordinates
+// into NIFTI's intended coordinate system for the image.  NIFTI defines
+// these coordinate systems as:
+// 1) NIFTI_XFORM_SCANNER_ANAT - coordinate system of the imaging device
+// 2) NIFTI_XFORM_ALIGNED_ANAT - result of registration to another image
+// 3) NIFTI_XFORM_TALAIRACH - a brain-specific coordinate system
+// 4) NIFTI_XFORM_MNI_152 - a similar brain-specific coordinate system
+//
+// NIFTI images can store orientation in two ways:
+// 1) via a quaternion (orientation and offset, i.e. rigid-body)
+// 2) via a matrix (used to store e.g. the results of registration)
+//
+// A NIFTI file can have both a quaternion (qform) and matrix (sform)
+// stored in the same file.  The NIFTI documentation recommends that
+// the qform be used to record the "scanner anatomical" coordinates
+// and that the sform, if present, be used to define a secondary
+// coordinate system, e.g. a coordinate system derived through
+// registration to a template.
+//
+// -- Quaternion Representation --
+//
+// If the "quaternion" form is used, then the following equation
+// defines the transformation from voxel indices to NIFTI's world
+// coordinates, where R is the rotation matrix computed from the
+// quaternion components:
+//
+//   [ x ]   [ R11 R12 R13 ] [ pixdim[1] * i        ]   [ qoffset_x ]
+//   [ y ] = [ R21 R22 R23 ] [ pixdim[2] * j        ] + [ qoffset_y ]
+//   [ z ]   [ R31 R32 R33 ] [ pixdim[3] * k * qfac ]   [ qoffset_z ]
+//
+// qfac is stored in pixdim[0], if it is equal to -1 then the slices
+// are stacked in reverse: VTK will have to reorder the slices in order
+// to maintain a right-handed coordinate transformation between indices
+// and coordinates.
+//
+// Let's call VTK data coordinates X,Y,Z to distinguish them from
+// the NIFTI coordinates x,y,z.  The relationship between X,Y,Z and
+// x,y,z is expressed by a 4x4 matrix M:
+//
+//   [ x ]   [ M11 M12 M13 M14 ] [ X ]
+//   [ y ] = [ M21 M22 M23 M24 ] [ Y ]
+//   [ z ]   [ M31 M32 M33 M34 ] [ Z ]
+//   [ 1 ]   [ 0   0   0   1   ] [ 1 ]
+//
+// where the VTK data coordinates X,Y,Z are related to the
+// VTK structured coordinates IJK (i.e. point indices) by:
+//
+//   X = I*Spacing[0] + Origin[0]
+//   Y = J*Spacing[1] + Origin[1]
+//   Z = K*Spacing[2] + Origin[2]
+//
+// Now let's consider: when we read a NIFTI image, how should we set
+// the Spacing, the Origin, and the matrix M?  Let's consider the
+// cases:
+//
+// 1) If there is no qform, then R is identity and qoffset is zero,
+//    and qfac will be 1 (never -1).  So:
+//      I,J,K = i,j,k, Spacing = pixdim, Origin = 0, M = Identity
+//
+// 2) If there is a qform, and qfac is 1, then:
+//
+//    I,J,K = i,j,k (i.e. voxel order in VTK same as in NIFTI)
+//
+//    Spacing[0] = pixdim[1]
+//    Spacing[1] = pixdim[2]
+//    Spacing[2] = pixdim[3]
+//
+//    Origin[0] = 0.0
+//    Origin[1] = 0.0
+//    Origin[2] = 0.0
+//
+//        [ R11 R12 R13 qoffset_x ]
+//    M = [ R21 R22 R23 qoffset_y ]
+//        [ R31 R32 R33 qoffset_z ]
+//        [ 0   0   0   1         ]
+//
+//    Note that we cannot store qoffset in the origin.  That would
+//    be mathematically incorrect.  It would only give us the right
+//    offset when R is the identity matrix.
+//
+// 3) If there is a qform and qfac is -1, then the situation is more
+//    compilcated.  We have three choices, each of which is a compromise:
+//    a) we can use Spacing[2] = qfac*pixdim[3], i.e. use a negative
+//       slice spacing, which might cause some VTK algorithms to
+//       misbehave (the VTK tests only use images with positive spacing).
+//    b) we can use M13 = -R13, M23 = -R23, M33 = -R33 i.e. introduce
+//       a flip into the matrix, which is very bad for VTK rendering
+//       algorithms and should definitely be avoided.
+//    c) we can reverse the order of the slices in VTK relative to
+//       NIFTI, which allows us to preserve positive spacing and retain
+//       a well-behaved rotation matrix, by using these equations:
+//
+//         K = number_of_slices - k - 1
+//
+//         M14 = qoffset_x - (number_of_slices - 1)*pixdim[3]*R13
+//         M24 = qoffset_y - (number_of_slices - 1)*pixdim[3]*R23
+//         M34 = qoffset_z - (number_of_slices - 1)*pixdim[3]*R33
+//
+//       This will give us data that will be well-behaved in VTK, at
+//       the expense of making VTK slice numbers not match with
+//       the original NIFTI slice numbers.  NIFTI slice 0 will become
+//       VTK slice N-1, and the order will be reversed.
+//
+// -- Matrix Representation --
+//
+// If the "matrix" form is used, then pixdim[] is ignored, and the
+// voxel spacing is implicitly stored in the matrix.  In addition,
+// the matrix may have a negative determinant, there is no "qfac"
+// flip-factor as there is in the quaternion representation.
+//
+// Let S be the matrix stored in the NIFTI header, and let M be our
+// desired coordinate transformation from VTK data coordinates X,Y,Z
+// to NIFTI data coordinates x,y,z (see discussion above for more
+// information).  Let's consider the cases where the determinant
+// is positive, or negative.
+//
+// 1) If the determinant is positive, we will factor the spacing
+//    (but not the origin) out of the matrix.
+//
+//    Spacing[0] = pixdim[1]
+//    Spacing[1] = pixdim[2]
+//    Spacing[2] = pixdim[3]
+//
+//    Origin[0] = 0.0
+//    Origin[1] = 0.0
+//    Origin[2] = 0.0
+//
+//         [ S11/pixdim[1] S12/pixdim[2] S13/pixdim[3] S14 ]
+//    M  = [ S21/pixdim[1] S22/pixdim[2] S23/pixdim[3] S24 ]
+//         [ S31/pixdim[1] S32/pixdim[2] S33/pixdim[3] S34 ]
+//         [ 0             0             0             1   ]
+//
+// 2) If the determinant is negative, then we face the same choices
+//    as when qfac is -1 for the quaternion transformation.  We can:
+//    a) use a negative Z spacing and multiply the 3rd column of M by -1
+//    b) keep the matrix as is (with a negative determinant)
+//    c) reorder the slices, multiply the 3rd column by -1, and adjust
+//       the 4th column of the matrix:
+//
+//         M14 = S14 + (number_of_slices - 1)*S13
+//         M24 = S24 + (number_of_slices - 1)*S23
+//         M34 = S34 + (number_of_slices - 1)*S33
+//
+//       The third choice will provide a VTK image that has positive
+//       spacing and a matrix with a positive determinant.
 """
 
 
@@ -27,6 +180,7 @@ try:
     import vtk
 except ImportError:
     raise ImportError("VTK is not installed.")
+from vtk.util import numpy_support
 
 
 def ren():
@@ -170,6 +324,7 @@ def record(ren, outdir, prefix, cam_pos=None, cam_focal=None,
         camera.SetFocalPoint(cam_focal)
     if cam_view is not None:
         camera.SetViewUp(cam_view)
+    ren.ResetCamera()
     if verbose:
         print("Camera Position (%.2f,%.2f,%.2f)" % camera.GetPosition())
         print("Camera Focal Point (%.2f,%.2f,%.2f)" % camera.GetFocalPoint())
@@ -531,7 +686,7 @@ def dots(points, color=(1, 0, 0), psize=1, opacity=1):
 
 
 def surface(points, triangles, labels, ctab=None, opacity=1, set_lut=True,
-            decimation_ratio=0.):
+            decimation_ratio=0., smooth=False):
     """ Create a colored triangular surface.
 
     Parameters
@@ -553,6 +708,8 @@ def surface(points, triangles, labels, ctab=None, opacity=1, set_lut=True,
     decimation_ratio: float (optional, default 0)
         how many triangles should reduced by specifying the percentage
         ([0,1]) of triangles to be removed.
+    smooth: bool (optional, default False)
+        if set smooth the mesh using a Laplacian smoothing.
 
     Returns
     -------
@@ -601,12 +758,23 @@ def surface(points, triangles, labels, ctab=None, opacity=1, set_lut=True,
 
     # Decimate the mesh
     decimate = vtk.vtkDecimatePro()
-    decimate.SetInputConnection(polydata.GetProducerPort())
+    decimate.SetInputData(polydata)
     decimate.SetTargetReduction(decimation_ratio)
+
+    # Smooth the mesh
+    it = 0
+    if smooth:
+        it = 30
+    smooth = vtk.vtkSmoothPolyDataFilter()
+    smooth.SetInputConnection(decimate.GetOutputPort())
+    smooth.SetRelaxationFactor(0.1)
+    smooth.SetNumberOfIterations(it)
+    smooth.FeatureEdgeSmoothingOff()
+    smooth.BoundarySmoothingOn()
 
     # Create the mapper
     mapper = vtk.vtkPolyDataMapper()
-    mapper.SetInputConnection(decimate.GetOutputPort())
+    mapper.SetInputConnection(smooth.GetOutputPort())
     if set_lut:
         mapper.SetLookupTable(lut)
         mapper.SetColorModeToMapScalars()
@@ -620,5 +788,87 @@ def surface(points, triangles, labels, ctab=None, opacity=1, set_lut=True,
     actor.SetMapper(mapper)
     actor.GetProperty().SetOpacity(opacity)
     actor.GetProperty().SetColor(0.9, 0.9, 0.9)
+
+    return actor
+
+
+def skin(image_path, thres=500):
+    """ Extract the skin and create a mesh.
+
+    Parameters
+    ----------
+    image_path: str
+        the MRI image we want to extract the skin.
+    thres: int
+        the skin threshold.
+
+    Returns
+    -------
+    actor: vtkActor
+        one actor handling the surface.
+    """
+    # Read the inputs Nifti Image
+    reader = vtk.vtkNIFTIImageReader()
+    reader.SetFileName(image_path)
+
+    # An isosurface, or contour value of 500 is known to correspond to the
+    # skin of the patient. Once generated, a vtkPolyDataNormals filter is
+    # is used to create normals for smooth surface shading during rendering.
+    # The triangle stripper is used to create triangle strips from the
+    # isosurface these render much faster on may systems.
+    skinExtractor = vtk.vtkContourFilter()
+    skinExtractor.SetInputConnection(reader.GetOutputPort())
+    skinExtractor.SetValue(0, thres)
+    skinNormals = vtk.vtkPolyDataNormals()
+    skinNormals.SetInputConnection(skinExtractor.GetOutputPort())
+    skinNormals.SetFeatureAngle(60.0)
+    skinStripper = vtk.vtkStripper()
+    skinStripper.SetInputConnection(skinNormals.GetOutputPort())
+    skinMapper = vtk.vtkPolyDataMapper()
+    skinMapper.SetInputConnection(skinStripper.GetOutputPort())
+    skinMapper.ScalarVisibilityOff()
+    actor = vtk.vtkActor()
+    actor.SetMapper(skinMapper)
+    actor.GetProperty().SetDiffuseColor(1, .49, .25)
+    actor.GetProperty().SetSpecular(.3)
+    actor.GetProperty().SetSpecularPower(20)
+
+    return actor
+
+
+def mask_surface(mask, opacity=1, color=(1, 0, 0)):
+    """ Extract a mesh from a binary image.
+
+    Parameters
+    ----------
+    mask: str or ndarray
+        the MRI mask image we want to extract the surface.
+    opacity: float, default 1
+        the actor global opacity.
+    color: 3-uplet, default (1, 0, 0)
+        the generated mesh color.
+
+    Returns
+    -------
+    actor: vtkActor
+        one actor handling the surface.
+    """
+    # Create mesh
+    dmc = vtk.vtkDiscreteMarchingCubes()
+    if isinstance(mask, numpy.ndarray):
+        vtk_mask = numpy_support.numpy_to_vtk(
+            num_array=mask.ravel(), deep=True, array_type=vtk.VTK_FLOAT)
+        dmc.SetInputConnection(vtk_mask.Getoutput())
+    else:
+        reader = vtk.vtkNIFTIImageReader()
+        reader.SetFileName(mask)
+        dmc.SetInputConnection(reader.GetOutputPort())
+    dmcMapper = vtk.vtkPolyDataMapper()
+    dmcMapper.SetInputConnection(dmc.GetOutputPort())
+    dmcMapper.ScalarVisibilityOff()
+    actor = vtk.vtkActor()
+    actor.SetMapper(dmcMapper)
+    actor.GetProperty().SetColor(color)
+    actor.GetProperty().SetOpacity(opacity)
 
     return actor

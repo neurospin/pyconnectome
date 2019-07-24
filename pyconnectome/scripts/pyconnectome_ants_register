@@ -154,7 +154,24 @@ def get_cmd_line_args():
         help="This option allows the user to restrict the optimization of the "
              "displacement field.")
     parser.add_argument(
-        "-v", "--verbose",
+        "-L", "--moving-mask",
+        type=is_file, metavar="<path>",
+        help="Path to a mask image in the moving space: restrict "
+             "registration computations only to voxels with the mask (need to "
+             "specify the reference-mask).")
+    parser.add_argument(
+        "-A", "--reference-mask",
+        type=is_file, metavar="<path>",
+        help="Path to a mask image in the reference space: restrict "
+             "registration computations only to voxels with the mask.")
+    parser.add_argument(
+        "-T", "--apply-to",
+        metavar="<paths>", nargs="+",
+        help="Apply the computed deformation on these images: "
+             "[path,apply_inverse,interp] with apply_inverse (0, 1) and "
+             "interp (0:nearest neighboor, 1:bspline).")
+    parser.add_argument(
+        "-V", "--verbose",
         type=int, choices=[0, 1, 2], default=2,
         help="Increase the verbosity level: 0 silent, [1, 2] verbose.")
 
@@ -217,6 +234,9 @@ if len(inputs["images"]) != len(inputs["references"]):
 
 
 # Define parameters
+interp_map = {
+    "0": "NearestNeighbor",
+    "1": "BSpline"}
 nb_modalities = len(inputs["images"])
 transforms = ["Affine", "SyN"]
 radius_or_number_of_bins = [32, 4]
@@ -242,7 +262,8 @@ baseoutput = os.path.join(inputs["outdir"], "ants_")
 if not inputs["nobfc"]:
     print("Starting bias field corrections...")
     for index in range(nb_modalities):
-        biascorrectedfile = os.path.join(inputs["outdir"], "ants_BFC.nii.gz")
+        biascorrectedfile = os.path.join(
+            inputs["outdir"], "ants_BFC{0}.nii.gz".format(index))
         cmd0 = [
             "N4BiasFieldCorrection",
             "-d", str(inputs["dimensions"]),
@@ -325,6 +346,10 @@ if inputs["dononlinear"]:
         "-f", to_ants_list(shrink_factors[1]),
         "-s", to_ants_list(smoothing_sigmas[1]),
         "-g", to_ants_list(restrict_deformation)]
+if inputs["moving_mask"] is not None or inputs["reference_mask"] is not None:
+    cmd1 += [
+        "-x", "[{0}, {1}]".format(inputs.get("reference_mask", ""),
+                                  inputs.get("moving_mask", ""))]  
 if verbose > 0:
     print("-" * 20)
     print(" ".join(cmd1))
@@ -342,49 +367,97 @@ if exitcode != 0:
     raise ValueError("Command '{0}' failed:: {1}".format(
         " ".join(cmd1), stderr + stdout))
 affinefile = baseoutput + "0GenericAffine.mat"
-fieldfile = baseoutput + "1Warp.nii.gz"
+if inputs["dononlinear"]:
+    fieldfile = baseoutput + "1Warp.nii.gz"
+    invfieldfile = baseoutput + "1InverseWarp.nii.gz"
+else:
+    fieldfile, invfieldfile = (None, None)
 print("Done.")
 
 
 # Apply deformation
 print("Apply deformation...")
-warpedfiles = []
-for index in range(nb_modalities):
-    outfile = os.path.join(inputs["outdir"], "ants_2WarpToTemplate.nii.gz")
-    cmd2 = [
-        "antsApplyTransforms",
-        "-d", str(inputs["dimensions"]),
-        "--float", "1",
-        "-i", inputs["images"][index],
-        "-o", outfile,
-        "-r", inputs["references"][index],
-        "-n", "BSpline"]
-    if inputs["dononlinear"]:
-        cmd2 += [
-            "-t", fieldfile,
-            "-t", affinefile,
-            "-n", "BSpline"]
+def apply_transforms(moving_file, reference_file, outdir, fieldfile,
+                     affinefile, dim, interp, inverse):
+    basename = os.path.basename(moving_file).split(".")[0]
+    if inverse:
+        outfile = os.path.join(
+            outdir, "ants_2WarpToNative_{0}.nii.gz".format(basename))
+        cmd = [
+            "antsApplyTransforms",
+            "-d", str(dim),
+            "--float", "1",
+            "-i", moving_file,
+            "-o", outfile,
+            "-r", reference_file,
+            "-n", interp]
+        if fieldfile is not None:
+            cmd += [
+                "-t", "[{0},1]".format(affinefile),
+                "-t", fieldfile,
+                "-n", interp]
+        else:
+            cmd += [
+                "-t", "[{0},1]".format(affinefile),]
     else:
-        cmd2 += [
-            "-t", affinefile]
+        outfile = os.path.join(
+            outdir, "ants_2WarpToTemplate_{0}.nii.gz".format(basename))
+        cmd = [
+            "antsApplyTransforms",
+            "-d", str(dim),
+            "--float", "1",
+            "-i", moving_file,
+            "-o", outfile,
+            "-r", reference_file,
+            "-n", interp]
+        if fieldfile is not None:
+            cmd += [
+                "-t", fieldfile,
+                "-t", affinefile,
+                "-n", interp]
+        else:
+            cmd += [
+                "-t", affinefile]
+    return cmd, outfile
 
-
-if verbose > 0:
-    print("-" * 20)
-    print(" ".join(cmd2))
-    print("-" * 20)
-environment = os.environ
-environment["ANTSPATH"] = inputs["binaries"]
-environment["PATH"] += ":" + inputs["binaries"]
-process = subprocess.Popen(cmd2,
-                           env=environment,
-                           stdout=subprocess.PIPE,
-                           stderr=subprocess.PIPE)
-stdout, stderr = process.communicate()
-exitcode = process.returncode
-if exitcode != 0:
-    raise ValueError("Command '{0}' failed:: {1}".format(
-        " ".join(cmd2), stderr + stdout))
+warpedfiles = []
+commands = []
+for index in range(nb_modalities):
+    cmd, outfile = apply_transforms(
+        inputs["images"][index], inputs["references"][index], inputs["outdir"],
+        fieldfile, affinefile, inputs["dimensions"], "BSpline", False)
+    commands.append(cmd)
+    warpedfiles.append(outfile)
+if inputs["apply_to"] is not None:
+    for item in inputs["apply_to"]:
+        path, use_inverse, interp = item.split(",")
+        if use_inverse == "1":
+            cmd, outfile = apply_transforms(
+                path, inputs["images"][0], inputs["outdir"], invfieldfile,
+                affinefile, inputs["dimensions"], interp_map[interp], True)
+        else:
+            cmd, outfile = apply_transforms(
+                path, inputs["references"][0], inputs["outdir"], fieldfile,
+                affinefile, inputs["dimensions"], interp_map[interp], False)
+        commands.append(cmd)
+        warpedfiles.append(outfile)
+for cmd in commands:
+    if verbose > 0:
+        print("-" * 20)
+        print(" ".join(cmd))
+        print("-" * 20)
+    environment = os.environ
+    environment["ANTSPATH"] = inputs["binaries"]
+    environment["PATH"] += ":" + inputs["binaries"]
+    process = subprocess.Popen(cmd,
+                               env=environment,
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+    exitcode = process.returncode
+    if exitcode != 0:
+        raise ValueError("Command '{0}' failed:: {1}".format(
+            " ".join(cmd), stderr + stdout))
 print("Done.")
 
 
@@ -396,8 +469,8 @@ if not os.path.isdir(logdir):
     os.mkdir(logdir)
 params = locals()
 outputs = dict([(name, params[name])
-               for name in ("cmd0", "cmd1", "cmd2", "affinefile",
-                            "fieldfile")])
+               for name in ("cmd0", "cmd1", "commands", "affinefile",
+                            "invfieldfile", "fieldfile", "warpedfiles")])
 for name, final_struct in [("inputs", inputs), ("outputs", outputs),
                            ("runtime", runtime)]:
     log_file = os.path.join(logdir, "{0}.json".format(name))

@@ -298,6 +298,10 @@ outputs["tbss_stats_dir"] = tbss_stat_dir
 
 # Thresholds the mean FA skeleton image at the chosen threshold with
 # tbss_4_prestats
+# TODO: remove the search_rule_mask in tbss_skeleton
+# for this relatively isolated tubular structure the search is not
+# 1D perpendicular to the local skeleton sheet, but in 2D perpendicular to 
+# the tube (actually is in the XY plane)
 tbss_4_prestats(
     tbss_dir=tbss_dir,
     threshold=inputs["threshold_fa_skeleton"],

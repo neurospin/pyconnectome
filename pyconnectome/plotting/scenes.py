@@ -76,7 +76,8 @@ class LabelsOnPick(object):
             self.textactor.VisibilityOn()
         # Focus on the picked actor and display the fold label
         else:
-            if self.highlight_selection:
+            if (actor.label not in self.to_keep_actors and
+                    self.highlight_selection):
                 for act in self.actors:
                     if act.label not in self.to_keep_actors:
                         act.SetVisibility(False)
@@ -86,6 +87,93 @@ class LabelsOnPick(object):
             if not self.static_position:
                 point = self.picker.GetSelectionPoint()
                 self.textactor.SetPosition(point[:2])
+
+
+def bundles(bundle_masks, labels, bundle_tracks=None, brain_mask=None,
+            use_lut=False, compare=False):
+    """ Scene that shows a network.
+
+    Parameters
+    ----------
+    bundle_masks: list of array
+        the bundle masks.
+    labels: list of str
+        the bundles associated labels.
+    bundle_tracks: list of list of array, default None
+        the bundle associated tracks.
+    brain_mask: arr, default None
+        the brain mask.
+    use_lut: bool, default False
+        color the bundles.
+    compare: bool, default False
+        if set without use_lut, expect two groups of bundles of same size and
+        ordered by group.
+
+    Returns
+    ----------
+    actors: list of vtkActor
+        the scene actors.
+    observer: LabelsOnPick
+        pickle event callback.
+    """
+    # Parameters
+    ren = pvtk.ren()
+    ren.SetBackground(1, 1, 1)
+    actors = []
+    label_actors = []
+
+    # Check inputs
+    if len(bundle_masks) != len(labels):
+        raise ValueError("Bundles and labels must have the same size.")
+    if len(bundle_masks) != len(bundle_tracks):
+        raise ValueError("Bundles and tracks must have the same size.")
+
+    # Create an actor for the brain
+    if brain_mask is not None:
+        actor = pvtk.mask_surface(brain_mask, color=colors.blue, opacity=0.2)
+        actor.GetProperty().SetRepresentationToWireframe()
+        actor.label = "brain"
+        actors.append(actor)
+        pvtk.add(ren, actor)
+
+    # Create actors for the bundles
+    lut = vtk.vtkColorTransferFunction()
+    lut.AddRGBPoint(0, 0.0, 0.0, 1.0)
+    lut.AddRGBPoint(len(labels), 1.0, 0.0, 0.0)
+    for cnt, (mask, name) in enumerate(zip(bundle_masks, labels)):
+        if use_lut:
+            color = lut.GetColor(cnt)
+        else:
+            color = colors.red
+        if not use_lut and compare and cnt >= (len(labels) / 2):
+            color = colors.blue
+        actor = pvtk.mask_surface(mask, opacity=0.4, color=color)
+        actor.label = name
+        actors.append(actor)
+        pvtk.add(ren, actor)
+
+    # Create actors for the bundle tracks
+    if bundle_tracks is not None:
+        for tracks, name in zip(bundle_tracks, labels):
+            if tracks is None:
+                continue
+            actor = pvtk.tubes(
+                tracks, colors=colors.line_colors(tracks), opacity=1,
+                linewidth=0.15, tube_sides=8, lod=True, lod_points=10 ** 4,
+                lod_points_size=5)
+            actor.label = name
+            pvtk.add(ren, actor)
+
+    # Create actor for label and associated callback
+    txtactor = pvtk.text(LabelsOnPick.default_message, font_size=15,
+                         position=(10, 10), is_visible=True)
+    observer = LabelsOnPick(txtactor, static_position=True,
+                            to_keep_actors=["brain"],
+                            highlight_selection=False)
+    actors.append(txtactor)
+    pvtk.add(ren, txtactor)
+
+    return ren, actors, observer
 
 
 def network(nodes, labels, weights=None, edges=None, lh_surf=None,

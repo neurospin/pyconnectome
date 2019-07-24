@@ -133,8 +133,8 @@ def bedpostx(subjectdir, n=3, w=1, b=1000, j=1250, s=25, model=2,
         cmd += ["-c"]
 
     # Execute the FSL command
-    fslprocess = FSLWrapper(cmd, shfile=fslconfig, fsl_parallel=fsl_parallel)
-    fslprocess()
+    fslprocess = FSLWrapper(shfile=fslconfig, fsl_parallel=fsl_parallel)
+    fslprocess(cmd=cmd)
 
     # Format outputs
     outdir = subjectdir + ".bedpostX"
@@ -178,8 +178,8 @@ def bedpostx_datacheck(data_dir, fslconfig=DEFAULT_FSL_PATH):
     cmd = ["bedpostx_datacheck", data_dir]
 
     # Execute the FSL command
-    fslprocess = FSLWrapper(cmd, shfile=fslconfig)
-    fslprocess()
+    fslprocess = FSLWrapper(shfile=fslconfig)
+    fslprocess(cmd=cmd)
 
     # Parse outputs
     is_valid = (

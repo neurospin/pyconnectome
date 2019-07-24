@@ -284,8 +284,8 @@ def probtrackx2(
         cmd += ["--savepaths"]
 
     # Call probtrackx
-    fslprocess = FSLWrapper(cmd, shfile=shfile)
-    fslprocess()
+    fslprocess = FSLWrapper(shfile=shfile)
+    fslprocess(cmd=cmd)
 
     # Get the outputs
     proba_files = glob.glob(os.path.join(dir, out + "*"))
@@ -506,7 +506,8 @@ def mrtrix_tractogram(
     fast_t1_brain = t1_brain_to_dif if fast_t1_brain is None else fast_t1_brain
     cmd_3 = ["5ttgen", "fsl", fast_t1_brain, five_tissues, "-premasked",
              "-tempdir", tempdir, "-nthreads", "%i" % nb_threads]
-    FSLWrapper(cmd_3, env=os.environ, shfile=fsl_sh)()
+    process = FSLWrapper(cmd_3, env=os.environ, shfile=fsl_sh)
+    process(cmd=cmd_3)
 
     # -------------------------------------------------------------------------
     # STEP 4 - Estimation of the response function of fibers in each voxel

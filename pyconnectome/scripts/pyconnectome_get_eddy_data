@@ -57,8 +57,8 @@ Summarize subject data from dicoms, and write a JSON output with information
 such as scanner data, echo spacing, etc.
 
 Requirements:
-    - DWI file(s) path (required).
-    - Associated .bval and .bvec files (required)
+    - EPI file(s) path (required).
+    - For DWI, associated .bval and .bvec files (required)
     - Associated DICOMs (required).
     - Assocaited T1 file (required)
 
@@ -77,10 +77,10 @@ Command example on the MAPT data:
 python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_get_eddy_data \
     -s 03990185BAI \
     -c CENTER1 \
-    -m /neurospin/cati/cati_shared/MAPT/CONVERTED/0399/03990185BAI/M0/MRI/DWI/03990185BAI_M0_DWI_1_S014.tar.gz \
+    -D /neurospin/cati/cati_shared/MAPT/CONVERTED/0399/03990185BAI/M0/MRI/DWI/03990185BAI_M0_DWI_1_S014.tar.gz \
     -d /neurospin/cati/cati_shared/MAPT/CONVERTED/0399/03990185BAI/M0/MRI/DWI/03990185BAI_M0_DWI_1_S014.nii.gz /neurospin/cati/cati_shared/MAPT/CONVERTED/0399/03990185BAI/M0/MRI/DWI/03990185BAI_M0_DWI_2_S019.nii.gz \
-    -b /neurospin/cati/cati_shared/MAPT/CONVERTED/0399/03990185BAI/M0/MRI/DWI/03990185BAI_M0_DWI_1_S014.bval /neurospin/cati/cati_shared/MAPT/CONVERTED/0399/03990185BAI/M0/MRI/DWI/03990185BAI_M0_DWI_2_S019.bval \
-    -r /neurospin/cati/cati_shared/MAPT/CONVERTED/0399/03990185BAI/M0/MRI/DWI/03990185BAI_M0_DWI_1_S014.bvec /neurospin/cati/cati_shared/MAPT/CONVERTED/0399/03990185BAI/M0/MRI/DWI/03990185BAI_M0_DWI_2_S019.bvec \
+    -B /neurospin/cati/cati_shared/MAPT/CONVERTED/0399/03990185BAI/M0/MRI/DWI/03990185BAI_M0_DWI_1_S014.bval /neurospin/cati/cati_shared/MAPT/CONVERTED/0399/03990185BAI/M0/MRI/DWI/03990185BAI_M0_DWI_2_S019.bval \
+    -R /neurospin/cati/cati_shared/MAPT/CONVERTED/0399/03990185BAI/M0/MRI/DWI/03990185BAI_M0_DWI_1_S014.bvec /neurospin/cati/cati_shared/MAPT/CONVERTED/0399/03990185BAI/M0/MRI/DWI/03990185BAI_M0_DWI_2_S019.bvec \
     -o /tmp/mapt \
     -V 2
 
@@ -89,10 +89,10 @@ Command example on the SENIOR data:
 python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_get_eddy_data \
     -s ag160127 \
     -c CENTER1 \
-    -m /neurospin/acquisition/database/Prisma_fit/20160707/ag160127-5226_001/000011_DTI \
+    -D /neurospin/acquisition/database/Prisma_fit/20160707/ag160127-5226_001/000011_DTI \
     -d /neurospin/senior/nsap/data/V0/nifti/ag160127/000011_DTI/000011_DTI.nii.gz \
-    -b /neurospin/senior/nsap/data/V0/nifti/ag160127/000011_DTI/000011_DTI.bvals \
-    -r /neurospin/senior/nsap/data/V0/nifti/ag160127/000011_DTI/000011_DTI.bvecs \
+    -B /neurospin/senior/nsap/data/V0/nifti/ag160127/000011_DTI/000011_DTI.bvals \
+    -R /neurospin/senior/nsap/data/V0/nifti/ag160127/000011_DTI/000011_DTI.bvecs \
     -o /tmp/senior \
     -V 2
 """
@@ -137,17 +137,9 @@ def get_cmd_line_args():
         required=True,
         help="The center name.")
     required.add_argument(
-        "-d", "--dwi",
+        "-d", "--epi",
         required=True, metavar="<path>", nargs="+", type=is_file,
-        help="Path to the DWI image files.")
-    required.add_argument(
-        "-b", "--bval",
-        required=True, metavar="<path>", nargs="+", type=is_file,
-        help="Path to the DWI asscoaited bval files.")
-    required.add_argument(
-        "-r", "--bvec",
-        required=True, metavar="<path>", nargs="+", type=is_file,
-        help="Path to the DWI asscoaited bvec files.")
+        help="Path to the EPI (DWI, func) image files.")
     required.add_argument(
         "-o", "--outdir",
         required=True, metavar="<path>", type=is_directory,
@@ -155,16 +147,24 @@ def get_cmd_line_args():
 
     # Optional argument
     required.add_argument(
+        "-B", "--bval",
+        metavar="<path>", nargs="+", type=is_file,
+        help="Path to the DWI asscoaited bval files.")
+    required.add_argument(
+        "-R", "--bvec",
+        metavar="<path>", nargs="+", type=is_file,
+        help="Path to the DWI asscoaited bvec files.")
+    required.add_argument(
         "-D", "--dicom",
         metavar="<path>",
-        help="A compressed tarball (.tar.gz) or a folder containing the dMRI "
+        help="A compressed tarball (.tar.gz) or a folder containing the EPI "
              "DICOM files. We assume that all images were acquired with the "
              "same protocol.")
     parser.add_argument(
         "-I", "--dicom-info", metavar="<path>", type=is_file,
         help="Image BIDS description file.")
     parser.add_argument(
-        "-R", "--round-readout-time", action="store_true",
+        "-A", "--round-readout-time", action="store_true",
         help="Round read out time value to 3 digits after the decimal point.")
     parser.add_argument(
         "-V", "--verbose",
@@ -209,16 +209,19 @@ if not os.path.isdir(output_sub_dir):
     os.mkdir(output_sub_dir)
 subject_data["output_dir"] = output_sub_dir
 
-# Concatenate the volume into new nii/bvec/bval files
-concat_volume, concat_bvals, concat_bvecs = concatenate_volumes(
-    nii_files=inputs["dwi"],
-    bvals_files=inputs["bval"],
-    bvecs_files=inputs["bvec"],
-    outdir=output_sub_dir,
-    axis=-1)
-subject_data["dwi"] = concat_volume
-subject_data["bvec"] = concat_bvecs
-subject_data["bval"] = concat_bvals
+# DWI only: concatenate the volume into new nii/bvec/bval files
+if inputs["bval"] is not None:
+    concat_volume, concat_bvals, concat_bvecs = concatenate_volumes(
+        nii_files=inputs["epi"],
+        bvals_files=inputs["bval"],
+        bvecs_files=inputs["bvec"],
+        outdir=output_sub_dir,
+        axis=-1)
+    subject_data["dwi"] = concat_volume
+    subject_data["bvec"] = concat_bvecs
+    subject_data["bval"] = concat_bvals
+else:
+    subject_data["func"] = inputs["epi"][0]
 
 # Get sequence information from dicom
 # > Unzip dicom archive
@@ -261,6 +264,7 @@ elif "PhaseEncodingAxis" in dcm_info.keys():
 else:
     raise ValueError("No information on phase encode direction...")
 subject_data["Manufacturer"] = dcm_info["Manufacturer"]
+subject_data["RepetitionTime"] = dcm_info["RepetitionTime"]
 subject_data["MagneticFieldStrength"] = dcm_info["MagneticFieldStrength"]
 
 # Get dwell time (effective echo spacing)
@@ -312,7 +316,7 @@ subject_data["acqp"] = acqp_file
 
 # Write index file
 index_file = os.path.join(output_sub_dir, "index.txt")
-nii_img = nibabel.load(subject_data["dwi"])
+nii_img = nibabel.load(subject_data.get("dwi", subject_data.get("func")))
 nb_volume = nii_img.get_data().shape[3]
 with open(index_file, "wt") as open_file:
     for vol in range(nb_volume):

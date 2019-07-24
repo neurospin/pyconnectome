@@ -253,6 +253,11 @@ def get_cmd_line_args():
         help="the template brain file used as a reference volume during the "
              "non linear registration.")
     parser.add_argument(
+        "-G", "--wmseg",
+        type=is_file,
+        help="the white matter segementation file needed when BBR cost is "
+             "used.")
+    parser.add_argument(
         "-F", "--fsl-sh",
         type=is_file, metavar="<path>",
         help="bash script initializing FSL's environment.")
@@ -314,15 +319,18 @@ if inputs["doreorient"]:
         os.mkdir(reorient_dir)
     inputfile = os.path.join(
         reorient_dir, os.path.basename(inputs["inputfile"]))
-    fslreorient2std(
+    inputfile = fslreorient2std(
         inputs["inputfile"], inputfile, fslconfig=inputs["fsl_sh"])
     referencefile = os.path.join(
         reorient_dir, os.path.basename(inputs["referencefile"]))
-    fslreorient2std(
+    referencefile = fslreorient2std(
         inputs["referencefile"], referencefile, fslconfig=inputs["fsl_sh"])
 else:
     inputfile = inputs["inputfile"]
     referencefile = inputs["referencefile"]
+if verbose > 0:
+    print("[result] Input image: {0}.".format(inputfile))
+    print("[result] Reference image: {0}.".format(referencefile))
 
 
 """
@@ -389,6 +397,10 @@ if crop_outputs[1] is not None:
     cropped_reference_file = crop_outputs[1]
 else:
     cropped_reference_file = referencefile
+if verbose > 0:
+    print("[result] Input cropped image: {0}.".format(cropped_moving_file))
+    print("[result] Reference cropped image: {0}.".format(
+        cropped_reference_file))
 
 
 """
@@ -473,12 +485,12 @@ if verbose > 0:
 """
 Step 3: Affine registration
 """
-basename = os.path.basename(biascorrected_anatfile).split(".")[0]
+basename = os.path.basename(cropped_moving_file).split(".")[0]
 flirt_dir = os.path.join(subjdir, "flirt")
 if not os.path.isdir(flirt_dir):
     os.mkdir(flirt_dir)
 affine_file, affine_omat = flirt(
-    in_file=cropped_moving_file,
+    in_file=biascorrected_anatfile,
     ref_file=cropped_reference_file,
     omat=os.path.join(flirt_dir, "flirt_{0}_to_template.txt".format(basename)),
     out=os.path.join(flirt_dir, "flirt_{0}.nii.gz".format(basename)),
@@ -493,6 +505,7 @@ affine_file, affine_omat = flirt(
     applyxfm=False,
     applyisoxfm=None,
     nosearch=inputs["nosearch"],
+    wmseg=inputs["wmseg"],
     verbose=verbose,
     shfile=inputs["fsl_sh"])
 if inputs["dosnap"]:
@@ -513,8 +526,8 @@ if inputs["dononlinear"]:
     if not os.path.isdir(fnirt_dir):
         os.mkdir(fnirt_dir)
     cout, iout, fout, jout, refout, intout, logout = fnirt(
-        in_file=brain_file,
-        ref_file=inputs["referencebrainfile"],
+        in_file=biascorrected_anatfile,
+        ref_file=cropped_reference_file,
         affine_file=affine_omat,
         outdir=fnirt_dir,
         inmask_file=None,

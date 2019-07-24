@@ -39,14 +39,14 @@ class FSLWrapper(object):
         "NIFTI_PAIR_GZ": ".hdr.gz",
     }
 
-    def __init__(self, cmd, shfile=DEFAULT_FSL_PATH, fsl_parallel=False,
+    def __init__(self, cmd=None, shfile=DEFAULT_FSL_PATH, fsl_parallel=False,
                  env=None):
         """ Initialize the FSLWrapper class by setting properly the
         environment.
 
         Parameters
         ----------
-        cmd: list of str (mandatory)
+        cmd: list of str (optional, default None)
             The FreeSurfer command to execute.
         shfile: str (optional, default NeuroSpin path)
             The path to the FSL 'fsl.sh' configuration file.
@@ -62,6 +62,7 @@ class FSLWrapper(object):
         self.environment = self._fsl_version_check()
         if env is not None:
             self.environment = concat_environment(self.environment, env)
+        # self.environment["FSLOUTPUTTYPE"] = "NIFTI_GZ"
 
         # Condor specific setting
         if fsl_parallel:
@@ -77,14 +78,22 @@ class FSLWrapper(object):
             if self.exitcode != 0:
                 raise FSLDependencyError("condor_qsub", "Condor")
 
-    def __call__(self, cwdir=None):
+    def __call__(self, cmd=None, cwdir=None):
         """ Run the FSL command.
 
         Parameters
         ----------
+        cmd: list of str (optional, default None)
+            The FreeSurfer command to execute.
         cwdir: str (optional, default None)
             the working directory that will be passed to the subprocess.
         """
+        # Set command
+        if cmd is not None:
+            self.cmd = cmd
+        if self.cmd is None:
+            raise FSLConfigurationError("None")
+
         # Check FSL has been configured so the command can be found
         process = subprocess.Popen(["which", self.cmd[0]],
                                    env=self.environment,

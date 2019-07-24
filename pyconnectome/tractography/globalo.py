@@ -169,7 +169,8 @@ def mitk_gibbs_tractogram(
     # STEP 2 - Apply brain mask to DWI before Qball reconstruction
     dwi_brain = os.path.join(outdir, "dwi_brain.nii.gz")
     cmd_4 = ["fslmaths", dwi, "-mas", nodif_brain_mask, dwi_brain]
-    FSLWrapper(cmd_4, shfile=fsl_sh)()
+    process = FSLWrapper(shfile=fsl_sh)
+    process(cmd=cmd_4)
 
     # MITK requires the Nifti to have an .fslgz extension and the bvals/bvecs
     # to have the same name with .bvals/.bvecs extension
@@ -198,7 +199,8 @@ def mitk_gibbs_tractogram(
     fast_tempdir = tempfile.mkdtemp(prefix="FSL_fast_", dir=tempdir)
     base_outpath = os.path.join(fast_tempdir, "brain")
     cmd_6 = ["fast", "-o", base_outpath, t1_brain_to_dif]
-    FSLWrapper(cmd_6, shfile=fsl_sh)()
+    process = FSLWrapper(cmd_6, shfile=fsl_sh)
+    process(cmd=cmd_6)
 
     # Save the white matter probability map
     wm_prob_map = os.path.join(outdir, "wm_prob_map.nii.gz")
