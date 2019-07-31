@@ -32,6 +32,7 @@ def topup(
         phase_enc_dirs,
         readout_time,
         outroot,
+        apply_to=None,
         fsl_sh=DEFAULT_FSL_PATH):
     """ Wraps FSL topup tool to estimate the susceptibility induced
     off-resonance field.
@@ -46,6 +47,11 @@ def topup(
         the readout time.
     outroot: str
         fileroot name for output.
+    apply_to: 2-uplet, default None
+        apply the topup correction to the volumes acquired in the blip up and
+        blip down acquisition settings respectivelly. Will take the first
+        and last indices of the acquisiton parameters file during the
+        correction.
     fsl_sh: str, optional default 'DEFAULT_FSL_PATH'
         path to fsl setup sh file.
 
@@ -66,6 +72,7 @@ def topup(
     acqp_file = os.path.join(outroot, "acqp.txt")
     data = []
     affine = None
+    tot_nvol = 0
     with open(acqp_file, "wt") as open_file:
         for enc_dir, path in zip(phase_enc_dirs, b0s):
             im = nibabel.load(path)
@@ -82,6 +89,7 @@ def topup(
                 arr.shape += (1, )
             data.append(arr)
             nvol = arr.shape[-1]
+            tot_nvol += nvol
             if enc_dir == "i":
                 row = "1 0 0 {0}".format(readout_time)
             elif enc_dir == "i-":
@@ -115,13 +123,27 @@ def topup(
     fslprocess = FSLWrapper(shfile=fsl_sh)
     fslprocess(cmd=cmd)
 
+    # Apply topup correction
+    if apply_to is not None:
+        if len(apply_to) != 2:
+            raise ValueError(
+                "Need two volumes acquired in the blip up and blip down "
+                "acquisition settings to apply topup.")
+        cmd = [
+            "applytopup",
+            "--imain={0}".format(",".join(apply_to)),
+            "--inindex=1,{0}".format(tot_nvol),
+            "--datain={0}".format(acqp_file),
+            "--topup={0}".format(os.path.join(outroot, "topup")),
+            "--out={0}".format(os.path.join(outroot, "applytopup"))]
+        fslprocess(cmd=cmd)
+
     # Average b0s
     mean_corrected_b0s = os.path.join(outroot, "mean_unwarped_b0s.nii.gz")
     cmd = [
         "fslmaths",
         corrected_b0s,
         "-Tmean", mean_corrected_b0s]
-    fslprocess = FSLWrapper(shfile=fsl_sh)
     fslprocess(cmd=cmd)
 
     return fieldmap, corrected_b0s, mean_corrected_b0s
