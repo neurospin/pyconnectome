@@ -9,6 +9,7 @@
 # System import
 import shutil
 import os
+import numpy as np
 
 
 def noddifit(dwi_file, bvec_file, bval_file, mask_file, out):
@@ -66,10 +67,15 @@ def noddifit(dwi_file, bvec_file, bval_file, mask_file, out):
     amico_root = os.path.join(out, "Study", "Subject")
     if not os.path.isdir(amico_root):
         os.makedirs(amico_root)
-    os.symlink(dwi_file, os.path.join(amico_root, "dwi.nii.gz"))
-    os.symlink(bvec_file, os.path.join(amico_root, "dwi.bvec"))
-    os.symlink(bval_file, os.path.join(amico_root, "dwi.bval"))
-    os.symlink(mask_file, os.path.join(amico_root, "mask.nii.gz"))
+    if not os.path.islink(os.path.join(amico_root, "dwi.nii.gz")):
+        os.symlink(dwi_file, os.path.join(amico_root, "dwi.nii.gz"))
+        os.symlink(bvec_file, os.path.join(amico_root, "dwi.bvec"))
+        bvals = np.loadtxt(bval_file)
+        bvals = np.asarray([int(round(bval, -2)) for bval in bvals])
+        bvals = np.expand_dims(bvals, axis=0)
+        np.savetxt(os.path.join(amico_root, "dwi.bval"), bvals)
+        # os.symlink(bval_file, os.path.join(amico_root, "dwi.bval"))
+        os.symlink(mask_file, os.path.join(amico_root, "mask.nii.gz"))
 
     # Load the data
     amico.core.setup()
@@ -77,7 +83,7 @@ def noddifit(dwi_file, bvec_file, bval_file, mask_file, out):
     amico.util.fsl2scheme(os.path.join("Study", "Subject", "dwi.bval"),
                           os.path.join("Study", "Subject", "dwi.bvec"))
     ae.load_data(dwi_filename="dwi.nii.gz", scheme_filename="dwi.scheme",
-                 mask_filename="mask.nii.gz", b0_thr=0)
+                 mask_filename="mask.nii.gz", b0_thr=10)
     ae.set_model("NODDI")
 
     # Compute the response functions

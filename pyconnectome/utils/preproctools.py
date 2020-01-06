@@ -283,7 +283,7 @@ def fsl_prepare_fieldmap(
 
     # Define the FSL command
     cmd = ["fsl_prepare_fieldmap", manufacturer, phase_file,
-           brain_magnitude_file, output_file, delta_te]
+           brain_magnitude_file, output_file, str(delta_te)]
 
     # Call fsl_prepare_fieldmap
     fslprocess = FSLWrapper(shfile=fsl_sh)

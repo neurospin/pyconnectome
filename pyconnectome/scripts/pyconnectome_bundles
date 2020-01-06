@@ -1,0 +1,247 @@
+#!/usr/bin/env python3
+##########################################################################
+# NSAp - Copyright (C) CEA, 2018
+# Distributed under the terms of the CeCILL-B license, as published by
+# the CEA-CNRS-INRIA. Refer to the LICENSE file or to
+# http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html
+# for details.
+##########################################################################
+
+# System import
+from __future__ import print_function
+import os
+import sys
+import json
+import glob
+import shutil
+import argparse
+import textwrap
+import subprocess
+from pprint import pprint
+from datetime import datetime
+from argparse import RawTextHelpFormatter
+
+# Bredala import
+try:
+    import bredala
+    bredala.USE_PROFILER = False
+except:
+    pass
+
+# Package import
+import pyconnectome
+from pyconnectome import __version__ as version
+
+# Third party import
+import numpy
+import nibabel
+import progressbar
+import tractographyGP as tgp
+from dipy.segment.metric import ResampleFeature
+from dipy.segment.clustering import QuickBundles
+from dipy.segment.metric import AveragePointwiseEuclideanMetric
+from pyfreesurfer.utils.surftools import apply_affine_on_mesh
+
+
+# Parameters to keep trace
+__hopla__ = ["runtime", "inputs", "outputs"]
+
+
+# Script documentation
+DOC = """
+Regroup the fibers in bundles and find the most representative fiber of each
+bundle. Then generate a white matter skeleton.
+
+Example on HCP data:
+
+python $HOME/git/pyconnectome/pyconnectome/scripts/pyconnectome_bundles \
+    -o /neurospin/nsap/processed/hcp_sillons/data/tracks \
+    -s 930449 \
+    -t /neurospin/nsap/processed/hcp_sillons/data/tracks/930449_40k.tck \
+    -r /neurospin/hcp/ANALYSIS/3T_connectomist/930449/preproc/nodiff.nii.gz \
+    -T 10 \
+    -v 2
+"""
+
+def is_file(filearg):
+    """ Type for argparse - checks that file exists but does not open.
+    """
+    if not os.path.isfile(filearg):
+        raise argparse.ArgumentError(
+            "The file '{0}' does not exist!".format(filearg))
+    return filearg
+
+
+def is_directory(dirarg):
+    """ Type for argparse - checks that directory exists.
+    """
+    if not os.path.isdir(dirarg):
+        raise argparse.ArgumentError(
+            "The directory '{0}' does not exist!".format(dirarg))
+    return dirarg
+
+
+def get_cmd_line_args():
+    """
+    Create a command line argument parser and return a dict mapping
+    <argument name> -> <argument value>.
+    """
+    parser = argparse.ArgumentParser(
+        prog="python pyconnectome_bundles",
+        description=textwrap.dedent(DOC),
+        formatter_class=RawTextHelpFormatter)
+
+    # Required arguments
+    required = parser.add_argument_group("required arguments")
+    required.add_argument(
+        "-o", "--outdir",
+        type=is_directory, required=True, metavar="PATH",
+        help="Directory where to output that is also were the individual pits "
+             "analysis were run.")
+    required.add_argument(
+        "-t", "--tractogram",
+        type=is_file, required=True, metavar="PATH",
+        help="The tractogram file.")
+    required.add_argument(
+        "-s", "--subjectid",
+        required=True,
+        help="the subject identifier.")
+    required.add_argument(
+        "-r", "--ref-file",
+        type=is_file, required=True, metavar="PATH",
+        help="the path to the NIFTI image file that supports the tractogram.")
+
+    # Optional arguments
+    parser.add_argument(
+        "-v", "--verbose",
+        type=int, choices=[0, 1, 2], default=2,
+        help="Increase the verbosity level: 0 silent, [1, 2] verbose.")
+    required.add_argument(
+        "-T", "--threshold",
+        type=float, default=10.,
+        help="The clustering threshold.")
+    required.add_argument(
+        "-G", "--gaussian-process",
+        action="store_true",
+        help="If set, compute the skeleton Gaussian Process mean.")
+
+    # Create a dict of arguments to pass to the 'main' function
+    args = parser.parse_args()
+    kwargs = vars(args)
+    verbose = kwargs.pop("verbose")
+
+    return kwargs, verbose
+
+
+"""
+Parse the command line.
+"""
+inputs, verbose = get_cmd_line_args()
+runtime = {
+    "tool": "pyconnectome_bundles",
+    "tool_version": version,
+    "timestamp": datetime.now().isoformat()
+}
+outputs = None
+out_files = []
+if verbose > 0:
+    pprint("[info] Starting sulcal pits correction...")
+    pprint("[info] Runtime:")
+    pprint(runtime)
+    pprint("[info] Inputs:")
+    pprint(inputs)
+
+
+"""
+Fiber clustering.
+"""
+# Welcome message
+if verbose > 0:
+    print("Start fibers clustering...")
+# Load & cluster
+tracks = nibabel.streamlines.load(inputs["tractogram"])
+if 0:
+    feature = ResampleFeature(nb_points=20)
+    metric = AveragePointwiseEuclideanMetric(feature)
+    qb = QuickBundles(threshold=inputs["threshold"], metric=metric)
+    clusters = {}
+    for cnt, cluster in enumerate(qb.cluster(tracks.streamlines)):
+        clusters[cnt] = {
+            "indices": cluster.indices,
+            "centroid": cluster.centroid.tolist()
+        }
+# Save
+subj_dir = os.path.join(inputs["outdir"], inputs["subjectid"])
+if not os.path.isdir(subj_dir):
+    os.mkdir(subj_dir)
+clusters_file = os.path.join(
+    subj_dir, "{0}_clusters_quickbundle.json".format(inputs["subjectid"]))
+if 0:
+    with open(clusters_file, "wt") as open_file:
+        json.dump(clusters, open_file, indent=4)
+else:
+    with open(clusters_file, "rt") as open_file:
+        clusters = json.load(open_file)
+
+
+"""
+Generate skeleton.
+"""
+# Welcome message
+if verbose > 0:
+    print("Start skeleton computation...")
+# Create a density map
+ref_im = nibabel.load(inputs["ref_file"])
+trf = numpy.linalg.inv(ref_im.affine)
+density_map = numpy.zeros(ref_im.shape, dtype=int)
+for cluster in clusters.values():
+    track = numpy.asarray(cluster["centroid"])
+    vox_streamlines = apply_affine_on_mesh(track, trf).astype(int)
+    density_map[vox_streamlines.T.tolist()] += 1
+density_map_file = os.path.join(subj_dir, "density_map.nii.gz")
+density_map_image = nibabel.Nifti1Image(density_map, ref_im.affine)
+density_map_image.to_filename(density_map_file)
+# Create a 'Gaussian' like density map
+if inputs["gaussian_process"]:
+    mean_gps = numpy.zeros(ref_im.shape)
+    variances = []
+    bbox = numpy.zeros((2, 3), dtype=int)
+    bbox[1] = ref_im.shape
+    with progressbar.ProgressBar(redirect_stdout=True,
+                                 max_value=len(clusters)) as bar:
+        for cnt, cluster in enumerate(clusters.values()):
+            track = numpy.asarray(cluster["centroid"])
+            vox_streamlines = apply_affine_on_mesh(track, trf)#.astype(int)
+            gp = tgp.fiberGPAnalysis.fiberGP(vox_streamlines, rFactor=1)
+            mean_gps += gp.getMeanFieldForBoundingBox(bbox, (1, 1, 1))[1]
+            # var = gp.getVarianceFieldForBoundingBox((bbox, (1, 1, 1)))
+            bar.update(cnt)
+    mean_gps /= len(clusters)
+    mean_gps_file = os.path.join(subj_dir, "mean_gps.nii.gz")
+    mean_gps_image = nibabel.Nifti1Image(mean_gps, ref_im.affine)
+    mean_gps_image.to_filename(mean_gps_file)
+else:
+    mean_gps_file = None
+
+
+"""
+Update the outputs and save them and the inputs in a 'logs' directory.
+"""
+logdir = os.path.join(inputs["outdir"], inputs["subjectid"], "logs")
+if not os.path.isdir(logdir):
+    os.mkdir(logdir)
+params = locals()
+outputs = {
+    "clusters_file": clusters_file,
+    "density_map_file": density_map_file,
+    "mean_gps_file": mean_gps_file}
+for name, final_struct in [
+        ("inputs_correct", inputs), ("outputs_correct", outputs),
+        ("runtime_correct", runtime)]:
+    log_file = os.path.join(logdir, "{0}.json".format(name))
+    with open(log_file, "wt") as open_file:
+        json.dump(final_struct, open_file, sort_keys=True, check_circular=True,
+                  indent=4)
+if verbose > 0:
+    print("[info] Outputs:")
+    pprint(outputs)

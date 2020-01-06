@@ -10,7 +10,7 @@
 # Module current version
 version_major = 1
 version_minor = 0
-version_micro = 0
+version_micro = 1
 
 # Expected by setup.py: string of form "X.Y.Z"
 __version__ = "{0}.{1}.{2}".format(version_major, version_minor, version_micro)
@@ -90,20 +90,46 @@ EXTRA_REQUIRES = {
     }
 }
 SCRIPTS = [
-    "pyconnectome/scripts/pyconnectome_ants_register",
-    "pyconnectome/scripts/pyconnectome_ants_template",
-    "pyconnectome/scripts/pyconnectome_bedpostx",
-    "pyconnectome/scripts/pyconnectome_compress_tractogram",
-    "pyconnectome/scripts/pyconnectome_life",
-    "pyconnectome/scripts/pyconnectome_metrics",
-    "pyconnectome/scripts/pyconnectome_metrics_heatmap",
-    "pyconnectome/scripts/pyconnectome_mitk_tractogram",
-    "pyconnectome/scripts/pyconnectome_mrtrix_tractogram",
-    "pyconnectome/scripts/pyconnectome_probtrackx2_complete",
-    "pyconnectome/scripts/pyconnectome_probtrackx2_tractogram",
-    "pyconnectome/scripts/pyconnectome_reduced_connectome",
-    "pyconnectome/scripts/pyconnectome_reduced_probtrackx2",
-    "pyconnectome/scripts/pyconnectome_register",
-    "pyconnectome/scripts/pyconnectome_report_tractogram",
-    "pyconnectome/scripts/pyconnectome_tissue_segmentation"
+    "pyconnectome_ants_register",
+    "pyconnectome_ants_template",
+    "pyconnectome_applyxfm",
+    "pyconnectome_bedpostx",
+    "pyconnectome_bet",
+    "pyconnectome_blueprints",
+    "pyconnectome_bundles",
+    "pyconnectome_compress_tractogram",
+    "pyconnectome_dmri_preproc",
+    "pyconnectome_dtitk_create_templates",
+    "pyconnectome_dtitk_import_tensors",
+    "pyconnectome_dtitk_register",
+    "pyconnectome_dtitk_tbss",
+    "pyconnectome_folds_metrics",
+    "pyconnectome_folds_metrics_summary",
+    "pyconnectome_get_eddy_data",
+    "pyconnectome_life",
+    "pyconnectome_metrics",
+    "pyconnectome_metrics_heatmap",
+    "pyconnectome_mitk_tractogram",
+    "pyconnectome_mrtrix_tractogram",
+    "pyconnectome_probtrackx2_complete",
+    "pyconnectome_probtrackx2_tractogram",
+    "pyconnectome_project",
+    "pyconnectome_reduced_connectome",
+    "pyconnectome_reduced_probtrackx2",
+    "pyconnectome_register",
+    "pyconnectome_register_report",
+    "pyconnectome_report_tractogram",
+    "pyconnectome_scalars",
+    "pyconnectome_segmentation_report",
+    "pyconnectome_sulcal_pits_analysis",
+    "pyconnectome_sulcal_pits_correction",
+    "pyconnectome_sulcal_pits_parcellation",
+    "pyconnectome_tbss",
+    "pyconnectome_tbss_non_fa",
+    "pyconnectome_tbss_outliers",
+    "pyconnectome_tbss_psmd",
+    "pyconnectome_tbss_report",
+    "pyconnectome_tbss_stats",
+    "pyconnectome_tissue_segmentation",
+   " pyconnectome_tractseg"
 ]

@@ -1,0 +1,170 @@
+#! /usr/bin/env python3
+##########################################################################
+# NSAp - Copyright (C) CEA, 2013 - 2019
+# Distributed under the terms of the CeCILL-B license, as published by
+# the CEA-CNRS-INRIA. Refer to the LICENSE file or to
+# http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html
+# for details.
+##########################################################################
+
+# System import
+from __future__ import print_function
+import argparse
+import os
+import shutil
+from datetime import datetime
+import json
+from pprint import pprint
+import textwrap
+from argparse import RawTextHelpFormatter
+
+# Bredala import
+try:
+    import bredala
+    bredala.USE_PROFILER = False
+    bredala.register("pyconnectome.utils.segtools",
+                     names=["bet2"])
+except:
+    pass
+
+# Package import
+from pyconnectome import __version__ as version
+from pyconnectome import DEFAULT_FSL_PATH
+from pyconnectome.wrapper import FSLWrapper
+from pyconnectome.utils.regtools import flirt
+
+
+# Parameters to keep trace
+__hopla__ = ["runtime", "inputs", "outputs"]
+
+
+# Script documentation
+DOC = """
+Apply FSL transformation
+"""
+
+
+def is_file(filearg):
+    """ Type for argparse - checks that file exists but does not open.
+    """
+    if not os.path.isfile(filearg):
+        raise argparse.ArgumentError(
+            "The file '{0}' does not exist!".format(filearg))
+    return filearg
+
+
+def is_directory(dirarg):
+    """ Type for argparse - checks that directory exists.
+    """
+    if not os.path.isdir(dirarg):
+        raise argparse.ArgumentError(
+            "The directory '{0}' does not exist!".format(dirarg))
+    return dirarg
+
+
+def get_cmd_line_args():
+    """
+    Create a command line argument parser and return a dict mapping
+    <argument name> -> <argument value>.
+    """
+    parser = argparse.ArgumentParser(
+        prog="pyconnectome_tissue_segmentation",
+        description=textwrap.dedent(DOC),
+        formatter_class=RawTextHelpFormatter)
+
+    # Required arguments
+    required = parser.add_argument_group("required arguments")
+    required.add_argument(
+        "-o", "--outfile",
+        required=True, metavar="<path>",
+        help="the generated file path.")
+    required.add_argument(
+        "-i", "--inputfile",
+        required=True, type=is_file,
+        help="the input volume to be registered.")
+    required.add_argument(
+        "-r", "--reffile",
+        required=True, type=is_file,
+        help="the template space.")
+    required.add_argument(
+        "-t", "--trffile",
+        required=True, type=is_file,
+        help="the FSL affine transformation to be applied.")
+
+    # Optional arguments
+    parser.add_argument(
+        "-F", "--fsl-sh",
+        type=is_file, metavar="<path>",
+        help="bash script initializing FSL's environment.")
+    parser.add_argument(
+        "-v", "--verbose",
+        type=int, choices=[0, 1, 2], default=0,
+        help="increase the verbosity level: 0 silent, [1, 2] verbose.")
+
+    # Create a dict of arguments to pass to the 'main' function
+    args = parser.parse_args()
+    kwargs = vars(args)
+    verbose = kwargs.pop("verbose")
+    if kwargs["fsl_sh"] is None:
+        kwargs["fsl_sh"] = DEFAULT_FSL_PATH
+
+    return kwargs, verbose
+
+
+"""
+Parse the command line.
+"""
+inputs, verbose = get_cmd_line_args()
+tool = "pyconnectome_applyxfm"
+timestamp = datetime.now().isoformat()
+tool_version = version
+fsl_version = FSLWrapper([], shfile=inputs["fsl_sh"]).version
+params = locals()
+runtime = dict([(name, params[name])
+               for name in ("tool", "tool_version", "fsl_version",
+                            "timestamp")])
+outputs = None
+if verbose > 0:
+    pprint("[info] Starting BET ...")
+    pprint("[info] Runtime:")
+    pprint(runtime)
+    pprint("[info] Inputs:")
+    pprint(inputs)
+
+
+"""
+Step 1: Applyxfm
+"""
+moved_file, _ = flirt(
+    in_file=inputs["inputfile"],
+    ref_file=inputs["reffile"],
+    out=inputs["outfile"],
+    init=inputs["trffile"],
+    applyxfm=True,
+    interp="nearestneighbour",
+    verbose=verbose,
+    shfile=inputs["fsl_sh"])
+if verbose > 0:
+    print("[result] Moved image: {0}.".format(moved_file))
+
+"""
+Update the outputs and save them and the inputs in a 'logs' directory.
+"""
+params = locals()
+outputs = dict([(name, params[name])
+               for name in ("moved_file", )])
+if 0:
+    logdir = os.path.join(subjdir, "logs")
+    if not os.path.isdir(logdir):
+        os.mkdir(logdir)
+
+    for name, final_struct in [("inputs_applyxfm", inputs),
+                               ("outputs_applyxfm", outputs),
+                               ("runtime_applyxfm", runtime)]:
+        log_file = os.path.join(logdir, "{0}.json".format(name))
+        with open(log_file, "wt") as open_file:
+            json.dump(final_struct, open_file, sort_keys=True, check_circular=True,
+                      indent=4)
+if verbose > 1:
+    print("[info] Outputs:")
+    pprint(outputs)

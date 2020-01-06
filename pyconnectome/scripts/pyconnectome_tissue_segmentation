@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 ##########################################################################
 # NSAp - Copyright (C) CEA, 2013 - 2017
 # Distributed under the terms of the CeCILL-B license, as published by
@@ -104,7 +104,6 @@ def get_cmd_line_args():
              "generated.")
     required.add_argument(
         "-s", "--sid",
-        required=True,
         help="the subject identifier.")
     required.add_argument(
         "-i", "--inputfile",
@@ -172,7 +171,10 @@ params = locals()
 runtime = dict([(name, params[name])
                for name in ("tool", "tool_version", "fsl_version",
                             "timestamp")])
-subjdir = os.path.join(inputs["outdir"], inputs["sid"])
+if inputs["sid"] is not None:
+    subjdir = os.path.join(inputs["outdir"], inputs["sid"])
+else:
+    subjdir = inputs["outdir"]
 if not os.path.isdir(subjdir):
     os.mkdir(subjdir)
 outputs = None
@@ -309,8 +311,8 @@ outputs = dict([(name, params[name])
                             "segmentation_anatfile", "bias_anatfile",
                             "biascorrected_anatfile", "brain_file", "mask_file",
                             "snaps")])
-for name, final_struct in [("inputs", inputs), ("outputs", outputs),
-                           ("runtime", runtime)]:
+for name, final_struct in [("inputs_fast", inputs), ("outputs_fast", outputs),
+                           ("runtime_fast", runtime)]:
     log_file = os.path.join(logdir, "{0}.json".format(name))
     with open(log_file, "wt") as open_file:
         json.dump(final_struct, open_file, sort_keys=True, check_circular=True,
