@@ -17,7 +17,6 @@ import numpy
 
 # Third party import
 import nibabel
-from dipy.viz import fvtk
 from dipy.reconst.shm import sh_to_sf
 from dipy.data import get_sphere
 from dipy.reconst.shore import ShoreModel

@@ -15,7 +15,6 @@ import os
 
 # Third party import
 import nibabel
-from dipy.viz import fvtk
 from dipy.data import get_sphere
 from dipy.reconst.shm import CsaOdfModel
 from dipy.direction import peaks_from_model
